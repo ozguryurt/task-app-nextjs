@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useTeamStore } from '@/lib/store/team-store';
 import { useTeams } from '@/lib/hooks/use-teams';
+import { useUserTasks } from '@/lib/hooks/use-user-tasks';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLogout } from '@/lib/hooks/use-logout';
 import { CreateTeamDialog } from '@/components/teams/create-team-dialog';
 import { TeamCard } from '@/components/teams/team-card';
-import { Plus, Users } from 'lucide-react';
+import { UserTaskItem } from '@/components/dashboard/user-task-item';
+import { Plus, Users, ClipboardList } from 'lucide-react';
+import { Alert } from '@/components/ui/alert';
 
 export default function DashboardPage() {
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -17,9 +20,11 @@ export default function DashboardPage() {
     const { user } = useAuthStore();
     const { teams } = useTeamStore();
     const { fetchTeams, isLoading } = useTeams();
+    const { tasks: userTasks, fetchUserTasks, isLoading: isLoadingTasks, error: tasksError } = useUserTasks();
 
     useEffect(() => {
         fetchTeams();
+        fetchUserTasks();
     }, []);
 
     const handleLogoutBtn = async () => {
@@ -69,6 +74,41 @@ export default function DashboardPage() {
                                     {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('tr-TR') : '-'}
                                 </p>
                             </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Atanan Görevler */}
+                    <Card className="lg:col-span-2">
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <ClipboardList className="w-5 h-5" />
+                                <CardTitle>Bana Atanan Görevler</CardTitle>
+                            </div>
+                            <CardDescription>
+                                Aktif görevleriniz ({userTasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled').length})
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {tasksError && (
+                                <Alert variant="destructive" className="mb-4">
+                                    {tasksError}
+                                </Alert>
+                            )}
+
+                            {isLoadingTasks ? (
+                                <p className="text-center text-gray-500 py-8">Görevler yükleniyor...</p>
+                            ) : userTasks.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <ClipboardList className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                                    <p className="text-gray-500">Henüz size atanmış görev yok</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                                    {userTasks.map((task) => (
+                                        <UserTaskItem key={task.id} task={task} />
+                                    ))}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

@@ -23,10 +23,32 @@ export interface TeamMember {
     email_verified: boolean;
 }
 
+export interface Task {
+    id: number;
+    team_id: number;
+    assigned_to: number;
+    assigned_by: number;
+    title: string;
+    description: string | null;
+    status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+    priority: 'low' | 'medium' | 'high';
+    start_date: string | null;
+    end_date: string | null;
+    due_date: string | null;
+    completed_at: string | null;
+    created_at: string;
+    updated_at: string;
+    assigned_to_name: string;
+    assigned_to_email: string;
+    assigned_by_name: string;
+    assigned_by_email: string;
+}
+
 interface TeamStore {
     teams: Team[];
     currentTeam: Team | null;
     currentTeamMembers: TeamMember[];
+    currentTeamTasks: Task[];
     setTeams: (teams: Team[]) => void;
     addTeam: (team: Team) => void;
     updateTeam: (teamId: number, data: Partial<Team>) => void;
@@ -36,6 +58,10 @@ interface TeamStore {
     addMember: (member: TeamMember) => void;
     updateMember: (memberId: number, data: Partial<TeamMember>) => void;
     removeMember: (memberId: number) => void;
+    setCurrentTeamTasks: (tasks: Task[]) => void;
+    addTask: (task: Task) => void;
+    updateTask: (taskId: number, data: Partial<Task>) => void;
+    removeTask: (taskId: number) => void;
     reset: () => void;
 }
 
@@ -43,6 +69,7 @@ const initialState = {
     teams: [],
     currentTeam: null,
     currentTeamMembers: [],
+    currentTeamTasks: [],
 };
 
 export const useTeamStore = create<TeamStore>((set) => ({
@@ -85,6 +112,24 @@ export const useTeamStore = create<TeamStore>((set) => ({
     removeMember: (memberId) => set((state) => ({
         currentTeamMembers: state.currentTeamMembers.filter(
             (member) => member.id !== memberId
+        ),
+    })),
+
+    setCurrentTeamTasks: (tasks) => set({ currentTeamTasks: tasks }),
+
+    addTask: (task) => set((state) => ({
+        currentTeamTasks: [task, ...state.currentTeamTasks],
+    })),
+
+    updateTask: (taskId, data) => set((state) => ({
+        currentTeamTasks: state.currentTeamTasks.map((task) =>
+            task.id === taskId ? { ...task, ...data } : task
+        ),
+    })),
+
+    removeTask: (taskId) => set((state) => ({
+        currentTeamTasks: state.currentTeamTasks.filter(
+            (task) => task.id !== taskId
         ),
     })),
 

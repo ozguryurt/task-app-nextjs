@@ -4,14 +4,18 @@ import { useEffect, useState } from 'react';
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { useTeamStore } from '@/lib/store/team-store';
+import { useTeamStore, Task } from '@/lib/store/team-store';
 import { useTeamMembers } from '@/lib/hooks/use-team-members';
+import { useTasks } from '@/lib/hooks/use-tasks';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddMemberDialog } from '@/components/teams/add-member-dialog';
 import { MemberListItem } from '@/components/teams/member-list-item';
+import { CreateTaskDialog } from '@/components/tasks/create-task-dialog';
+import { EditTaskDialog } from '@/components/tasks/edit-task-dialog';
+import { TaskListItem } from '@/components/tasks/task-list-item';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { ArrowLeft, Users, UserPlus, Trash2, Calendar } from 'lucide-react';
+import { ArrowLeft, Users, UserPlus, Trash2, Calendar, ClipboardList, Plus } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 
 interface PageProps {
@@ -28,6 +32,11 @@ export default function TeamDetailPage({ params }: PageProps) {
     const [isDeleteTeamDialogOpen, setIsDeleteTeamDialogOpen] = useState(false);
     const [isDeleteMemberDialogOpen, setIsDeleteMemberDialogOpen] = useState(false);
     const [memberToDelete, setMemberToDelete] = useState<{ id: number; name: string } | null>(null);
+    const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
+    const [isEditTaskDialogOpen, setIsEditTaskDialogOpen] = useState(false);
+    const [isDeleteTaskDialogOpen, setIsDeleteTaskDialogOpen] = useState(false);
+    const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+    const [taskToDelete, setTaskToDelete] = useState<{ id: number; title: string } | null>(null);
     const [isLoadingTeam, setIsLoadingTeam] = useState(true);
     const [isDeletingTeam, setIsDeletingTeam] = useState(false);
     const [teamError, setTeamError] = useState<string | null>(null);
@@ -42,6 +51,17 @@ export default function TeamDetailPage({ params }: PageProps) {
         isSubmitting,
         error: membersError,
     } = useTeamMembers(teamId);
+
+    const {
+        tasks,
+        fetchTasks,
+        createTask,
+        updateTask,
+        deleteTask,
+        isLoading: isLoadingTasks,
+        isSubmitting: isSubmittingTask,
+        error: tasksError,
+    } = useTasks(teamId);
 
     useEffect(() => {
         loadTeamAndMembers();
@@ -66,8 +86,11 @@ export default function TeamDetailPage({ params }: PageProps) {
             setCurrentTeam(teamData.team);
             setUserRole(teamData.userRole);
 
-            // Üyeleri çek
-            await fetchMembers();
+            // Üyeleri ve görevleri çek
+            await Promise.all([
+                fetchMembers(),
+                fetchTasks(),
+            ]);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
             setTeamError(errorMessage);
@@ -126,6 +149,45 @@ export default function TeamDetailPage({ params }: PageProps) {
             setIsDeleteTeamDialogOpen(false);
         } finally {
             setIsDeletingTeam(false);
+        }
+    };
+
+    // Task handlers
+    const handleCreateTask = async (data: any) => {
+        await createTask(data);
+        if (!tasksError) {
+            setIsCreateTaskDialogOpen(false);
+        }
+    };
+
+    const handleEditTaskClick = (task: Task) => {
+        setTaskToEdit(task);
+        setIsEditTaskDialogOpen(true);
+    };
+
+    const handleUpdateTask = async (data: any) => {
+        if (!taskToEdit) return;
+        const success = await updateTask(taskToEdit.id, data);
+        if (success) {
+            setIsEditTaskDialogOpen(false);
+            setTaskToEdit(null);
+        }
+    };
+
+    const handleDeleteTaskClick = (taskId: number, taskTitle: string) => {
+        setTaskToDelete({ id: taskId, title: taskTitle });
+        setIsDeleteTaskDialogOpen(true);
+    };
+
+    const handleConfirmDeleteTask = async () => {
+        if (!taskToDelete) return;
+
+        try {
+            await deleteTask(taskToDelete.id);
+            setIsDeleteTaskDialogOpen(false);
+            setTaskToDelete(null);
+        } catch (err) {
+            // Hata hook tarafında işleniyor
         }
     };
 
@@ -259,6 +321,58 @@ export default function TeamDetailPage({ params }: PageProps) {
                     </CardContent>
                 </Card>
 
+                {/* Tasks Section */}
+                <Card className="mt-6">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle>Görevler</CardTitle>
+                                <CardDescription>
+                                    {isAdmin
+                                        ? 'Takım görevlerini görüntüleyin ve yönetin'
+                                        : 'Takım görevlerini görüntüleyin'}
+                                </CardDescription>
+                            </div>
+                            {isAdmin && (
+                                <Button onClick={() => setIsCreateTaskDialogOpen(true)}>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Görev Oluştur
+                                </Button>
+                            )}
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        {tasksError && (
+                            <Alert variant="destructive" className="mb-4">
+                                {tasksError}
+                            </Alert>
+                        )}
+
+                        {isLoadingTasks ? (
+                            <p className="text-center text-gray-500 py-8">Görevler yükleniyor...</p>
+                        ) : tasks.length === 0 ? (
+                            <div className="text-center py-8">
+                                <ClipboardList className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                                <p className="text-gray-500">Henüz görev yok</p>
+                            </div>
+                        ) : (
+                            <div className="divide-y">
+                                {tasks.map((task) => (
+                                    <TaskListItem
+                                        key={task.id}
+                                        task={task}
+                                        isAdmin={isAdmin}
+                                        currentUserId={user?.id || 0}
+                                        onEdit={handleEditTaskClick}
+                                        onDelete={handleDeleteTaskClick}
+                                        isUpdating={isSubmittingTask}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
                 {/* Add Member Dialog */}
                 <AddMemberDialog
                     open={isAddMemberDialogOpen}
@@ -266,6 +380,27 @@ export default function TeamDetailPage({ params }: PageProps) {
                     onSubmit={handleAddMember}
                     isSubmitting={isSubmitting}
                     error={membersError}
+                />
+
+                {/* Create Task Dialog */}
+                <CreateTaskDialog
+                    open={isCreateTaskDialogOpen}
+                    onOpenChange={setIsCreateTaskDialogOpen}
+                    onSubmit={handleCreateTask}
+                    members={currentTeamMembers}
+                    isSubmitting={isSubmittingTask}
+                    error={tasksError}
+                />
+
+                {/* Edit Task Dialog */}
+                <EditTaskDialog
+                    open={isEditTaskDialogOpen}
+                    onOpenChange={setIsEditTaskDialogOpen}
+                    onSubmit={handleUpdateTask}
+                    task={taskToEdit}
+                    members={currentTeamMembers}
+                    isSubmitting={isSubmittingTask}
+                    error={tasksError}
                 />
 
                 {/* Delete Team Confirmation Dialog */}
@@ -292,6 +427,19 @@ export default function TeamDetailPage({ params }: PageProps) {
                     cancelText="İptal"
                     isDestructive={true}
                     isLoading={isSubmitting}
+                />
+
+                {/* Delete Task Confirmation Dialog */}
+                <ConfirmDialog
+                    open={isDeleteTaskDialogOpen}
+                    onOpenChange={setIsDeleteTaskDialogOpen}
+                    onConfirm={handleConfirmDeleteTask}
+                    title="Görevi Sil"
+                    description={taskToDelete ? `"${taskToDelete.title}" görevini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.` : ''}
+                    confirmText="Evet, Sil"
+                    cancelText="İptal"
+                    isDestructive={true}
+                    isLoading={isSubmittingTask}
                 />
             </div>
         </div>

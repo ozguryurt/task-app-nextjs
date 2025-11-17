@@ -16,7 +16,7 @@ const pool = mysql.createPool({
 // Bağlantı testi
 pool.getConnection()
     .then(connection => {
-        console.log('✅ MySQL bağlantısı başarılı');
+        //console.log('✅ MySQL bağlantısı başarılı');
         connection.release();
     })
     .catch(err => {
