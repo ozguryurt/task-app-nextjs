@@ -51,10 +51,11 @@ Modern ve güvenli bir görev yönetim uygulaması. Kullanıcı kimlik doğrulam
     - Rol değiştirme
     - Takım bilgilerini düzenleme
     - Takımı silme
+    - Görev oluşturma
   - **Üye (Member):** Görüntüleme yetkisi
     - Takım bilgilerini görüntüleme
     - Üyeleri görüntüleme
-    - Kendisine atanan görevleri yönetme (ileride)
+    - Kendisine atanan görevleri yönetme
 
 - **Üye Yönetimi**
   - E-posta ile üye ekleme
@@ -69,6 +70,51 @@ Modern ve güvenli bir görev yönetim uygulaması. Kullanıcı kimlik doğrulam
   - Confirmation dialog'ları ile güvenli silme işlemleri
   - Gerçek zamanlı durum güncellemeleri
   - Responsive tasarım
+
+### 📋 Görev Yönetimi Sistemi
+
+- **Görev Oluşturma ve Atama**
+  - Takım yöneticileri görev oluşturabilir
+  - Takım üyelerine görev atama
+  - Görev başlığı ve detaylı açıklama
+  - Başlangıç, bitiş ve son tarih belirleme
+  - Otomatik atayan kişi kaydı
+
+- **Görev Özellikleri**
+  - **Durum Takibi:**
+    - Beklemede (pending)
+    - Devam Ediyor (in_progress)
+    - Tamamlandı (completed)
+    - İptal Edildi (cancelled)
+  - **Öncelik Seviyeleri:**
+    - Düşük (low)
+    - Orta (medium)
+    - Yüksek (high)
+  - **Tarih Yönetimi:**
+    - Başlangıç tarihi
+    - Bitiş tarihi
+    - Son tarih (due date)
+    - Otomatik tamamlanma tarihi kaydı
+
+- **Yetki Matrisi**
+  - **Görev Oluşturma:** Sadece takım yöneticileri
+  - **Görev Düzenleme:** Admin, görevi atayan kişi ve göreve atanan kişi
+  - **Görev Silme:** Admin ve görevi atayan kişi
+  - **Görev Görüntüleme:** Tüm takım üyeleri
+
+- **Dashboard Entegrasyonu**
+  - Kullanıcıya atanan tüm görevleri dashboard'da görüntüleme
+  - Durum ve önceliğe göre akıllı sıralama
+  - Görevden takım sayfasına tek tıkla geçiş
+  - Aktif görev sayısı gösterimi
+  - Renkli durum ve öncelik badge'leri
+
+- **Modern Görev Arayüzü**
+  - Görev oluşturma/düzenleme dialog'ları
+  - ShadCN UI Select bileşenleri ile seçimler
+  - Görev liste görünümü
+  - Tarih seçici entegrasyonu
+  - Gerçek zamanlı validasyon
 
 ### 🎨 Modern UI Bileşenleri (ShadCN)
 
@@ -86,7 +132,7 @@ Modern ve güvenli bir görev yönetim uygulaması. Kullanıcı kimlik doğrulam
 
 - **Zustand** ile global state yönetimi
 - **Auth Store:** Kullanıcı bilgileri ve kimlik durumu
-- **Team Store:** Takım ve üye yönetimi
+- **Team Store:** Takım, üye ve görev yönetimi
 - LocalStorage ile kalıcı state
 - Cookie senkronizasyonu
 
@@ -168,7 +214,7 @@ DB_USER=root
 DB_PASSWORD=your_mysql_password
 DB_NAME=task-app-nextjs
 
-# JWT Secret (güçlü bir anahtar kullanın!)
+# JWT Secret
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 
 # Application
@@ -214,13 +260,18 @@ task-app-nextjs/
 │   │   │   ├── verify-email/route.ts # E-posta doğrulama
 │   │   │   ├── forgot-password/route.ts
 │   │   │   └── reset-password/route.ts
-│   │   └── teams/                    # Takım Yönetimi API
-│   │       ├── route.ts              # Takım listesi/oluşturma
-│   │       └── [teamId]/             # Takım detay işlemleri
-│   │           ├── route.ts          # Takım CRUD
-│   │           └── members/          # Üye yönetimi
-│   │               ├── route.ts      # Üye listesi/ekleme
-│   │               └── [memberId]/route.ts
+│   │   ├── teams/                    # Takım Yönetimi API
+│   │   │   ├── route.ts              # Takım listesi/oluşturma
+│   │   │   └── [teamId]/             # Takım detay işlemleri
+│   │   │       ├── route.ts          # Takım CRUD
+│   │   │       ├── members/          # Üye yönetimi
+│   │   │       │   ├── route.ts      # Üye listesi/ekleme
+│   │   │       │   └── [memberId]/route.ts
+│   │   │       └── tasks/            # Görev Yönetimi API
+│   │   │           ├── route.ts      # Görev listesi/oluşturma
+│   │   │           └── [taskId]/route.ts # Görev CRUD
+│   │   └── user/                     # Kullanıcı API
+│   │       └── tasks/route.ts        # Kullanıcının görevleri
 │   │
 │   ├── dashboard/                    # Dashboard Sayfaları
 │   │   ├── page.tsx                  # Ana dashboard
@@ -240,6 +291,14 @@ task-app-nextjs/
 │   │   ├── team-card.tsx             # Takım kartı
 │   │   ├── add-member-dialog.tsx     # Üye ekleme dialog
 │   │   └── member-list-item.tsx      # Üye liste elemanı
+│   │
+│   ├── tasks/                        # Görev bileşenleri
+│   │   ├── create-task-dialog.tsx    # Görev oluşturma dialog
+│   │   ├── edit-task-dialog.tsx      # Görev düzenleme dialog
+│   │   └── task-list-item.tsx        # Görev liste elemanı
+│   │
+│   ├── dashboard/                    # Dashboard bileşenleri
+│   │   └── user-task-item.tsx        # Kullanıcı görev kartı
 │   │
 │   └── ui/                           # ShadCN UI Bileşenleri
 │       ├── button.tsx                # Button bileşeni
@@ -266,7 +325,9 @@ task-app-nextjs/
 │   │   ├── use-register.ts           # Kayıt hook
 │   │   ├── use-teams.ts              # Takımları getir
 │   │   ├── use-create-team.ts        # Takım oluştur
-│   │   └── use-team-members.ts       # Üye yönetimi
+│   │   ├── use-team-members.ts       # Üye yönetimi
+│   │   ├── use-tasks.ts              # Görev yönetimi
+│   │   └── use-user-tasks.ts         # Kullanıcı görevleri
 │   │
 │   ├── store/                        # Zustand State Store
 │   │   ├── auth-store.ts             # Auth state
@@ -344,7 +405,7 @@ task-app-nextjs/
 │   • users - Kullanıcı bilgileri                 │
 │   • teams - Takım bilgileri                     │
 │   • team_members - Üyeler ve roller             │
-│   • tasks - Görevler (hazır yapı)              │
+│   • tasks - Görevler ve atamalar               │
 │   Prepared Statements ile SQL Injection koruması│
 └─────────────────────────────────────────────────┘
                       ↓
@@ -384,7 +445,7 @@ team_members
 ├── role (enum: 'admin', 'member')
 └── joined_at
 
-tasks (hazır yapı - ileride kullanılacak)
+tasks
 ├── id (PK)
 ├── team_id (FK → teams.id)
 ├── assigned_to (FK → users.id)
@@ -396,7 +457,9 @@ tasks (hazır yapı - ileride kullanılacak)
 ├── start_date
 ├── end_date
 ├── due_date
-└── created_at
+├── completed_at
+├── created_at
+└── updated_at
 ```
 
 ## 🎯 Kullanım
@@ -479,7 +542,69 @@ function TeamDetailPage() {
 }
 ```
 
-### 3. Yeni Korumalı Sayfa Eklemek
+### 3. Görev Yönetimi
+
+```typescript
+// Takım görevlerini listele
+import { useTasks } from '@/lib/hooks/use-tasks';
+
+function TeamTasksPage() {
+  const { 
+    tasks,
+    fetchTasks, 
+    createTask, 
+    updateTask,
+    deleteTask,
+    isLoading,
+    isSubmitting 
+  } = useTasks(teamId);
+  
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+  
+  // Yeni görev oluştur (sadece admin)
+  await createTask({
+    assigned_to: userId,
+    title: 'Yeni özellik geliştir',
+    description: 'Login sayfası tasarımı',
+    status: 'pending',
+    priority: 'high',
+    start_date: '2025-01-20',
+    due_date: '2025-01-25'
+  });
+  
+  // Görevi güncelle
+  await updateTask(taskId, {
+    status: 'in_progress',
+    priority: 'high'
+  });
+  
+  // Görevi sil
+  await deleteTask(taskId);
+}
+
+// Kullanıcıya atanan görevleri listele
+import { useUserTasks } from '@/lib/hooks/use-user-tasks';
+
+function Dashboard() {
+  const { tasks, fetchUserTasks, isLoading } = useUserTasks();
+  
+  useEffect(() => {
+    fetchUserTasks();
+  }, []);
+  
+  return (
+    <div>
+      {tasks.map(task => (
+        <TaskCard key={task.id} task={task} />
+      ))}
+    </div>
+  );
+}
+```
+
+### 4. Yeni Korumalı Sayfa Eklemek
 
 1. **Middleware'de route ekleyin:**
 
@@ -503,7 +628,7 @@ export default function ProfilePage() {
 
 Middleware otomatik olarak korur! ✨
 
-### 4. Zustand Store Kullanımı
+### 5. Zustand Store Kullanımı
 
 ```typescript
 import { useAuthStore } from '@/lib/store/auth-store';
@@ -560,6 +685,17 @@ function MyComponent() {
 | `PUT` | `/api/teams/[teamId]/members/[memberId]` | Üye rolünü güncelle | Admin |
 | `DELETE` | `/api/teams/[teamId]/members/[memberId]` | Üyeyi takımdan çıkar | Admin |
 
+### Görev Yönetimi
+
+| Method | Endpoint | Açıklama | Yetki |
+|--------|----------|----------|-------|
+| `GET` | `/api/teams/[teamId]/tasks` | Takımın görevlerini listele | Üye |
+| `POST` | `/api/teams/[teamId]/tasks` | Yeni görev oluştur | Admin |
+| `GET` | `/api/teams/[teamId]/tasks/[taskId]` | Görev detaylarını getir | Üye |
+| `PUT` | `/api/teams/[teamId]/tasks/[taskId]` | Görevi güncelle | Admin / Atayan / Atanan |
+| `DELETE` | `/api/teams/[teamId]/tasks/[taskId]` | Görevi sil | Admin / Atayan |
+| `GET` | `/api/user/tasks` | Kullanıcıya atanan görevler | Tümü |
+
 ### Örnek API İstekleri
 
 **Kayıt:**
@@ -605,44 +741,41 @@ curl -X POST http://localhost:3000/api/teams/1/members \
   }'
 ```
 
+**Görev Oluşturma:**
+```bash
+curl -X POST http://localhost:3000/api/teams/1/tasks \
+  -H "Content-Type: application/json" \
+  -H "Cookie: auth-token=YOUR_JWT_TOKEN" \
+  -d '{
+    "assigned_to": 2,
+    "title": "API Entegrasyonu",
+    "description": "Kullanıcı API entegrasyonunu tamamla",
+    "status": "pending",
+    "priority": "high",
+    "due_date": "2025-01-30"
+  }'
+```
+
+**Kullanıcı Görevlerini Listele:**
+```bash
+curl -X GET http://localhost:3000/api/user/tasks \
+  -H "Cookie: auth-token=YOUR_JWT_TOKEN"
+```
+
 ## 🔐 Güvenlik
 
 ### Güvenlik Özellikleri
 
 - ✅ **JWT Authentication** - httpOnly cookie ile güvenli token yönetimi
 - ✅ **SQL Injection Koruması** - Prepared statements ile parametre binding
-- ✅ **SHA256 Şifreleme** - Güvenli şifre hash'leme
-- ✅ **Token Expiration** - JWT token 7 gün sonra otomatik expire
+- ✅ **SHA256 Şifreleme** - Şifre hashleme
+- ✅ **Token Expiration** - JWT token (7 gün sonra otomatik expire)
 - ✅ **Validasyon** - Client + Server side validasyon (Zod)
 - ✅ **Cookie Security** - httpOnly, SameSite, Secure flags
 - ✅ **Middleware Auth** - Merkezi route koruma
 - ✅ **TypeScript** - Tip güvenliği
-- ✅ **Rol Bazlı Yetkilendirme** - Admin/Member rolleri
-- ✅ **CSRF Koruması** - SameSite cookie flag'i
-
-### Güvenlik Best Practices
-
-1. **Production'da Yapılması Gerekenler:**
-   - `.env` dosyasını asla commit etmeyin
-   - Güçlü JWT_SECRET kullanın (minimum 32 karakter)
-   - HTTPS kullanın
-   - Rate limiting ekleyin
-   - CAPTCHA ekleyin (bot koruması)
-   - CSP (Content Security Policy) header'ları ekleyin
-   - Helmet.js ile güvenlik header'ları ekleyin
-
-2. **Veri Tabanı Güvenliği:**
-   - Güçlü MySQL şifreleri kullanın
-   - MySQL kullanıcısına minimum gerekli yetkiler verin
-   - Düzenli yedekleme yapın
-   - SSL/TLS bağlantısı kullanın
-
-3. **Password Politikaları:**
-   - Minimum 8 karakter
-   - En az bir büyük harf
-   - En az bir küçük harf
-   - En az bir rakam
-   - Özel karakter önerisi
+- ✅ **Rol Bazlı Yetkilendirme** - Admin/Üye rolleri
+- ✅ **CSRF Koruması** - SameSite cookie flagi
 
 ## ⚙️ Önemli Dosyalar
 
@@ -693,14 +826,22 @@ console.log(localStorage.getItem('auth-store'));
 document.cookie.split(';').find(c => c.includes('auth-token'));
 ```
 
-## 🚧 İleride Eklenecek Özellikler
+## ✅ Tamamlanan Özellikler
+
+- [x] Görev (Task) CRUD işlemleri
+- [x] Görev atama sistemi
+- [x] Rol tabanlı görev yetkilendirmesi
+- [x] Görev durum ve öncelik yönetimi
+- [x] Kullanıcı dashboard'ında görev listesi
+- [x] Tarih yönetimi (başlangıç, bitiş, son tarih)
+
+## 🚧 İleride Eklenebilecek Özellikler
 
 ### Kısa Vadeli
-- [ ] Görev (Task) CRUD işlemleri
-- [ ] Görev atama sistemi
 - [ ] Görev filtreleme ve sıralama
-- [ ] Görev durum takibi (Kanban board)
-- [ ] E-posta gönderme servisi (takım davetleri)
+- [ ] Görev durum takibi
+- [ ] Görev arama
+- [ ] E-posta gönderme servisi (takım davetleri vb. durumlar için)
 - [ ] Bildirim sistemi
 - [ ] Kullanıcı profil sayfası ve düzenleme
 
@@ -732,40 +873,7 @@ document.cookie.split(';').find(c => c.includes('auth-token'));
 - **Server Components** ile optimized rendering
 - **Image Optimization** Next.js Image bileşeni ile
 - **Code Splitting** otomatik route-based splitting
-- **Database Connection Pooling** mysql2 ile
-
-## 🤝 Katkıda Bulunma
-
-Katkılarınız projeyi geliştirmek için çok değerlidir!
-
-### Katkı Süreci
-
-1. Fork edin
-2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
-3. Commit edin (`git commit -m 'feat: Add amazing feature'`)
-4. Push edin (`git push origin feature/amazing-feature`)
-5. Pull Request açın
-
-### Commit Mesaj Formatı
-
-```
-feat: Yeni özellik ekle
-fix: Hata düzelt
-docs: Dokümantasyon güncelle
-style: Kod formatı düzelt
-refactor: Kod yeniden yapılandır
-test: Test ekle/güncelle
-chore: Yapılandırma güncelle
-```
-
-## 📝 Lisans
-
-Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için `LICENSE` dosyasına bakın.
-
-## 👨‍💻 Geliştirici
-
-Task App - Next.js
-Modern Görev Yönetim Uygulaması
+- **Database Connection Pooling** mysql2
 
 ## 🙏 Teşekkürler
 
@@ -776,20 +884,12 @@ Modern Görev Yönetim Uygulaması
 - [Zustand](https://github.com/pmndrs/zustand) - State management
 - [Lucide Icons](https://lucide.dev/) - Icon seti
 
-## 📞 İletişim ve Destek
-
-- **Dokümantasyon:** Bu README dosyası
-- **Issues:** GitHub Issues bölümünü kullanın
-- **Discussions:** GitHub Discussions'da tartışmalar başlatın
-
 ---
 
-**⚠️ Önemli Not:** Bu proje geliştirilme aşamasındadır. Production kullanımı için aşağıdaki ek güvenlik önlemlerini mutlaka alın:
+**⚠️ Önemli Not:** Bu proje geliştirilme aşamasındadır. Production kullanımı için aşağıdaki ek güvenlik önlemlerini mutlaka alınmalı:
 - Rate limiting ekleyin
 - CAPTCHA entegrasyonu yapın
 - SSL/TLS sertifikası kullanın
 - Güvenlik header'ları ekleyin (Helmet.js)
 - Düzenli güvenlik güncellemeleri yapın
 - Penetrasyon testleri gerçekleştirin
-
-**Son Güncelleme:** 2025-01-23
