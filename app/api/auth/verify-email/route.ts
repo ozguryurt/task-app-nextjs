@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { isTokenValid } from '@/lib/auth-helpers';
 import { RowDataPacket } from 'mysql2';
+import { sendVerificationEmail } from '@/lib/email';
 
 export async function GET(request: NextRequest) {
     try {
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
 
         // Kullanıcıyı bul (SQL Injection korumalı)
         const [users] = await pool.query<RowDataPacket[]>(
-            'SELECT id, email, email_verified FROM users WHERE email = ?',
+            'SELECT id, email, name, email_verified FROM users WHERE email = ?',
             [email]
         );
 
@@ -134,14 +135,24 @@ export async function POST(request: NextRequest) {
             [verificationToken, verificationExpiry, user.id]
         );
 
-        // TODO: E-posta gönderme servisi
+        const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+
+        try {
+            await sendVerificationEmail({
+                to: user.email,
+                name: user.name || user.email,
+                verificationLink,
+            });
+        } catch (emailError) {
+            console.error('Doğrulama e-postası gönderilemedi:', emailError);
+        }
 
         return NextResponse.json(
             {
                 success: true,
                 message: 'Yeni doğrulama e-postası gönderildi',
                 data: {
-                    verificationToken // Geliştirme aşamasında görmek için
+                    verificationToken: process.env.NODE_ENV === 'development' ? verificationToken : undefined
                 }
             },
             { status: 200 }

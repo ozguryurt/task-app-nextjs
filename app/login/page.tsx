@@ -18,7 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { loginSchema, LoginFormData } from "@/lib/validations/auth-schema"
 import { useLogin } from "@/lib/hooks/use-login"
 
-function Giris() {
+function LoginPage() {
     const { handleLogin, error, isSubmitting } = useLogin();
 
     const {
@@ -72,7 +72,7 @@ function Giris() {
                                 <div className="flex items-center">
                                     <Label htmlFor="password">Şifre</Label>
                                     <Link
-                                        href="/sifremi-unuttum"
+                                        href="/forgot-password"
                                         className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                                     >
                                         Şifremi unuttum
@@ -97,7 +97,7 @@ function Giris() {
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
                     <Button variant="link" className="w-full" asChild>
-                        <Link href="/kayit">
+                        <Link href="/register">
                             Hesabınız yok mu? Hemen bir tane oluşturun.
                         </Link>
                     </Button>
@@ -108,4 +108,4 @@ function Giris() {
 }
 
 // Middleware otomatik olarak auth kontrolü yapıyor
-export default Giris;
+export default LoginPage;

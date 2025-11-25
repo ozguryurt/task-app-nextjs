@@ -19,7 +19,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { registerSchema, RegisterFormData } from "@/lib/validations/auth-schema"
 import { useRegister } from "@/lib/hooks/use-register"
 
-function Kayit() {
+function RegisterPage() {
     const { handleRegister, error, success, isSubmitting } = useRegister();
 
     const {
@@ -175,7 +175,7 @@ function Kayit() {
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
                     <Button variant="link" className="w-full" asChild>
-                        <Link href="/giris">
+                        <Link href="/login">
                             Zaten hesabınız var mı? Giriş yapın.
                         </Link>
                     </Button>
@@ -186,4 +186,4 @@ function Kayit() {
 }
 
 // Middleware otomatik olarak auth kontrolü yapıyor
-export default Kayit;
+export default RegisterPage;

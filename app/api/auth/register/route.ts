@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { hashPassword, generateToken, isValidEmail, isValidPassword, getTokenExpiry } from '@/lib/auth-helpers';
 import { RowDataPacket } from 'mysql2';
+import { sendVerificationEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
     try {
@@ -63,17 +64,31 @@ export async function POST(request: NextRequest) {
             [email, hashedPassword, name, verificationToken, verificationExpiry]
         );
 
-        // TODO: Burada e-posta gönderme servisi entegre edilecek
-        // Örnek doğrulama linki: ${process.env.NEXT_PUBLIC_APP_URL}/api/auth/verify-email?token=${verificationToken}
+        const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+
+        try {
+            await sendVerificationEmail({
+                to: email,
+                name,
+                verificationLink,
+            });
+        } catch (emailError) {
+            console.error('Doğrulama e-postası gönderilemedi:', emailError);
+        }
+
+        const responseData: Record<string, unknown> = {
+            userId: (result as any).insertId,
+        };
+
+        if (process.env.NODE_ENV === 'development') {
+            responseData.verificationToken = verificationToken;
+        }
 
         return NextResponse.json(
             {
                 success: true,
                 message: 'Kayıt başarılı! Lütfen e-posta adresinizi doğrulayın.',
-                data: {
-                    userId: (result as any).insertId,
-                    verificationToken // Geliştirme aşamasında görmek için (production'da kaldırılmalı)
-                }
+                data: responseData
             },
             { status: 201 }
         );

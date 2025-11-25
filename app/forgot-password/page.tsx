@@ -19,7 +19,7 @@ import { forgotPasswordSchema, ForgotPasswordFormData } from "@/lib/validations/
 import { forgotPassword } from "@/lib/api/auth-api"
 import { useState } from "react"
 
-export default function SifremiUnuttum() {
+export default function ForgotPasswordPage() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,7 +99,7 @@ export default function SifremiUnuttum() {
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
                     <Button variant="link" className="w-full" asChild>
-                        <Link href="/giris">
+                        <Link href="/login">
                             Giriş sayfasına dön
                         </Link>
                     </Button>

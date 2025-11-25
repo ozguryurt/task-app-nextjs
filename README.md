@@ -21,7 +21,7 @@ Modern ve güvenli bir görev yönetim uygulaması. Kullanıcı kimlik doğrulam
 - **Kullanıcı Kaydı**
   - E-posta ile kayıt
   - Şifre güvenlik gereksinimleri (min. 8 karakter, büyük/küçük harf, rakam)
-  - E-posta doğrulama sistemi
+  - E-posta doğrulama sistemi (otomatik SMTP gönderimi)
   
 - **Kullanıcı Girişi**
   - JWT token tabanlı kimlik doğrulama
@@ -160,6 +160,7 @@ Modern ve güvenli bir görev yönetim uygulaması. Kullanıcı kimlik doğrulam
 - **Runtime:** Node.js
 - **Database:** MySQL (mysql2 3.15.2)
 - **Authentication:** JSON Web Tokens (jsonwebtoken 9.0.2)
+- **Email:** Nodemailer (SMTP)
 - **Security:** SHA256, Prepared Statements
 
 ### Development
@@ -220,12 +221,21 @@ JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 # Application
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NODE_ENV=development
+
+# SMTP Server (Email Verification)
+SMTP_HOST=mail.ozguryurt.dev
+SMTP_PORT=587
+SMTP_USER=taskappnextjs@ozguryurt.dev
+SMTP_PASS=%+CerknLQ2zS^zj
+EMAIL_FROM="Task App Next.js" <taskappnextjs@ozguryurt.dev>
 ```
 
 **JWT_SECRET Oluşturma:**
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
+
+> 📁 `env.example` dosyasını kendi değerlerinizle güncelleyip `.env.local` veya `.env` olarak kopyalayabilirsiniz.
 
 ⚠️ **Önemli Güvenlik Notları:**
 - `.env` dosyasını asla Git'e commit etmeyin!
@@ -281,6 +291,7 @@ task-app-nextjs/
 │   ├── giris/page.tsx                # Giriş sayfası
 │   ├── kayit/page.tsx                # Kayıt sayfası
 │   ├── sifremi-unuttum/page.tsx      # Şifre sıfırlama
+│   ├── verify-email/page.tsx         # E-posta doğrulama sayfası
 │   ├── layout.tsx                    # Root layout
 │   ├── page.tsx                      # Ana sayfa
 │   └── globals.css                   # Global stil tanımları
@@ -353,7 +364,7 @@ task-app-nextjs/
 │
 ├── middleware.ts                     # Next.js Middleware (JWT auth)
 ├── components.json                   # ShadCN konfigürasyonu
-├── .env                              # Environment değişkenleri
+├── env.example                       # Örnek environment değerleri
 ├── package.json                      # NPM bağımlılıkları
 ├── tsconfig.json                     # TypeScript konfigürasyonu
 ├── next.config.ts                    # Next.js konfigürasyonu
@@ -604,7 +615,15 @@ function Dashboard() {
 }
 ```
 
-### 4. Yeni Korumalı Sayfa Eklemek
+### 4. E-posta Doğrulama Arayüzü
+
+- Kullanıcı kayıt olduğunda otomatik olarak `/verify-email?token=...` adresine yönlendiren bir bağlantı içeren e-posta gönderilir.
+- Bu sayfada:
+  - Token otomatik olarak doğrulanır ve kullanıcıya durum bilgisi gösterilir.
+  - E-posta ulaşmadıysa form üzerinden yeni doğrulama e-postası talep edilebilir.
+  - Doğrulama başarılıysa doğrudan giriş sayfasına veya dashboard'a geçiş kısayolları sunulur.
+
+### 5. Yeni Korumalı Sayfa Eklemek
 
 1. **Middleware'de route ekleyin:**
 
@@ -628,7 +647,7 @@ export default function ProfilePage() {
 
 Middleware otomatik olarak korur! ✨
 
-### 5. Zustand Store Kullanımı
+### 6. Zustand Store Kullanımı
 
 ```typescript
 import { useAuthStore } from '@/lib/store/auth-store';
@@ -786,9 +805,11 @@ curl -X GET http://localhost:3000/api/user/tasks \
 | `lib/auth-helpers.ts` | Şifre hash, e-posta validasyon |
 | `lib/store/auth-store.ts` | Global auth state (Zustand) |
 | `lib/store/team-store.ts` | Global team state (Zustand) |
+| `lib/email.ts` | SMTP üzerinden e-posta gönderimi |
 | `lib/middleware/auth-config.ts` | Korumalı/public route tanımları |
 | `database/schema.sql` | MySQL veri tabanı şeması ve tablolar |
 | `components.json` | ShadCN UI konfigürasyonu |
+| `env.example` | Örnek environment değişkenleri |
 
 ## 🧪 Test
 
@@ -834,6 +855,7 @@ document.cookie.split(';').find(c => c.includes('auth-token'));
 - [x] Görev durum ve öncelik yönetimi
 - [x] Kullanıcı dashboard'ında görev listesi
 - [x] Tarih yönetimi (başlangıç, bitiş, son tarih)
+- [x] SMTP tabanlı e-posta doğrulama sistemi
 
 ## 🚧 İleride Eklenebilecek Özellikler
 
