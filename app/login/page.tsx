@@ -17,6 +17,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { loginSchema, LoginFormData } from "@/lib/validations/auth-schema"
 import { useLogin } from "@/lib/hooks/use-login"
+import { Layers3 } from "lucide-react"
 
 function LoginPage() {
     const { handleLogin, error, isSubmitting } = useLogin();
@@ -34,16 +35,19 @@ function LoginPage() {
     };
 
     return (
-        <div className="flex items-center justify-center h-screen">
-            <Card className="w-full max-w-sm">
-                <CardHeader>
-                    <CardTitle>Hesabınıza giriş yapın</CardTitle>
+        <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+            <div className="subtle-grid absolute inset-0 -z-10 opacity-70 [mask-image:radial-gradient(circle_at_center,black,transparent_75%)]" />
+            <div className="absolute left-1/2 top-1/3 -z-10 size-[28rem] -translate-x-1/2 rounded-full bg-primary/12 blur-[110px]" />
+            <Card className="w-full max-w-sm border-white/90 bg-white/85 shadow-[0_24px_80px_rgba(46,40,100,0.13)]">
+                <CardHeader className="text-center">
+                    <Link href="/" className="mx-auto mb-3 flex size-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20"><Layers3 className="size-5" /></Link>
+                    <CardTitle className="text-xl">Tekrar hoş geldiniz</CardTitle>
                     <CardDescription>
-                        E-posta adresinizi ve şifrenizi girerek hesabınıza giriş yapın.
+                        Çalışma alanınıza devam etmek için giriş yapın.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                         {/* Hata mesajı */}
                         {error && (
                             <Alert variant="destructive">
@@ -51,14 +55,14 @@ function LoginPage() {
                             </Alert>
                         )}
 
-                        <div className="flex flex-col gap-6">
+                        <div className="flex flex-col gap-4">
                             {/* E-posta */}
                             <div className="grid gap-2">
                                 <Label htmlFor="email">E-posta</Label>
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="johndoe@site.com"
+                                    placeholder="ornek@sirket.com"
                                     {...register("email")}
                                     disabled={isSubmitting}
                                 />
@@ -95,10 +99,10 @@ function LoginPage() {
                         </Button>
                     </form>
                 </CardContent>
-                <CardFooter className="flex-col gap-2">
+                <CardFooter className="flex-col gap-2 border-t pt-4">
                     <Button variant="link" className="w-full" asChild>
                         <Link href="/register">
-                            Hesabınız yok mu? Hemen bir tane oluşturun.
+                            Hesabınız yok mu? Ücretsiz kayıt olun.
                         </Link>
                     </Button>
                 </CardFooter>

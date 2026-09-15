@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Şifreyi hashle
-        const hashedPassword = hashPassword(password);
+        const hashedPassword = await hashPassword(password);
 
         // E-posta doğrulama token'ı oluştur
         const verificationToken = generateToken();

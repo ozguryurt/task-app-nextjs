@@ -59,11 +59,11 @@ export function TaskListItem({
     const canDelete = isAdmin || isTaskCreator;
 
     return (
-        <div className="py-4 bg-gray-50 hover:bg-gray-100 p-5 rounded-xl transition-colors">
+        <div className="rounded-xl border border-transparent bg-muted/45 p-4 transition-all hover:border-primary/10 hover:bg-white hover:shadow-sm">
             <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-medium text-gray-900 truncate">
+                        <h3 className="truncate text-sm font-semibold">
                             {task.title}
                         </h3>
                         <Badge className={statusInfo.className}>
@@ -75,12 +75,12 @@ export function TaskListItem({
                     </div>
 
                     {task.description && (
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                        <p className="mb-3 line-clamp-2 text-xs leading-5 text-muted-foreground">
                             {task.description}
                         </p>
                     )}
 
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
                             <User className="w-4 h-4" />
                             <span>
@@ -123,7 +123,7 @@ export function TaskListItem({
                         )}
                     </div>
 
-                    <div className="mt-2 text-xs text-gray-400">
+                    <div className="mt-2 text-[11px] text-muted-foreground/70">
                         Oluşturulma: {new Date(task.created_at).toLocaleString('tr-TR')}
                     </div>
                 </div>

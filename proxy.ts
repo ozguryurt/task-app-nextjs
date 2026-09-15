@@ -34,7 +34,7 @@ function isAuthenticated(request: NextRequest): boolean {
     return verification.valid;
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // API route'larını middleware'den geçirme
@@ -87,7 +87,6 @@ export const config = {
          * - favicon.ico (favicon file)
          */
         '/((?!api|_next/static|_next/image|favicon.ico).*)',
-    ],
-    runtime: 'nodejs', // jsonwebtoken için nodejs runtime kullan
+    ]
 };
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +11,7 @@ import { Loader2, MailCheck, MailWarning } from 'lucide-react';
 
 type VerificationStatus = 'idle' | 'loading' | 'success' | 'error';
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const token = searchParams.get('token');
@@ -106,12 +106,12 @@ export default function VerifyEmailPage() {
             return <MailWarning className="w-12 h-12 text-amber-500" />;
         }
 
-        return <MailWarning className="w-12 h-12 text-gray-400" />;
+        return <MailWarning className="w-12 h-12 text-muted-foreground/50" />;
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
-            <Card className="w-full max-w-xl">
+        <div className="subtle-grid min-h-screen flex items-center justify-center px-4 py-12">
+            <Card className="w-full max-w-xl border-white/90 bg-white/85 shadow-[0_24px_80px_rgba(46,40,100,0.13)]">
                 <CardHeader className="text-center space-y-2">
                     <div className="flex justify-center mb-4">{renderIcon()}</div>
                     <CardTitle className="text-2xl">E-posta Doğrulama</CardTitle>
@@ -129,7 +129,7 @@ export default function VerifyEmailPage() {
                     )}
 
                     {status === 'loading' && (
-                        <p className="text-sm text-gray-500 text-center">Doğrulama işlemi devam ediyor...</p>
+                        <p className="text-center text-sm text-muted-foreground">Doğrulama işlemi devam ediyor...</p>
                     )}
 
                     {status === 'success' && (
@@ -144,7 +144,7 @@ export default function VerifyEmailPage() {
                     {status !== 'success' && (
                         <div className="space-y-4">
                             <div>
-                                <p className="text-sm text-gray-600 mb-2">Doğrulama e-postasını bulamadınız mı?</p>
+                                <p className="mb-2 text-sm text-muted-foreground">Doğrulama e-postasını bulamadınız mı?</p>
                                 <form onSubmit={handleResend} className="space-y-3">
                                     <div className="space-y-2">
                                         <Input
@@ -169,7 +169,7 @@ export default function VerifyEmailPage() {
                                 )}
                             </div>
 
-                            <div className="text-center text-sm text-gray-500 space-y-1">
+                            <div className="space-y-1 text-center text-sm text-muted-foreground">
                                 <p>E-posta adresinizi yanlış yazdıysanız yeni bir hesap oluşturabilirsiniz.</p>
                                 <div className="flex justify-center gap-2">
                                     <Link href="/giris" className="text-blue-600 hover:underline">
@@ -186,6 +186,20 @@ export default function VerifyEmailPage() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+export default function VerifyEmailPage() {
+    return (
+        <Suspense
+            fallback={(
+                <div className="min-h-screen flex items-center justify-center">
+                    <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+                </div>
+            )}
+        >
+            <VerifyEmailContent />
+        </Suspense>
     );
 }
 

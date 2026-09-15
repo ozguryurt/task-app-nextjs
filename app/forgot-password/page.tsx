@@ -18,6 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { forgotPasswordSchema, ForgotPasswordFormData } from "@/lib/validations/auth-schema"
 import { forgotPassword } from "@/lib/api/auth-api"
 import { useState } from "react"
+import { KeyRound, Layers3 } from "lucide-react"
 
 export default function ForgotPasswordPage() {
     const [error, setError] = useState<string | null>(null);
@@ -53,10 +54,12 @@ export default function ForgotPasswordPage() {
     };
 
     return (
-        <div className="flex items-center justify-center h-screen">
-            <Card className="w-full max-w-sm">
-                <CardHeader>
-                    <CardTitle>Şifremi Unuttum</CardTitle>
+        <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+            <div className="subtle-grid absolute inset-0 -z-10 opacity-70 [mask-image:radial-gradient(circle_at_center,black,transparent_75%)]" />
+            <Card className="w-full max-w-sm border-white/90 bg-white/85 shadow-[0_24px_80px_rgba(46,40,100,0.13)]">
+                <CardHeader className="text-center">
+                    <Link href="/" className="mx-auto mb-3 flex size-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20"><Layers3 className="size-5" /></Link>
+                    <CardTitle className="text-xl">Erişiminizi geri alın</CardTitle>
                     <CardDescription>
                         E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim.
                     </CardDescription>
@@ -83,7 +86,7 @@ export default function ForgotPasswordPage() {
                             <Input
                                 id="email"
                                 type="email"
-                                placeholder="johndoe@site.com"
+                                placeholder="ornek@sirket.com"
                                 {...register("email")}
                                 disabled={isSubmitting}
                             />
@@ -93,11 +96,11 @@ export default function ForgotPasswordPage() {
                         </div>
 
                         <Button type="submit" className="w-full" disabled={isSubmitting}>
-                            {isSubmitting ? "Gönderiliyor..." : "Sıfırlama Bağlantısı Gönder"}
+                            {isSubmitting ? "Gönderiliyor..." : <><KeyRound /> Bağlantı gönder</>}
                         </Button>
                     </form>
                 </CardContent>
-                <CardFooter className="flex-col gap-2">
+                <CardFooter className="flex-col gap-2 border-t pt-4">
                     <Button variant="link" className="w-full" asChild>
                         <Link href="/login">
                             Giriş sayfasına dön

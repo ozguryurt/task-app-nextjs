@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { hashPassword, isValidEmail } from '@/lib/auth-helpers';
+import { hashPassword, isValidEmail, verifyPassword } from '@/lib/auth-helpers';
 import { signJWT } from '@/lib/jwt-helpers';
 import { RowDataPacket } from 'mysql2';
 
@@ -25,15 +25,12 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Şifreyi hashle
-        const hashedPassword = hashPassword(password);
-
-        // Kullanıcıyı veritabanından bul (SQL Injection korumalı)
+        // Kullanıcıyı e-posta ile bul; parola uygulama katmanında güvenli biçimde doğrulanır.
         const [users] = await pool.query<RowDataPacket[]>(
-            `SELECT id, email, name, email_verified, is_active, created_at 
+            `SELECT id, email, password, name, email_verified, is_active, created_at 
        FROM users 
-       WHERE email = ? AND password = ?`,
-            [email, hashedPassword]
+       WHERE email = ?`,
+            [email]
         );
 
         if (users.length === 0) {
@@ -44,6 +41,20 @@ export async function POST(request: NextRequest) {
         }
 
         const user = users[0];
+
+        const passwordVerification = await verifyPassword(password, user.password);
+        if (!passwordVerification.isValid) {
+            return NextResponse.json(
+                { success: false, message: 'E-posta veya şifre hatalı' },
+                { status: 401 }
+            );
+        }
+
+        // Eski SHA-256 kayıtlarını ve zayıf Argon2 parametrelerini başarılı girişte yükselt.
+        if (passwordVerification.needsRehash) {
+            const upgradedHash = await hashPassword(password);
+            await pool.query('UPDATE users SET password = ? WHERE id = ?', [upgradedHash, user.id]);
+        }
 
         // Hesap aktif mi kontrol et
         if (!user.is_active) {

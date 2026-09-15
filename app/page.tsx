@@ -1,187 +1,109 @@
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Users,
-  CheckSquare,
-  BarChart3,
-  Bell,
-  Clock,
-  Shield,
-  Sparkles,
-  ArrowRight,
-} from "lucide-react";
 import Link from "next/link";
+import {
+  ArrowRight,
+  BarChart3,
+  Check,
+  CheckCircle2,
+  Layers3,
+  ShieldCheck,
+  Sparkles,
+  Users2,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+const features = [
+  { icon: Users2, title: "Ekipler tek merkezde", description: "Üyeleri, rolleri ve iş akışlarını karmaşa olmadan yönetin." },
+  { icon: CheckCircle2, title: "Net görev takibi", description: "Sorumlu, öncelik ve teslim tarihini bir bakışta görün." },
+  { icon: BarChart3, title: "Anlık ilerleme", description: "Ekibin odağını ve tamamlanan işleri gerçek zamanlı izleyin." },
+];
 
 export default function Home() {
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-background via-muted/20 to-background border-b min-h-screen flex items-center">
-        <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:bg-grid-slate-700/25"></div>
-        <div className="container mx-auto px-6 relative">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Content */}
-            <div className="space-y-8">
-              <Badge variant="secondary" className="inline-flex items-center gap-2 px-4 py-2">
-                <Sparkles className="h-4 w-4" />
-                Takım Yönetiminde Yeni Dönem
-              </Badge>
-
-              <h1 className="text-5xl lg:text-7xl font-extrabold leading-tight tracking-tight">
-                <span className="bg-gradient-to-r from-blue-600 via-cyan-600 to-sky-600 text-transparent bg-clip-text">
-                  Takımınızı
-                </span>
-                <br />
-                <span className="text-foreground">
-                  Güçlendirin
-                </span>
-              </h1>
-
-              <p className="text-xl text-muted-foreground leading-relaxed">
-                Ekip üyelerinizi bir araya getirin, görevleri kolayca atayın ve projelerin ilerlemesini gerçek zamanlı takip edin. Başarıya giden yol, doğru araçlarla başlar.
-              </p>
-
-              <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="group" asChild>
-                  <Link href="/login">
-                    Hemen Başla
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                </Button>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-6 pt-8 border-t">
-                <div>
-                  <p className="text-3xl font-bold">10K+</p>
-                  <p className="text-sm text-muted-foreground">Aktif Kullanıcı</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold">50K+</p>
-                  <p className="text-sm text-muted-foreground">Tamamlanan Görev</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold">99%</p>
-                  <p className="text-sm text-muted-foreground">Memnuniyet</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Image */}
-            <div className="relative">
-              <Card className="relative overflow-hidden border-2">
-                <CardContent className="p-4">
-                  <Image
-                    src="/hero.webp"
-                    alt="Takım Yönetimi Dashboard"
-                    width={600}
-                    height={400}
-                    className="rounded-lg w-full h-auto"
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+    <main className="min-h-screen overflow-hidden">
+      <header className="relative z-20 border-b border-black/[0.04] bg-background/75 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+              <Layers3 className="size-4.5" />
+            </span>
+            <span className="text-[15px] font-bold tracking-tight">Taskflow</span>
+          </Link>
+          <nav className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" asChild><Link href="/login">Giriş yap</Link></Button>
+            <Button size="sm" asChild><Link href="/register">Ücretsiz başla</Link></Button>
+          </nav>
         </div>
-      </section>
+      </header>
 
-      {/* Features Section */}
-      <section className="py-24 bg-muted/30">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16 space-y-4">
-            <Badge variant="secondary">Özellikler</Badge>
-            <h2 className="text-4xl lg:text-5xl font-bold tracking-tight">
-              Güçlü Özellikler, <span className="bg-gradient-to-r from-blue-600 to-cyan-600 text-transparent bg-clip-text">Kolay Kullanım</span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Takım yönetimini kolaylaştıran ve verimliliği artıran özellikleri keşfedin
+      <section className="relative">
+        <div className="subtle-grid absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,black,transparent_75%)]" />
+        <div className="absolute left-1/2 top-0 -z-10 h-72 w-[44rem] -translate-x-1/2 rounded-full bg-primary/10 blur-[100px]" />
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[0.9fr_1.1fr] lg:py-24">
+          <div className="max-w-xl">
+            <Badge variant="secondary" className="mb-5 rounded-full border border-primary/10 px-3 py-1 text-primary">
+              <Sparkles className="size-3" /> Daha az operasyon, daha çok ilerleme
+            </Badge>
+            <h1 className="text-balance text-4xl font-bold leading-[1.08] tracking-[-0.04em] sm:text-5xl lg:text-[3.6rem]">
+              Ekibinizin odağını tek bir yerde toplayın.
+            </h1>
+            <p className="mt-5 max-w-lg text-pretty text-base leading-7 text-muted-foreground sm:text-lg">
+              Görevleri planlayın, sorumlulukları netleştirin ve herkesin aynı hedefe ilerlemesini sağlayın.
             </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Button size="lg" asChild><Link href="/register">Çalışma alanı oluştur <ArrowRight /></Link></Button>
+              <Button size="lg" variant="outline" asChild><Link href="/login">Hesabıma giriş yap</Link></Button>
+            </div>
+            <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-muted-foreground">
+              {['Kurulum gerektirmez', 'Kredi kartı gerekmez', 'Ekibinle hemen başla'].map((item) => (
+                <span key={item} className="flex items-center gap-1.5"><Check className="size-3.5 text-primary" /> {item}</span>
+              ))}
+            </div>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Feature 1 */}
-            <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-2">
-              <CardHeader>
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle className="text-2xl">Takım Yönetimi</CardTitle>
-                <CardDescription className="text-base">
-                  Ekip üyelerinizi kolayca ekleyin, roller atayın ve tüm takımı tek bir yerden yönetin.
-                </CardDescription>
-              </CardHeader>
+          <div className="relative mx-auto w-full max-w-2xl lg:mx-0">
+            <div className="absolute -inset-5 -z-10 rounded-[2.5rem] bg-gradient-to-br from-primary/15 via-cyan-400/10 to-transparent blur-2xl" />
+            <Card className="overflow-hidden border-white/90 bg-white/80 p-0 shadow-[0_30px_90px_rgba(46,40,100,0.16)]">
+              <div className="flex h-11 items-center justify-between border-b bg-white/70 px-4">
+                <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-rose-400" /><span className="size-2 rounded-full bg-amber-400" /><span className="size-2 rounded-full bg-emerald-400" /></div>
+                <span className="text-[11px] font-medium text-muted-foreground">Proje görünümü</span><span className="w-8" />
+              </div>
+              <CardContent className="p-3 sm:p-4">
+                <Image src="/hero.webp" alt="Taskflow ekip yönetimi ekranı" width={800} height={520} priority className="aspect-[4/2.65] w-full rounded-xl border object-cover object-top" />
+              </CardContent>
             </Card>
-
-            {/* Feature 2 */}
-            <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-2">
-              <CardHeader>
-                <div className="w-12 h-12 rounded-lg bg-cyan-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <CheckSquare className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
-                </div>
-                <CardTitle className="text-2xl">Görev Atama</CardTitle>
-                <CardDescription className="text-base">
-                  Görevleri hızlıca oluşturun, önceliklendirin ve doğru kişilere atayın. Deadline yönetimi kolayca.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            {/* Feature 3 */}
-            <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-2">
-              <CardHeader>
-                <div className="w-12 h-12 rounded-lg bg-sky-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <BarChart3 className="h-6 w-6 text-sky-600 dark:text-sky-400" />
-                </div>
-                <CardTitle className="text-2xl">İlerleme Takibi</CardTitle>
-                <CardDescription className="text-base">
-                  Gerçek zamanlı raporlar ve grafiklerle projelerin ilerlemesini her an takip edin.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            {/* Feature 4 */}
-            <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-2">
-              <CardHeader>
-                <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <Bell className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <CardTitle className="text-2xl">Anlık Bildirimler</CardTitle>
-                <CardDescription className="text-base">
-                  Önemli güncellemeler ve değişiklikler hakkında anında bildirim alın.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            {/* Feature 5 */}
-            <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-2">
-              <CardHeader>
-                <div className="w-12 h-12 rounded-lg bg-indigo-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <Clock className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <CardTitle className="text-2xl">Zaman Yönetimi</CardTitle>
-                <CardDescription className="text-base">
-                  Zaman takibi ve raporlama ile ekibinizin verimliliğini maksimize edin.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            {/* Feature 6 */}
-            <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-2">
-              <CardHeader>
-                <div className="w-12 h-12 rounded-lg bg-slate-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <Shield className="h-6 w-6 text-slate-600 dark:text-slate-400" />
-                </div>
-                <CardTitle className="text-2xl">Güvenli Sistem</CardTitle>
-                <CardDescription className="text-base">
-                  Rol bazlı erişim kontrolü ile verilerinizi güvende tutun.
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <div className="premium-panel absolute -bottom-5 -left-4 hidden items-center gap-3 rounded-2xl border p-3 sm:flex">
+              <span className="flex size-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700"><CheckCircle2 className="size-4.5" /></span>
+              <div><p className="text-xs font-semibold">Sprint tamamlandı</p><p className="mt-0.5 text-[11px] text-muted-foreground">12 görev zamanında bitti</p></div>
+            </div>
           </div>
         </div>
       </section>
 
-    </div>
+      <section className="mx-auto max-w-6xl px-5 pb-20 sm:px-8">
+        <div className="mb-8 flex flex-col justify-between gap-3 border-t pt-10 sm:flex-row sm:items-end">
+          <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Akıcı iş yönetimi</p><h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Ekibiniz için gereken netlik</h2></div>
+          <p className="max-w-md text-sm leading-6 text-muted-foreground">Dağınık konuşmaları, belirsiz sorumlulukları ve kaçan teslim tarihlerini geride bırakın.</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {features.map(({ icon: Icon, title, description }) => (
+            <Card key={title} className="group transition-all hover:-translate-y-1 hover:border-primary/15 hover:shadow-xl">
+              <CardContent className="pt-1">
+                <span className="mb-5 flex size-10 items-center justify-center rounded-xl bg-secondary text-primary transition-transform group-hover:scale-105"><Icon className="size-4.5" /></span>
+                <h3 className="font-semibold tracking-tight">{title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card className="mt-4 overflow-hidden border-primary/10 bg-[#18172a] text-white shadow-2xl shadow-primary/10">
+          <CardContent className="flex flex-col items-start justify-between gap-6 py-4 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-4"><span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/10"><ShieldCheck className="size-5 text-indigo-300" /></span><div><h3 className="font-semibold">Ekibiniz hazır olduğunda siz de hazırsınız.</h3><p className="mt-1 text-sm text-white/55">Dakikalar içinde alanınızı kurun ve ilk görevi atayın.</p></div></div>
+            <Button variant="secondary" asChild className="shrink-0 bg-white text-[#18172a] hover:bg-white/90"><Link href="/register">Şimdi başlayın <ArrowRight /></Link></Button>
+          </CardContent>
+        </Card>
+      </section>
+    </main>
   );
 }

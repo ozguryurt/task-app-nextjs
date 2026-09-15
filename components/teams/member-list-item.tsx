@@ -45,10 +45,10 @@ export function MemberListItem({
     };
 
     return (
-        <div className="flex items-center justify-between py-3 px-4 border-b last:border-b-0 hover:bg-gray-50">
+        <div className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-muted/60">
             <div className="flex items-center gap-3 flex-1">
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-sm font-semibold text-gray-600">
+                <div className="flex size-9 items-center justify-center rounded-xl bg-secondary text-primary">
+                    <span className="text-xs font-bold">
                         {member.name.charAt(0).toUpperCase()}
                     </span>
                 </div>
@@ -59,7 +59,7 @@ export function MemberListItem({
                             <Badge variant="outline" className="text-xs">Sen</Badge>
                         )}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Mail className="w-3 h-3" />
                         <span>{member.email}</span>
                         {member.email_verified ? (

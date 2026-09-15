@@ -15,7 +15,7 @@ import { CreateTaskDialog } from '@/components/tasks/create-task-dialog';
 import { EditTaskDialog } from '@/components/tasks/edit-task-dialog';
 import { TaskListItem } from '@/components/tasks/task-list-item';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { ArrowLeft, Users, UserPlus, Trash2, Calendar, ClipboardList, Plus } from 'lucide-react';
+import { ArrowLeft, Users, UserPlus, Trash2, Calendar, ClipboardList, Plus, Loader2, Layers3 } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 
 interface PageProps {
@@ -193,9 +193,10 @@ export default function TeamDetailPage({ params }: PageProps) {
 
     if (isLoadingTeam) {
         return (
-            <div className="min-h-screen bg-gray-50 py-8">
-                <div className="container mx-auto px-4 max-w-6xl">
-                    <p className="text-center text-gray-500">Yükleniyor...</p>
+            <div className="flex min-h-screen items-center justify-center">
+                <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
+                    <Loader2 className="size-6 animate-spin text-primary" />
+                    <p>Takım hazırlanıyor...</p>
                 </div>
             </div>
         );
@@ -203,8 +204,8 @@ export default function TeamDetailPage({ params }: PageProps) {
 
     if (teamError) {
         return (
-            <div className="min-h-screen bg-gray-50 py-8">
-                <div className="container mx-auto px-4 max-w-6xl">
+            <div className="min-h-screen py-8">
+                <div className="container mx-auto max-w-6xl px-5">
                     <Alert variant="destructive" className="mb-4">
                         {teamError}
                     </Alert>
@@ -224,26 +225,32 @@ export default function TeamDetailPage({ params }: PageProps) {
     const isAdmin = userRole === 'admin';
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="container mx-auto px-4 max-w-6xl">
+        <main className="min-h-screen pb-12">
+            <header className="border-b border-black/[0.04] bg-background/80 backdrop-blur-xl">
+                <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
+                    <div className="flex items-center gap-2.5"><span className="flex size-9 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20"><Layers3 className="size-4.5" /></span><span className="text-sm font-bold tracking-tight">Taskflow</span></div>
+                    <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard')}><ArrowLeft /> Dashboard</Button>
+                </div>
+            </header>
+            <div className="container mx-auto max-w-6xl px-5 py-8">
                 {/* Header */}
                 <div className="mb-6">
                     <Button
                         variant="ghost"
                         onClick={() => router.push('/dashboard')}
-                        className="mb-4"
+                        className="mb-3 px-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Geri
                     </Button>
 
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
                         <div className="flex-1">
-                            <h1 className="text-3xl font-bold">{currentTeam.name}</h1>
+                            <h1 className="text-3xl font-bold tracking-[-0.035em]">{currentTeam.name}</h1>
                             {currentTeam.description && (
-                                <p className="text-gray-600 mt-2">{currentTeam.description}</p>
+                                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{currentTeam.description}</p>
                             )}
-                            <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                            <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-1">
                                     <Calendar className="w-4 h-4" />
                                     <span>
@@ -270,8 +277,8 @@ export default function TeamDetailPage({ params }: PageProps) {
                 </div>
 
                 {/* Members Section */}
-                <Card>
-                    <CardHeader>
+                <Card className="mt-6">
+                    <CardHeader className="border-b">
                         <div className="flex items-center justify-between">
                             <div>
                                 <CardTitle>Takım Üyeleri</CardTitle>
@@ -297,14 +304,14 @@ export default function TeamDetailPage({ params }: PageProps) {
                         )}
 
                         {isLoading ? (
-                            <p className="text-center text-gray-500 py-8">Üyeler yükleniyor...</p>
+                            <p className="py-8 text-center text-sm text-muted-foreground">Üyeler yükleniyor...</p>
                         ) : currentTeamMembers.length === 0 ? (
                             <div className="text-center py-8">
-                                <Users className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                                <p className="text-gray-500">Henüz üye yok</p>
+                                <Users className="mx-auto mb-3 size-10 text-muted-foreground/45" />
+                                <p className="text-sm text-muted-foreground">Henüz üye yok</p>
                             </div>
                         ) : (
-                            <div className="divide-y">
+                            <div className="space-y-1">
                                 {currentTeamMembers.map((member) => (
                                     <MemberListItem
                                         key={member.id}
@@ -322,8 +329,8 @@ export default function TeamDetailPage({ params }: PageProps) {
                 </Card>
 
                 {/* Tasks Section */}
-                <Card className="mt-6">
-                    <CardHeader>
+                <Card className="mt-5">
+                    <CardHeader className="border-b">
                         <div className="flex items-center justify-between">
                             <div>
                                 <CardTitle>Görevler</CardTitle>
@@ -349,14 +356,14 @@ export default function TeamDetailPage({ params }: PageProps) {
                         )}
 
                         {isLoadingTasks ? (
-                            <p className="text-center text-gray-500 py-8">Görevler yükleniyor...</p>
+                            <p className="py-8 text-center text-sm text-muted-foreground">Görevler yükleniyor...</p>
                         ) : tasks.length === 0 ? (
                             <div className="text-center py-8">
-                                <ClipboardList className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                                <p className="text-gray-500">Henüz görev yok</p>
+                                <ClipboardList className="mx-auto mb-3 size-10 text-muted-foreground/45" />
+                                <p className="text-sm text-muted-foreground">Henüz görev yok</p>
                             </div>
                         ) : (
-                            <div className="divide-y">
+                            <div className="space-y-2">
                                 {tasks.map((task) => (
                                     <TaskListItem
                                         key={task.id}
@@ -442,7 +449,7 @@ export default function TeamDetailPage({ params }: PageProps) {
                     isLoading={isSubmittingTask}
                 />
             </div>
-        </div>
+        </main>
     );
 }
 

@@ -1,9 +1,50 @@
 // Auth Helper Functions - Node.js Runtime (API Routes için)
 import crypto from 'crypto';
+import * as argon2 from 'argon2';
 
-// SHA256 hash oluştur
-export function hashPassword(password: string): string {
-    return crypto.createHash('sha256').update(password).digest('hex');
+const ARGON2_OPTIONS: argon2.HashOptions & { raw: false } = {
+    raw: false,
+    type: argon2.argon2id,
+    memoryCost: 19 * 1024,
+    timeCost: 2,
+    parallelism: 1,
+};
+
+const LEGACY_SHA256_PATTERN = /^[a-f0-9]{64}$/i;
+
+// Parolaları rastgele salt içeren, bellek maliyetli Argon2id ile hashle.
+export async function hashPassword(password: string): Promise<string> {
+    return argon2.hash(password, ARGON2_OPTIONS);
+}
+
+export function isLegacyPasswordHash(storedHash: string): boolean {
+    return LEGACY_SHA256_PATTERN.test(storedHash);
+}
+
+export async function verifyPassword(
+    password: string,
+    storedHash: string
+): Promise<{ isValid: boolean; needsRehash: boolean }> {
+    if (isLegacyPasswordHash(storedHash)) {
+        const candidateHash = crypto.createHash('sha256').update(password).digest();
+        const storedHashBuffer = Buffer.from(storedHash, 'hex');
+        const isValid = crypto.timingSafeEqual(candidateHash, storedHashBuffer);
+
+        return { isValid, needsRehash: isValid };
+    }
+
+    if (!storedHash.startsWith('$argon2id$')) {
+        return { isValid: false, needsRehash: false };
+    }
+
+    try {
+        const isValid = await argon2.verify(storedHash, password);
+        const needsRehash = isValid && argon2.needsRehash(storedHash, ARGON2_OPTIONS);
+
+        return { isValid, needsRehash };
+    } catch {
+        return { isValid: false, needsRehash: false };
+    }
 }
 
 // Email verification için rastgele token oluşturma

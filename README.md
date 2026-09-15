@@ -1,6 +1,6 @@
 # Task App - Next.js
 
-Modern ve güvenli bir görev yönetim uygulaması. Kullanıcı kimlik doğrulama, takım yönetimi ve gelişmiş güvenlik özellikleri ile donatılmış profesyonel bir web uygulaması. Next.js 15, TypeScript, TailwindCSS ve MySQL teknolojileri kullanılarak geliştirilmiştir.
+Modern ve güvenli bir görev yönetim uygulaması. Kullanıcı kimlik doğrulama, takım yönetimi ve gelişmiş güvenlik özellikleri ile donatılmış profesyonel bir web uygulaması. Next.js 16, TypeScript, TailwindCSS ve MySQL teknolojileri kullanılarak geliştirilmiştir.
 
 ## 📋 İçindekiler
 
@@ -31,7 +31,8 @@ Modern ve güvenli bir görev yönetim uygulaması. Kullanıcı kimlik doğrulam
 - **Şifre Yönetimi**
   - Şifre sıfırlama talebi
   - Güvenli token ile şifre yenileme
-  - SHA256 ile şifre şifreleme
+  - Benzersiz salt ve bellek maliyetli parametrelerle Argon2id parola hashleme
+  - Eski SHA-256 parola kayıtlarını başarılı girişte otomatik Argon2id'e yükseltme
 
 - **Merkezi Route Koruma**
   - Next.js Middleware ile otomatik sayfa koruma
@@ -146,9 +147,9 @@ Modern ve güvenli bir görev yönetim uygulaması. Kullanıcı kimlik doğrulam
 ## 🛠 Teknolojiler
 
 ### Frontend
-- **Framework:** Next.js 15.5.4 (App Router)
-- **Language:** TypeScript 5
-- **UI Library:** React 19.1.0
+- **Framework:** Next.js 16.3.5 (App Router)
+- **Language:** TypeScript 7
+- **UI Library:** React 19.3.0
 - **Styling:** TailwindCSS 4
 - **Component Library:** Radix UI (ShadCN)
 - **Icons:** Lucide React
@@ -158,15 +159,16 @@ Modern ve güvenli bir görev yönetim uygulaması. Kullanıcı kimlik doğrulam
 
 ### Backend
 - **Runtime:** Node.js
-- **Database:** MySQL (mysql2 3.15.2)
-- **Authentication:** JSON Web Tokens (jsonwebtoken 9.0.2)
+- **Database:** MySQL (mysql2 3.24.4)
+- **Authentication:** JSON Web Tokens (jsonwebtoken 9.0.3)
 - **Email:** Nodemailer (SMTP)
-- **Security:** SHA256, Prepared Statements
+- **Password Hashing:** Argon2id (19 MiB bellek, 2 iterasyon, 1 paralellik)
+- **Security:** Argon2id, Prepared Statements
 
 ### Development
 - **Package Manager:** npm
 - **Build Tool:** Turbopack (Next.js)
-- **Linter:** ESLint 9
+- **Linter:** ESLint 10
 - **Type Checking:** TypeScript
 
 ## 🚀 Kurulum
@@ -204,6 +206,14 @@ USE `task-app-nextjs`;
 SOURCE database/schema.sql;
 ```
 
+Mevcut bir kurulumu SHA-256 parola kayıtlarından yükseltiyorsanız önce kolon migrasyonunu çalıştırın:
+
+```bash
+mysql -u root -p task-app-nextjs < database/migrations/001_expand_password_for_argon2.sql
+```
+
+Bu migrasyon mevcut hash'leri silmez. Eski 64 karakterlik SHA-256 kayıtları giriş sırasında güvenli ve sabit zamanlı biçimde doğrulanır; başarılı girişten hemen sonra aynı parola yeni, salt'lı Argon2id hash'iyle değiştirilir. Yeni kayıtlar ve parola sıfırlamaları doğrudan Argon2id kullanır.
+
 ### 4. Environment Değişkenlerini Ayarlayın
 
 Proje root dizininde `.env` dosyası oluşturun:
@@ -226,7 +236,7 @@ NODE_ENV=development
 SMTP_HOST=mail.ozguryurt.dev
 SMTP_PORT=587
 SMTP_USER=taskappnextjs@ozguryurt.dev
-SMTP_PASS=%+CerknLQ2zS^zj
+SMTP_PASS=your_smtp_password
 EMAIL_FROM="Task App Next.js" <taskappnextjs@ozguryurt.dev>
 ```
 
@@ -434,7 +444,7 @@ task-app-nextjs/
 users
 ├── id (PK)
 ├── email (UNIQUE)
-├── password (SHA256)
+├── password (VARCHAR(255), Argon2id PHC hash)
 ├── name
 ├── email_verified
 ├── email_verification_token
@@ -787,7 +797,8 @@ curl -X GET http://localhost:3000/api/user/tasks \
 
 - ✅ **JWT Authentication** - httpOnly cookie ile güvenli token yönetimi
 - ✅ **SQL Injection Koruması** - Prepared statements ile parametre binding
-- ✅ **SHA256 Şifreleme** - Şifre hashleme
+- ✅ **Argon2id Parola Hashleme** - Her parola için benzersiz salt ve bellek maliyetli doğrulama
+- ✅ **Geriye Dönük Hash Migrasyonu** - Eski SHA-256 kayıtlarını başarılı girişte otomatik yükseltme
 - ✅ **Token Expiration** - JWT token (7 gün sonra otomatik expire)
 - ✅ **Validasyon** - Client + Server side validasyon (Zod)
 - ✅ **Cookie Security** - httpOnly, SameSite, Secure flags
@@ -802,12 +813,13 @@ curl -X GET http://localhost:3000/api/user/tasks \
 |-------|----------|
 | `middleware.ts` | JWT token doğrulama ve route koruma |
 | `lib/jwt-helpers.ts` | JWT token oluşturma ve doğrulama fonksiyonları |
-| `lib/auth-helpers.ts` | Şifre hash, e-posta validasyon |
+| `lib/auth-helpers.ts` | Argon2id hash/doğrulama, eski SHA-256 geçişi ve e-posta validasyonu |
 | `lib/store/auth-store.ts` | Global auth state (Zustand) |
 | `lib/store/team-store.ts` | Global team state (Zustand) |
 | `lib/email.ts` | SMTP üzerinden e-posta gönderimi |
 | `lib/middleware/auth-config.ts` | Korumalı/public route tanımları |
 | `database/schema.sql` | MySQL veri tabanı şeması ve tablolar |
+| `database/migrations/001_expand_password_for_argon2.sql` | Mevcut parola kolonunu Argon2id PHC formatı için genişleten migrasyon |
 | `components.json` | ShadCN UI konfigürasyonu |
 | `env.example` | Örnek environment değişkenleri |
 

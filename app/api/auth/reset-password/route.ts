@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { hashPassword, isTokenValid, isValidPassword } from '@/lib/auth-helpers';
+import { hashPassword, isTokenValid, isValidPassword, verifyPassword } from '@/lib/auth-helpers';
 import { RowDataPacket } from 'mysql2';
 
 export async function POST(request: NextRequest) {
@@ -56,13 +56,15 @@ export async function POST(request: NextRequest) {
         }
 
         // Yeni şifre eski şifre ile aynı mı kontrol et
-        const newHashedPassword = hashPassword(newPassword);
-        if (user.password === newHashedPassword) {
+        const currentPasswordVerification = await verifyPassword(newPassword, user.password);
+        if (currentPasswordVerification.isValid) {
             return NextResponse.json(
                 { success: false, message: 'Yeni şifre eski şifreniz ile aynı olamaz' },
                 { status: 400 }
             );
         }
+
+        const newHashedPassword = await hashPassword(newPassword);
 
         // Şifreyi güncelle ve token'ı temizle (SQL Injection korumalı)
         await pool.query(

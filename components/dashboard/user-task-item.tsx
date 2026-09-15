@@ -2,9 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { UserTask } from '@/lib/hooks/use-user-tasks';
-import { Calendar, User, ArrowRight } from 'lucide-react';
+import { Calendar, User, ArrowUpRight } from 'lucide-react';
 
 interface UserTaskItemProps {
     task: UserTask;
@@ -45,41 +44,39 @@ export function UserTaskItem({ task }: UserTaskItemProps) {
     };
 
     return (
-        <Card
-            className="hover:shadow-md transition-shadow cursor-pointer"
+        <button
+            type="button"
+            className="group w-full rounded-xl border border-transparent bg-muted/55 p-3 text-left transition-all hover:border-primary/10 hover:bg-white hover:shadow-sm"
             onClick={handleClick}
         >
-            <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-2">
+                <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-gray-900 truncate">
+                        <div className="flex items-center gap-2">
+                            <h3 className="truncate text-sm font-semibold">
                                 {task.title}
                             </h3>
-                            <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         </div>
-                        <p className="text-sm text-gray-600 mb-2">
-                            <span className="font-medium">Takım:</span> {task.team_name}
-                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">{task.team_name}</p>
                     </div>
+                    <ArrowUpRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
                 </div>
 
                 {task.description && (
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                    <p className="mt-2 line-clamp-1 text-xs text-muted-foreground">
                         {task.description}
                     </p>
                 )}
 
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <Badge className={statusInfo.className}>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <Badge className={`${statusInfo.className} border-0`}>
                         {statusInfo.label}
                     </Badge>
-                    <Badge className={priorityInfo.className}>
+                    <Badge className={`${priorityInfo.className} border-0`}>
                         {priorityInfo.label}
                     </Badge>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
+                <div className="mt-3 flex flex-wrap items-center gap-4 border-t pt-2.5 text-[11px] text-muted-foreground">
                     <div className="flex items-center gap-1">
                         <User className="w-3 h-3" />
                         <span>Atayan: {task.assigned_by_name}</span>
@@ -92,8 +89,7 @@ export function UserTaskItem({ task }: UserTaskItemProps) {
                         </div>
                     )}
                 </div>
-            </CardContent>
-        </Card>
+        </button>
     );
 }
 
