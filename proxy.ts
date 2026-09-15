@@ -58,7 +58,7 @@ export function proxy(request: NextRequest) {
         if (!isUserAuthenticated) {
             // Giriş yapmamış, login sayfasına yönlendir
             const loginUrl = new URL('/giris', request.url);
-            loginUrl.searchParams.set('redirect', pathname);
+            loginUrl.searchParams.set('yonlendir', pathname);
             return NextResponse.redirect(loginUrl);
         }
     }
@@ -67,7 +67,7 @@ export function proxy(request: NextRequest) {
     if (isAuthRoute(pathname)) {
         if (isUserAuthenticated) {
             // Zaten giriş yapmış, dashboard'a yönlendir
-            const dashboardUrl = new URL('/dashboard', request.url);
+            const dashboardUrl = new URL('/panel', request.url);
             return NextResponse.redirect(dashboardUrl);
         }
     }

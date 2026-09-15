@@ -33,9 +33,6 @@ export const registerSchema = z
         email: emailSchema,
         password: passwordSchema,
         confirmPassword: z.string().min(1, 'Şifre tekrarı gereklidir'),
-        terms: z.boolean().refine((val) => val === true, {
-            message: 'Kullanım şartlarını kabul etmelisiniz',
-        }),
     })
     .refine((data) => data.password === data.confirmPassword, {
         message: 'Şifreler eşleşmiyor',

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useTeamStore } from '@/lib/store/team-store';
 
 interface CreateTeamData {
@@ -16,7 +17,7 @@ export function useCreateTeam() {
         setError(null);
 
         try {
-            const response = await fetch('/api/teams', {
+            const response = await fetch('/api/takimlar', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -32,10 +33,12 @@ export function useCreateTeam() {
             }
 
             addTeam(result.team);
+            toast.success('Takım oluşturuldu', { description: `"${result.team.name}" takımı hazır.` });
             return result.team;
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
             setError(errorMessage);
+            toast.error(errorMessage);
             throw err;
         } finally {
             setIsSubmitting(false);

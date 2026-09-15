@@ -12,7 +12,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert } from '@/components/ui/alert';
 import {
     Select,
     SelectContent,
@@ -26,15 +25,13 @@ interface AddMemberDialogProps {
     onOpenChange: (open: boolean) => void;
     onSubmit: (email: string, role: 'admin' | 'member') => Promise<void>;
     isSubmitting: boolean;
-    error: string | null;
 }
 
 export function AddMemberDialog({
     open,
     onOpenChange,
     onSubmit,
-    isSubmitting,
-    error
+    isSubmitting
 }: AddMemberDialogProps) {
     const [email, setEmail] = useState('');
     const [role, setRole] = useState<'admin' | 'member'>('member');
@@ -64,12 +61,6 @@ export function AddMemberDialog({
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-                        {error && (
-                            <Alert variant="destructive">
-                                {error}
-                            </Alert>
-                        )}
-
                         <div className="space-y-2">
                             <Label htmlFor="member-email">E-posta Adresi *</Label>
                             <Input

@@ -31,7 +31,7 @@ interface VerifyEmailData {
     email: string;
 }
 
-const API_BASE = '/api/auth';
+const API_BASE = '/api/kimlik';
 
 // Genel API istek fonksiyonu (JWT token httpOnly cookie olarak saklandığı için browser otomatik olarak gönderir. Manuel olarak Authorization header'a eklemeye gerek yok.)
 async function apiRequest<T>(
@@ -62,7 +62,7 @@ async function apiRequest<T>(
 
 // Kullanıcı kaydı
 export async function registerUser(data: RegisterData) {
-    return apiRequest('/register', {
+    return apiRequest('/kayit', {
         method: 'POST',
         body: JSON.stringify(data),
     });
@@ -70,7 +70,7 @@ export async function registerUser(data: RegisterData) {
 
 // Kullanıcı girişi
 export async function loginUser(data: LoginData) {
-    return apiRequest('/login', {
+    return apiRequest('/giris', {
         method: 'POST',
         body: JSON.stringify(data),
     });
@@ -78,14 +78,14 @@ export async function loginUser(data: LoginData) {
 
 // E-posta doğrulama (token ile)
 export async function verifyEmail(token: string) {
-    return apiRequest(`/verify-email?token=${token}`, {
+    return apiRequest(`/eposta-dogrulama?token=${token}`, {
         method: 'GET',
     });
 }
 
 // Yeni doğrulama e-postası gönder
 export async function resendVerificationEmail(data: VerifyEmailData) {
-    return apiRequest('/verify-email', {
+    return apiRequest('/eposta-dogrulama', {
         method: 'POST',
         body: JSON.stringify(data),
     });
@@ -93,7 +93,7 @@ export async function resendVerificationEmail(data: VerifyEmailData) {
 
 // Şifre sıfırlama talebi
 export async function forgotPassword(data: ForgotPasswordData) {
-    return apiRequest('/forgot-password', {
+    return apiRequest('/sifremi-unuttum', {
         method: 'POST',
         body: JSON.stringify(data),
     });
@@ -101,14 +101,14 @@ export async function forgotPassword(data: ForgotPasswordData) {
 
 // Şifre sıfırlama token doğrulama
 export async function verifyResetToken(token: string) {
-    return apiRequest(`/reset-password?token=${token}`, {
+    return apiRequest(`/sifre-sifirla?token=${token}`, {
         method: 'GET',
     });
 }
 
 // Yeni şifre belirleme
 export async function resetPassword(data: ResetPasswordData) {
-    return apiRequest('/reset-password', {
+    return apiRequest('/sifre-sifirla', {
         method: 'POST',
         body: JSON.stringify(data),
     });
@@ -116,7 +116,7 @@ export async function resetPassword(data: ResetPasswordData) {
 
 // Çıkış yap
 export async function logoutUser() {
-    return apiRequest('/logout', {
+    return apiRequest('/cikis', {
         method: 'POST',
     });
 }

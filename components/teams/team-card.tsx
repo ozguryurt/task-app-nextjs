@@ -12,7 +12,7 @@ interface TeamCardProps {
 
 export function TeamCard({ team }: TeamCardProps) {
     return (
-        <Link href={`/dashboard/teams/${team.id}`} className="block h-full">
+        <Link href={`/panel/takimlar/${team.id}`} className="block h-full">
             <Card className="group h-full cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-primary/15 hover:shadow-xl">
                 <CardHeader className="pb-1">
                     <div className="flex items-start justify-between">

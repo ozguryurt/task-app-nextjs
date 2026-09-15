@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useTeamStore } from '@/lib/store/team-store';
 
 interface AddMemberData {
@@ -17,7 +18,7 @@ export function useTeamMembers(teamId: number) {
         setError(null);
 
         try {
-            const response = await fetch(`/api/teams/${teamId}/members`, {
+            const response = await fetch(`/api/takimlar/${teamId}/uyeler`, {
                 method: 'GET',
                 credentials: 'include',
             });
@@ -33,6 +34,7 @@ export function useTeamMembers(teamId: number) {
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
             setError(errorMessage);
+            toast.error(errorMessage);
             throw err;
         } finally {
             setIsLoading(false);
@@ -44,7 +46,7 @@ export function useTeamMembers(teamId: number) {
         setError(null);
 
         try {
-            const response = await fetch(`/api/teams/${teamId}/members`, {
+            const response = await fetch(`/api/takimlar/${teamId}/uyeler`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -60,10 +62,12 @@ export function useTeamMembers(teamId: number) {
             }
 
             addMember(result.member);
+            toast.success('Üye eklendi', { description: `${result.member?.name ?? data.email} takıma eklendi.` });
             return result.member;
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
             setError(errorMessage);
+            toast.error(errorMessage);
             throw err;
         } finally {
             setIsSubmitting(false);
@@ -75,7 +79,7 @@ export function useTeamMembers(teamId: number) {
         setError(null);
 
         try {
-            const response = await fetch(`/api/teams/${teamId}/members/${memberId}`, {
+            const response = await fetch(`/api/takimlar/${teamId}/uyeler/${memberId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -91,10 +95,14 @@ export function useTeamMembers(teamId: number) {
             }
 
             updateMember(memberId, { role });
+            toast.success('Üye rolü güncellendi', {
+                description: role === 'admin' ? 'Üye artık takım yöneticisi.' : 'Üye artık takım üyesi.',
+            });
             return true;
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
             setError(errorMessage);
+            toast.error(errorMessage);
             throw err;
         } finally {
             setIsSubmitting(false);
@@ -106,7 +114,7 @@ export function useTeamMembers(teamId: number) {
         setError(null);
 
         try {
-            const response = await fetch(`/api/teams/${teamId}/members/${memberId}`, {
+            const response = await fetch(`/api/takimlar/${teamId}/uyeler/${memberId}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });
@@ -118,10 +126,12 @@ export function useTeamMembers(teamId: number) {
             }
 
             removeMember(memberId);
+            toast.success('Üye takımdan çıkarıldı');
             return true;
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
             setError(errorMessage);
+            toast.error(errorMessage);
             throw err;
         } finally {
             setIsSubmitting(false);

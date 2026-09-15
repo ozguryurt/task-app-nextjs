@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -9,8 +10,12 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Task App - NextJS",
-  description: "Task App - NextJS",
+  title: {
+    default: "Taskflow | Görev ve Ekip Yönetimi",
+    template: "%s | Taskflow",
+  },
+  description:
+    "Ekipler için bulut tabanlı görev yönetimi: ekip ve rol yönetimi, görev atama, öncelik ve teslim tarihi takibi tek çalışma alanında.",
 };
 
 export default function RootLayout({
@@ -19,11 +24,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="tr">
       <body
         className={`${poppins.variable} font-sans antialiased`}
       >
         {children}
+        <Toaster />
       </body>
     </html>
   );

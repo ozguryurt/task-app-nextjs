@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { registerUser } from '@/lib/api/auth-api';
 import { RegisterFormData } from '@/lib/validations/auth-schema';
@@ -26,6 +27,9 @@ export function useRegister() {
 
             if (response.success) {
                 setSuccess(response.message);
+                toast.success('Hesabınız oluşturuldu', {
+                    description: 'Doğrulama bağlantısı e-posta adresinize gönderildi.',
+                });
                 setTimeout(() => {
                     router.push(AUTH_CONFIG.redirects.loginPage);
                 }, 2000);
@@ -33,11 +37,13 @@ export function useRegister() {
             } else {
                 const errorMessage = response.message || 'Kayıt başarısız';
                 setError(errorMessage);
+                toast.error(errorMessage);
                 return { success: false, message: errorMessage };
             }
         } catch (err) {
             const errorMessage = 'Beklenmeyen bir hata oluştu';
             setError(errorMessage);
+            toast.error(errorMessage);
             return { success: false, message: errorMessage };
         } finally {
             setIsSubmitting(false);

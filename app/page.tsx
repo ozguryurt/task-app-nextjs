@@ -5,7 +5,6 @@ import {
   BarChart3,
   Check,
   CheckCircle2,
-  Layers3,
   ShieldCheck,
   Sparkles,
   Users2,
@@ -13,6 +12,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
 
 const features = [
   { icon: Users2, title: "Ekipler tek merkezde", description: "Üyeleri, rolleri ve iş akışlarını karmaşa olmadan yönetin." },
@@ -23,20 +24,7 @@ const features = [
 export default function Home() {
   return (
     <main className="min-h-screen overflow-hidden">
-      <header className="relative z-20 border-b border-black/[0.04] bg-background/75 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-              <Layers3 className="size-4.5" />
-            </span>
-            <span className="text-[15px] font-bold tracking-tight">Taskflow</span>
-          </Link>
-          <nav className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" asChild><Link href="/login">Giriş yap</Link></Button>
-            <Button size="sm" asChild><Link href="/register">Ücretsiz başla</Link></Button>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <section className="relative">
         <div className="subtle-grid absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,black,transparent_75%)]" />
@@ -53,11 +41,11 @@ export default function Home() {
               Görevleri planlayın, sorumlulukları netleştirin ve herkesin aynı hedefe ilerlemesini sağlayın.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button size="lg" asChild><Link href="/register">Çalışma alanı oluştur <ArrowRight /></Link></Button>
-              <Button size="lg" variant="outline" asChild><Link href="/login">Hesabıma giriş yap</Link></Button>
+              <Button size="lg" asChild><Link href="/kayit">Çalışma alanı oluştur <ArrowRight /></Link></Button>
+              <Button size="lg" variant="outline" asChild><Link href="/giris">Hesabıma giriş yap</Link></Button>
             </div>
             <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-muted-foreground">
-              {['Kurulum gerektirmez', 'Kredi kartı gerekmez', 'Ekibinle hemen başla'].map((item) => (
+              {['Kurulum gerektirmez', 'Rol bazlı yetkilendirme', 'Ekibinle hemen başla'].map((item) => (
                 <span key={item} className="flex items-center gap-1.5"><Check className="size-3.5 text-primary" /> {item}</span>
               ))}
             </div>
@@ -82,7 +70,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 pb-20 sm:px-8">
+      <section id="ozellikler" className="mx-auto max-w-6xl scroll-mt-20 px-5 pb-20 sm:px-8">
         <div className="mb-8 flex flex-col justify-between gap-3 border-t pt-10 sm:flex-row sm:items-end">
           <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Akıcı iş yönetimi</p><h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Ekibiniz için gereken netlik</h2></div>
           <p className="max-w-md text-sm leading-6 text-muted-foreground">Dağınık konuşmaları, belirsiz sorumlulukları ve kaçan teslim tarihlerini geride bırakın.</p>
@@ -100,10 +88,12 @@ export default function Home() {
         <Card className="mt-4 overflow-hidden border-primary/10 bg-[#18172a] text-white shadow-2xl shadow-primary/10">
           <CardContent className="flex flex-col items-start justify-between gap-6 py-4 sm:flex-row sm:items-center">
             <div className="flex items-center gap-4"><span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/10"><ShieldCheck className="size-5 text-indigo-300" /></span><div><h3 className="font-semibold">Ekibiniz hazır olduğunda siz de hazırsınız.</h3><p className="mt-1 text-sm text-white/55">Dakikalar içinde alanınızı kurun ve ilk görevi atayın.</p></div></div>
-            <Button variant="secondary" asChild className="shrink-0 bg-white text-[#18172a] hover:bg-white/90"><Link href="/register">Şimdi başlayın <ArrowRight /></Link></Button>
+            <Button variant="secondary" asChild className="shrink-0 bg-white text-[#18172a] hover:bg-white/90"><Link href="/kayit">Şimdi başlayın <ArrowRight /></Link></Button>
           </CardContent>
         </Card>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }

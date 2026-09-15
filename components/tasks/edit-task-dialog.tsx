@@ -20,7 +20,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Alert } from '@/components/ui/alert';
 import { TeamMember, Task } from '@/lib/store/team-store';
 
 interface EditTaskDialogProps {
@@ -35,11 +34,10 @@ interface EditTaskDialogProps {
         start_date?: string;
         end_date?: string;
         due_date?: string;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     task: Task | null;
     members: TeamMember[];
     isSubmitting?: boolean;
-    error?: string | null;
 }
 
 export function EditTaskDialog({
@@ -49,7 +47,6 @@ export function EditTaskDialog({
     task,
     members,
     isSubmitting = false,
-    error = null,
 }: EditTaskDialogProps) {
     const [assignedTo, setAssignedTo] = useState('');
     const [title, setTitle] = useState('');
@@ -120,9 +117,9 @@ export function EditTaskDialog({
             }
         }
 
-        await onSubmit(updateData);
+        const success = await onSubmit(updateData);
 
-        if (!error) {
+        if (success) {
             onOpenChange(false);
         }
     };
@@ -139,12 +136,6 @@ export function EditTaskDialog({
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-                        {error && (
-                            <Alert variant="destructive">
-                                {error}
-                            </Alert>
-                        )}
-
                         <div className="space-y-2">
                             <Label htmlFor="assigned_to">Atanan Kişi *</Label>
                             <Select

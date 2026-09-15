@@ -40,7 +40,7 @@ export function UserTaskItem({ task }: UserTaskItemProps) {
     };
 
     const handleClick = () => {
-        router.push(`/dashboard/teams/${task.team_id}`);
+        router.push(`/panel/takimlar/${task.team_id}`);
     };
 
     return (

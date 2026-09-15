@@ -11,6 +11,8 @@ Modern ve güvenli bir görev yönetim uygulaması. Kullanıcı kimlik doğrulam
 - [Mimari](#-mimari)
 - [Kullanım](#-kullanım)
 - [API Endpoints](#-api-endpoints)
+- [Bildirimler (Toast)](#-bildirimler-toast)
+- [URL Yapısı](#-url-yapısı-türkçe)
 - [Güvenlik](#-güvenlik)
 - [Katkıda Bulunma](#-katkıda-bulunma)
 
@@ -240,6 +242,10 @@ SMTP_PORT=587
 SMTP_USER=taskappnextjs@ozguryurt.dev
 SMTP_PASS=your_smtp_password
 EMAIL_FROM="Task App Next.js" <taskappnextjs@ozguryurt.dev>
+
+# Site Bilgileri
+# Alt bilgide gösterilen destek/iletişim adresi.
+NEXT_PUBLIC_SUPPORT_EMAIL=destek@taskflow.app
 ```
 
 **JWT_SECRET Oluşturma:**
@@ -275,40 +281,45 @@ npm run start
 task-app-nextjs/
 ├── app/                              # Next.js App Router
 │   ├── api/                          # Backend API Routes
-│   │   ├── auth/                     # Kimlik Doğrulama API
-│   │   │   ├── login/route.ts        # Giriş endpoint
-│   │   │   ├── logout/route.ts       # Çıkış endpoint
-│   │   │   ├── register/route.ts     # Kayıt endpoint
-│   │   │   ├── verify-email/route.ts # E-posta doğrulama
-│   │   │   ├── forgot-password/route.ts
-│   │   │   └── reset-password/route.ts
-│   │   ├── teams/                    # Takım Yönetimi API
+│   │   ├── kimlik/                   # Kimlik Doğrulama API
+│   │   │   ├── giris/route.ts        # Giriş endpoint
+│   │   │   ├── cikis/route.ts        # Çıkış endpoint
+│   │   │   ├── kayit/route.ts        # Kayıt endpoint
+│   │   │   ├── eposta-dogrulama/route.ts # E-posta doğrulama
+│   │   │   ├── sifremi-unuttum/route.ts  # Şifre sıfırlama talebi
+│   │   │   └── sifre-sifirla/route.ts    # Yeni şifre belirleme
+│   │   ├── takimlar/                 # Takım Yönetimi API
 │   │   │   ├── route.ts              # Takım listesi/oluşturma
-│   │   │   └── [teamId]/             # Takım detay işlemleri
+│   │   │   └── [takimId]/            # Takım detay işlemleri
 │   │   │       ├── route.ts          # Takım CRUD
-│   │   │       ├── members/          # Üye yönetimi
+│   │   │       ├── uyeler/           # Üye yönetimi
 │   │   │       │   ├── route.ts      # Üye listesi/ekleme
-│   │   │       │   └── [memberId]/route.ts
-│   │   │       └── tasks/            # Görev Yönetimi API
+│   │   │       │   └── [uyeId]/route.ts
+│   │   │       └── gorevler/         # Görev Yönetimi API
 │   │   │           ├── route.ts      # Görev listesi/oluşturma
-│   │   │           └── [taskId]/route.ts # Görev CRUD
-│   │   └── user/                     # Kullanıcı API
-│   │       └── tasks/route.ts        # Kullanıcının görevleri
+│   │   │           └── [gorevId]/route.ts # Görev CRUD
+│   │   └── kullanici/                # Kullanıcı API
+│   │       └── gorevler/route.ts     # Kullanıcının görevleri
 │   │
-│   ├── dashboard/                    # Dashboard Sayfaları
-│   │   ├── page.tsx                  # Ana dashboard
-│   │   └── teams/                    # Takım sayfaları
-│   │       └── [teamId]/page.tsx     # Takım detay sayfası
+│   ├── panel/                        # Panel (dashboard) sayfaları
+│   │   ├── page.tsx                  # Ana panel
+│   │   └── takimlar/                 # Takım sayfaları
+│   │       └── [takimId]/page.tsx    # Takım detay sayfası
 │   │
 │   ├── giris/page.tsx                # Giriş sayfası
 │   ├── kayit/page.tsx                # Kayıt sayfası
-│   ├── sifremi-unuttum/page.tsx      # Şifre sıfırlama
-│   ├── verify-email/page.tsx         # E-posta doğrulama sayfası
+│   ├── sifremi-unuttum/page.tsx      # Şifre sıfırlama talebi
+│   ├── eposta-dogrulama/page.tsx     # E-posta doğrulama sayfası
+│   │
 │   ├── layout.tsx                    # Root layout
-│   ├── page.tsx                      # Ana sayfa
+│   ├── page.tsx                      # Ana sayfa (landing)
 │   └── globals.css                   # Global stil tanımları
 │
 ├── components/                       # React Bileşenleri
+│   ├── layout/                       # Sayfa iskeleti bileşenleri
+│   │   ├── site-header.tsx           # Ana sayfa üst menüsü
+│   │   └── site-footer.tsx           # Alt bilgi (ürün linkleri + iletişim)
+│   │
 │   ├── teams/                        # Takım bileşenleri
 │   │   ├── create-team-dialog.tsx    # Takım oluşturma dialog
 │   │   ├── team-card.tsx             # Takım kartı
@@ -336,7 +347,8 @@ task-app-nextjs/
 │       ├── textarea.tsx              # Textarea bileşeni
 │       ├── checkbox.tsx              # Checkbox bileşeni
 │       ├── input-group.tsx           # Input grubu
-│       └── navigation-menu.tsx       # Navigation menu
+│       ├── navigation-menu.tsx       # Navigation menu
+│       └── sonner.tsx                # Toast bildirimleri (sonner Toaster)
 │
 ├── lib/                              # Core Kütüphane
 │   ├── api/                          # API İstemci Katmanı
@@ -362,6 +374,8 @@ task-app-nextjs/
 │   ├── middleware/                   # Middleware Konfigürasyonu
 │   │   └── auth-config.ts            # Route koruma ayarları
 │   │
+│   ├── site-info.ts                  # Marka adı ve iletişim bilgisi
+│   │
 │   ├── auth-helpers.ts               # Auth yardımcı fonksiyonlar
 │   ├── jwt-helpers.ts                # JWT işlemleri
 │   ├── db.ts                         # MySQL bağlantı havuzu
@@ -374,7 +388,7 @@ task-app-nextjs/
 │   ├── hero.jpg
 │   └── hero.webp
 │
-├── middleware.ts                     # Next.js Middleware (JWT auth)
+├── proxy.ts                          # Next.js Proxy (JWT auth + route koruma)
 ├── components.json                   # ShadCN konfigürasyonu
 ├── env.example                       # Örnek environment değerleri
 ├── package.json                      # NPM bağımlılıkları
@@ -383,6 +397,83 @@ task-app-nextjs/
 ├── tailwind.config.js                # Tailwind konfigürasyonu
 └── README.md                         # Proje dokümantasyonu
 ```
+
+## 🔔 Bildirimler (Toast)
+
+Form ve veri işlemlerinin sonucu, sayfa içindeki bilgi kutucuğu (inline alert) yerine **toast** bildirimi olarak gösterilir. Bildirimler `sonner` ile üretilir; `components/ui/sonner.tsx` içindeki `Toaster` bileşeni kök layout'ta (`app/layout.tsx`) bir kez render edilir.
+
+> **Neden sonner?** shadcn'in yeni `toast` bileşeni yalnızca **Base UI** kaydına sahip projelerde kullanılabilir. Bu proje Radix tabanlı olduğu için CLI (`npx shadcn@latest add toast`) şu hatayı verir: *"The toast component is only available for Base UI projects. Use the sonner component instead."* Bu nedenle shadcn'in önerdiği `sonner` bileşeni kurulmuştur (`npx shadcn@latest add sonner`).
+
+### Kullanım
+
+```tsx
+import { toast } from 'sonner';
+
+toast.success('Görev oluşturuldu', { description: task.title });
+toast.error(errorMessage);
+toast.info('Bilgilendirme');
+toast.promise(kaydet(), { loading: 'Kaydediliyor...', success: 'Kaydedildi', error: 'Kaydedilemedi' });
+```
+
+### Davranış
+
+- **Konum:** sağ üst (`top-right`), 4,5 saniye sonra otomatik kapanır; kapatma butonu ve `richColors` (yeşil/kırmızı vurgu) aktiftir.
+- **Tema:** sabit `light`. Uygulamada tema geçişi bulunmadığı için bildirimin sistem temasına göre farklı görünmesi engellenmiştir.
+- **Kalıcılık:** sonner istemci tarafında çalışır; giriş/çıkış gibi yönlendirmelerden sonra da bildirim görünmeye devam eder.
+
+### Bildirim tetiklenen yerler
+
+En güncel sonuç bilgisine sahip oldukları için bildirimler ağırlıklı olarak **hook katmanında** tetiklenir:
+
+| Konum | Başarı bildirimi | Hata bildirimi |
+|-------|------------------|----------------|
+| `lib/hooks/use-login.ts` | "Giriş başarılı" | API mesajı |
+| `lib/hooks/use-register.ts` | "Hesabınız oluşturuldu" | API mesajı |
+| `lib/hooks/use-logout.ts` | "Çıkış yapıldı" | API mesajı |
+| `lib/hooks/use-create-team.ts` | "Takım oluşturuldu" | API mesajı |
+| `lib/hooks/use-team-members.ts` | Üye eklendi / rol güncellendi / üye çıkarıldı | API mesajı |
+| `lib/hooks/use-tasks.ts` | Görev oluşturuldu / güncellendi / silindi | API mesajı |
+| `lib/hooks/use-teams.ts`, `use-user-tasks.ts` | — | Liste yükleme hatası |
+| `app/sifremi-unuttum/page.tsx` | "Sıfırlama bağlantısı gönderildi" | API mesajı |
+| `app/eposta-dogrulama/page.tsx` | Doğrulama ve yeniden gönderim sonucu | API mesajı |
+| `app/panel/takimlar/[takimId]/page.tsx` | "Takım silindi" | API mesajı |
+
+> `components/ui/alert.tsx` genel amaçlı bir UI primitifi olarak korunmuştur; uygulamada form ve işlem geri bildirimleri toast ile gösterilir.
+
+## 🔗 URL Yapısı (Türkçe)
+
+Kullanıcıya görünen tüm sayfa adresleri ve dahili API endpoint'leri Türkçe'dir. Eski İngilizce adresler (`/login`, `/register`, `/dashboard`, `/verify-email`, `/api/auth/*`, `/api/teams/*` …) **kaldırılmıştır**; geriye dönük yönlendirme bırakılmamıştır.
+
+### Sayfalar
+
+| Sayfa | Adres |
+|-------|-------|
+| Ana sayfa | `/` |
+| Giriş | `/giris` |
+| Kayıt | `/kayit` |
+| Şifremi unuttum | `/sifremi-unuttum` |
+| E-posta doğrulama | `/eposta-dogrulama?token=...` |
+| Panel (dashboard) | `/panel` |
+| Takım detayı | `/panel/takimlar/[takimId]` |
+
+### API Endpoint'leri
+
+| Alan | Endpoint |
+|------|----------|
+| Giriş / kayıt / çıkış | `/api/kimlik/giris`, `/api/kimlik/kayit`, `/api/kimlik/cikis` |
+| Doğrulama ve şifre işlemleri | `/api/kimlik/eposta-dogrulama`, `/api/kimlik/sifremi-unuttum`, `/api/kimlik/sifre-sifirla` |
+| Takımlar | `/api/takimlar`, `/api/takimlar/[takimId]` |
+| Üyeler | `/api/takimlar/[takimId]/uyeler`, `/api/takimlar/[takimId]/uyeler/[uyeId]` |
+| Görevler | `/api/takimlar/[takimId]/gorevler`, `/api/takimlar/[takimId]/gorevler/[gorevId]` |
+| Kullanıcının görevleri | `/api/kullanici/gorevler` |
+
+### Adlandırma kuralları
+
+- Segmentler küçük harfli, tire ayraçlı ve ASCII'dir: `sifremi-unuttum`, `eposta-dogrulama`, `takimlar` (URL'de Türkçe karakter kullanılmaz).
+- Dinamik segment adları da Türkçedir: `[takimId]`, `[uyeId]`, `[gorevId]`. Route handler'larda ve panel sayfasında değer yerel değişkene eşlenir (ör. `const { takimId: teamId } = await params;`); veritabanı kolonları (`team_id`, `user_id`) ve iç veri modeli değişmemiştir.
+- Korumalı adresler `lib/middleware/auth-config.ts` içinde tanımlıdır: `/panel` (ve alt yolları), `/profil`, `/ayarlar`, `/gorevler`. Oturum yoksa `proxy.ts` kullanıcıyı `/giris?yonlendir=<istenen-yol>` adresine yönlendirir.
+- Yetkili kullanıcı `/giris`, `/kayit` veya `/sifremi-unuttum` sayfalarına gelirse otomatik olarak `/panel`'e yönlendirilir.
+- Yeni sayfa veya endpoint eklerken bu kurallara uyulmalıdır; proje genelinde Türkçe olmayan bir rota bulunmamalıdır.
 
 ## 🏗 Mimari
 
@@ -418,8 +509,8 @@ task-app-nextjs/
                       ↓
 ┌─────────────────────────────────────────────────┐
 │         API Routes (Backend)                    │
-│   • /api/auth/* - Kimlik doğrulama              │
-│   • /api/teams/* - Takım yönetimi               │
+│   • /api/kimlik/* - Kimlik doğrulama            │
+│   • /api/takimlar/* - Takım yönetimi            │
 │   JWT Token oluşturma ve doğrulama             │
 └─────────────────────────────────────────────────┘
                       ↓
@@ -629,7 +720,7 @@ function Dashboard() {
 
 ### 4. E-posta Doğrulama Arayüzü
 
-- Kullanıcı kayıt olduğunda otomatik olarak `/verify-email?token=...` adresine yönlendiren bir bağlantı içeren e-posta gönderilir.
+- Kullanıcı kayıt olduğunda otomatik olarak `/eposta-dogrulama?token=...` adresine yönlendiren bir bağlantı içeren e-posta gönderilir.
 - Bu sayfada:
   - Token otomatik olarak doğrulanır ve kullanıcıya durum bilgisi gösterilir.
   - E-posta ulaşmadıysa form üzerinden yeni doğrulama e-postası talep edilebilir.
@@ -642,9 +733,9 @@ function Dashboard() {
 ```typescript
 // middleware.ts
 const protectedRoutes = [
-  '/dashboard',
-  '/dashboard/teams',
-  '/profile', // ← YENİ
+  '/panel',
+  '/panel/takimlar',
+  '/profil', // ← YENİ
 ];
 ```
 
@@ -693,45 +784,45 @@ function MyComponent() {
 
 | Method | Endpoint | Açıklama |
 |--------|----------|----------|
-| `POST` | `/api/auth/register` | Yeni kullanıcı kaydı |
-| `POST` | `/api/auth/login` | Kullanıcı girişi (JWT token döner) |
-| `POST` | `/api/auth/logout` | Çıkış yap (JWT cookie temizler) |
-| `GET` | `/api/auth/verify-email?token=xxx` | E-posta doğrulama |
-| `POST` | `/api/auth/verify-email` | Yeni doğrulama e-postası gönder |
-| `POST` | `/api/auth/forgot-password` | Şifre sıfırlama talebi |
-| `GET` | `/api/auth/reset-password?token=xxx` | Reset token kontrolü |
-| `POST` | `/api/auth/reset-password` | Yeni şifre belirleme |
+| `POST` | `/api/kimlik/kayit` | Yeni kullanıcı kaydı |
+| `POST` | `/api/kimlik/giris` | Kullanıcı girişi (JWT token döner) |
+| `POST` | `/api/kimlik/cikis` | Çıkış yap (JWT cookie temizler) |
+| `GET` | `/api/kimlik/eposta-dogrulama?token=xxx` | E-posta doğrulama |
+| `POST` | `/api/kimlik/eposta-dogrulama` | Yeni doğrulama e-postası gönder |
+| `POST` | `/api/kimlik/sifremi-unuttum` | Şifre sıfırlama talebi |
+| `GET` | `/api/kimlik/sifre-sifirla?token=xxx` | Reset token kontrolü |
+| `POST` | `/api/kimlik/sifre-sifirla` | Yeni şifre belirleme |
 
 ### Takım Yönetimi
 
 | Method | Endpoint | Açıklama | Yetki |
 |--------|----------|----------|-------|
-| `GET` | `/api/teams` | Kullanıcının takımlarını listele | Tümü |
-| `POST` | `/api/teams` | Yeni takım oluştur | Tümü |
-| `GET` | `/api/teams/[teamId]` | Takım detaylarını getir | Üye |
-| `PUT` | `/api/teams/[teamId]` | Takım bilgilerini güncelle | Admin |
-| `DELETE` | `/api/teams/[teamId]` | Takımı sil | Admin |
-| `GET` | `/api/teams/[teamId]/members` | Takım üyelerini listele | Üye |
-| `POST` | `/api/teams/[teamId]/members` | Takıma üye ekle | Admin |
-| `PUT` | `/api/teams/[teamId]/members/[memberId]` | Üye rolünü güncelle | Admin |
-| `DELETE` | `/api/teams/[teamId]/members/[memberId]` | Üyeyi takımdan çıkar | Admin |
+| `GET` | `/api/takimlar` | Kullanıcının takımlarını listele | Tümü |
+| `POST` | `/api/takimlar` | Yeni takım oluştur | Tümü |
+| `GET` | `/api/takimlar/[takimId]` | Takım detaylarını getir | Üye |
+| `PUT` | `/api/takimlar/[takimId]` | Takım bilgilerini güncelle | Admin |
+| `DELETE` | `/api/takimlar/[takimId]` | Takımı sil | Admin |
+| `GET` | `/api/takimlar/[takimId]/uyeler` | Takım üyelerini listele | Üye |
+| `POST` | `/api/takimlar/[takimId]/uyeler` | Takıma üye ekle | Admin |
+| `PUT` | `/api/takimlar/[takimId]/uyeler/[uyeId]` | Üye rolünü güncelle | Admin |
+| `DELETE` | `/api/takimlar/[takimId]/uyeler/[uyeId]` | Üyeyi takımdan çıkar | Admin |
 
 ### Görev Yönetimi
 
 | Method | Endpoint | Açıklama | Yetki |
 |--------|----------|----------|-------|
-| `GET` | `/api/teams/[teamId]/tasks` | Takımın görevlerini listele | Üye |
-| `POST` | `/api/teams/[teamId]/tasks` | Yeni görev oluştur | Admin |
-| `GET` | `/api/teams/[teamId]/tasks/[taskId]` | Görev detaylarını getir | Üye |
-| `PUT` | `/api/teams/[teamId]/tasks/[taskId]` | Görevi güncelle | Admin / Atayan / Atanan |
-| `DELETE` | `/api/teams/[teamId]/tasks/[taskId]` | Görevi sil | Admin / Atayan |
-| `GET` | `/api/user/tasks` | Kullanıcıya atanan görevler | Tümü |
+| `GET` | `/api/takimlar/[takimId]/gorevler` | Takımın görevlerini listele | Üye |
+| `POST` | `/api/takimlar/[takimId]/gorevler` | Yeni görev oluştur | Admin |
+| `GET` | `/api/takimlar/[takimId]/gorevler/[gorevId]` | Görev detaylarını getir | Üye |
+| `PUT` | `/api/takimlar/[takimId]/gorevler/[gorevId]` | Görevi güncelle | Admin / Atayan / Atanan |
+| `DELETE` | `/api/takimlar/[takimId]/gorevler/[gorevId]` | Görevi sil | Admin / Atayan |
+| `GET` | `/api/kullanici/gorevler` | Kullanıcıya atanan görevler | Tümü |
 
 ### Örnek API İstekleri
 
 **Kayıt:**
 ```bash
-curl -X POST http://localhost:3000/api/auth/register \
+curl -X POST http://localhost:3000/api/kimlik/kayit \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -742,7 +833,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 
 **Giriş:**
 ```bash
-curl -X POST http://localhost:3000/api/auth/login \
+curl -X POST http://localhost:3000/api/kimlik/giris \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -752,7 +843,7 @@ curl -X POST http://localhost:3000/api/auth/login \
 
 **Takım Oluşturma:**
 ```bash
-curl -X POST http://localhost:3000/api/teams \
+curl -X POST http://localhost:3000/api/takimlar \
   -H "Content-Type: application/json" \
   -H "Cookie: auth-token=YOUR_JWT_TOKEN" \
   -d '{
@@ -763,7 +854,7 @@ curl -X POST http://localhost:3000/api/teams \
 
 **Üye Ekleme:**
 ```bash
-curl -X POST http://localhost:3000/api/teams/1/members \
+curl -X POST http://localhost:3000/api/takimlar/1/members \
   -H "Content-Type: application/json" \
   -H "Cookie: auth-token=YOUR_JWT_TOKEN" \
   -d '{
@@ -774,7 +865,7 @@ curl -X POST http://localhost:3000/api/teams/1/members \
 
 **Görev Oluşturma:**
 ```bash
-curl -X POST http://localhost:3000/api/teams/1/tasks \
+curl -X POST http://localhost:3000/api/takimlar/1/tasks \
   -H "Content-Type: application/json" \
   -H "Cookie: auth-token=YOUR_JWT_TOKEN" \
   -d '{
@@ -789,7 +880,7 @@ curl -X POST http://localhost:3000/api/teams/1/tasks \
 
 **Kullanıcı Görevlerini Listele:**
 ```bash
-curl -X GET http://localhost:3000/api/user/tasks \
+curl -X GET http://localhost:3000/api/kullanici/gorevler \
   -H "Cookie: auth-token=YOUR_JWT_TOKEN"
 ```
 
@@ -849,7 +940,7 @@ curl -X GET http://localhost:3000/api/user/tasks \
 4. **Güvenlik Testi:**
    - Çıkış yapın
    - /dashboard adresine gitmeye çalışın
-   - /giris sayfasına yönlendirilmelisiniz
+   - /login sayfasına yönlendirilmelisiniz
 
 ### Browser Console Test
 
@@ -863,6 +954,7 @@ document.cookie.split(';').find(c => c.includes('auth-token'));
 
 ## ✅ Tamamlanan Özellikler
 
+- [x] Toast tabanlı bildirim sistemi (sonner) — form ve veri işlemleri geri bildirimi
 - [x] Görev (Task) CRUD işlemleri
 - [x] Görev atama sistemi
 - [x] Rol tabanlı görev yetkilendirmesi

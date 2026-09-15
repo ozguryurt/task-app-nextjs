@@ -20,7 +20,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Alert } from '@/components/ui/alert';
 import { TeamMember } from '@/lib/store/team-store';
 
 interface CreateTaskDialogProps {
@@ -35,10 +34,9 @@ interface CreateTaskDialogProps {
         start_date?: string;
         end_date?: string;
         due_date?: string;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     members: TeamMember[];
     isSubmitting?: boolean;
-    error?: string | null;
 }
 
 export function CreateTaskDialog({
@@ -47,7 +45,6 @@ export function CreateTaskDialog({
     onSubmit,
     members,
     isSubmitting = false,
-    error = null,
 }: CreateTaskDialogProps) {
     const [assignedTo, setAssignedTo] = useState('');
     const [title, setTitle] = useState('');
@@ -65,7 +62,7 @@ export function CreateTaskDialog({
             return;
         }
 
-        await onSubmit({
+        const success = await onSubmit({
             assigned_to: parseInt(assignedTo),
             title,
             description: description || undefined,
@@ -77,7 +74,7 @@ export function CreateTaskDialog({
         });
 
         // Form başarılı olursa temizle
-        if (!error) {
+        if (success) {
             resetForm();
             onOpenChange(false);
         }
@@ -113,12 +110,6 @@ export function CreateTaskDialog({
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-                        {error && (
-                            <Alert variant="destructive">
-                                {error}
-                            </Alert>
-                        )}
-
                         <div className="space-y-2">
                             <Label htmlFor="assigned_to">Atanan Kişi *</Label>
                             <Select

@@ -1,10 +1,10 @@
 export const AUTH_CONFIG = {
     // Giriş gerekli olan route'lar
     protectedRoutes: [
-        '/dashboard',
-        '/profile',
-        '/settings',
-        '/tasks',
+        '/panel',
+        '/profil',
+        '/ayarlar',
+        '/gorevler',
     ],
 
     // Giriş yapmış kullanıcılar erişemez olan route'lar
@@ -19,13 +19,11 @@ export const AUTH_CONFIG = {
         '/',
         '/hakkimizda',
         '/iletisim',
-        '/sozlesme',
-        '/gizlilik',
     ],
 
     // Giriş sonrası yönlendirilecek sayfa
     redirects: {
-        afterLogin: '/dashboard',
+        afterLogin: '/panel',
         afterLogout: '/giris',
         loginPage: '/giris',
     },

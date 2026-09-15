@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useTeamStore } from '@/lib/store/team-store';
 
 export function useTeams() {
@@ -11,7 +12,7 @@ export function useTeams() {
         setError(null);
 
         try {
-            const response = await fetch('/api/teams', {
+            const response = await fetch('/api/takimlar', {
                 method: 'GET',
                 credentials: 'include',
             });
@@ -27,6 +28,7 @@ export function useTeams() {
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
             setError(errorMessage);
+            toast.error(errorMessage);
             throw err;
         } finally {
             setIsLoading(false);

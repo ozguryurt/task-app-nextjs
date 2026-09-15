@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert } from '@/components/ui/alert';
 
 interface CreateTeamDialogProps {
     open: boolean;
@@ -25,7 +24,7 @@ interface CreateTeamDialogProps {
 export function CreateTeamDialog({ open, onOpenChange, onSuccess }: CreateTeamDialogProps) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const { createTeam, isSubmitting, error } = useCreateTeam();
+    const { createTeam, isSubmitting } = useCreateTeam();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -37,7 +36,7 @@ export function CreateTeamDialog({ open, onOpenChange, onSuccess }: CreateTeamDi
             onOpenChange(false);
             onSuccess?.();
         } catch (err) {
-            // Hata hook tarafında işleniyor
+            // Hata hook tarafında toast bildirimi olarak gösterilir
         }
     };
 
@@ -53,12 +52,6 @@ export function CreateTeamDialog({ open, onOpenChange, onSuccess }: CreateTeamDi
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-                        {error && (
-                            <Alert variant="destructive">
-                                {error}
-                            </Alert>
-                        )}
-
                         <div className="space-y-2">
                             <Label htmlFor="team-name">Takım Adı *</Label>
                             <Input

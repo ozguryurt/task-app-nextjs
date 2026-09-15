@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 
 export interface UserTask {
     id: number;
@@ -29,7 +30,7 @@ export function useUserTasks() {
         setError(null);
 
         try {
-            const response = await fetch('/api/user/tasks', {
+            const response = await fetch('/api/kullanici/gorevler', {
                 credentials: 'include',
             });
 
@@ -43,6 +44,7 @@ export function useUserTasks() {
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
             setError(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setIsLoading(false);
         }

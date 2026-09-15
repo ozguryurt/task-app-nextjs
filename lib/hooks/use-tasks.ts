@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import { useTeamStore } from '../store/team-store';
 
 export interface Task {
@@ -56,7 +57,7 @@ export function useTasks(teamId: number) {
         setError(null);
 
         try {
-            const response = await fetch(`/api/teams/${teamId}/tasks`, {
+            const response = await fetch(`/api/takimlar/${teamId}/gorevler`, {
                 credentials: 'include',
             });
 
@@ -70,6 +71,7 @@ export function useTasks(teamId: number) {
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
             setError(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -82,7 +84,7 @@ export function useTasks(teamId: number) {
             setError(null);
 
             try {
-                const response = await fetch(`/api/teams/${teamId}/tasks`, {
+                const response = await fetch(`/api/takimlar/${teamId}/gorevler`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -100,10 +102,12 @@ export function useTasks(teamId: number) {
                 // Yeni görevi listeye ekle
                 setCurrentTeamTasks([data.task, ...currentTeamTasks]);
 
+                toast.success('Görev oluşturuldu', { description: taskData.title });
                 return true;
             } catch (err) {
                 const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
                 setError(errorMessage);
+                toast.error(errorMessage);
                 return false;
             } finally {
                 setIsSubmitting(false);
@@ -119,7 +123,7 @@ export function useTasks(teamId: number) {
             setError(null);
 
             try {
-                const response = await fetch(`/api/teams/${teamId}/tasks/${taskId}`, {
+                const response = await fetch(`/api/takimlar/${teamId}/gorevler/${taskId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -141,10 +145,14 @@ export function useTasks(teamId: number) {
                     )
                 );
 
+                toast.success('Görev güncellendi', {
+                    description: taskData.title ?? currentTeamTasks.find((task) => task.id === taskId)?.title,
+                });
                 return true;
             } catch (err) {
                 const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
                 setError(errorMessage);
+                toast.error(errorMessage);
                 return false;
             } finally {
                 setIsSubmitting(false);
@@ -160,7 +168,7 @@ export function useTasks(teamId: number) {
             setError(null);
 
             try {
-                const response = await fetch(`/api/teams/${teamId}/tasks/${taskId}`, {
+                const response = await fetch(`/api/takimlar/${teamId}/gorevler/${taskId}`, {
                     method: 'DELETE',
                     credentials: 'include',
                 });
@@ -176,10 +184,14 @@ export function useTasks(teamId: number) {
                     currentTeamTasks.filter((task) => task.id !== taskId)
                 );
 
+                toast.success('Görev silindi', {
+                    description: currentTeamTasks.find((task) => task.id === taskId)?.title,
+                });
                 return true;
             } catch (err) {
                 const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
                 setError(errorMessage);
+                toast.error(errorMessage);
                 return false;
             } finally {
                 setIsSubmitting(false);
