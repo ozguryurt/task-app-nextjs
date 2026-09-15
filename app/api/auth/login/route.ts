@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Eski SHA-256 kayıtlarını ve zayıf Argon2 parametrelerini başarılı girişte yükselt.
+        // Eski SHA-256 kayıtlarını ve düşük maliyetli bcrypt hash'lerini başarılı girişte yükselt.
         if (passwordVerification.needsRehash) {
             const upgradedHash = await hashPassword(password);
             await pool.query('UPDATE users SET password = ? WHERE id = ?', [upgradedHash, user.id]);

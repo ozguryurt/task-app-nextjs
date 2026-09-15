@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: 'Şifre en az 8 karakter olmalı ve büyük harf, küçük harf ve rakam içermelidir'
+                    message: 'Şifre 8-72 byte arasında olmalı ve büyük harf, küçük harf ve rakam içermelidir'
                 },
                 { status: 400 }
             );

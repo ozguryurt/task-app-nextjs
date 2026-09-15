@@ -31,8 +31,8 @@ Modern ve güvenli bir görev yönetim uygulaması. Kullanıcı kimlik doğrulam
 - **Şifre Yönetimi**
   - Şifre sıfırlama talebi
   - Güvenli token ile şifre yenileme
-  - Benzersiz salt ve bellek maliyetli parametrelerle Argon2id parola hashleme
-  - Eski SHA-256 parola kayıtlarını başarılı girişte otomatik Argon2id'e yükseltme
+  - Benzersiz salt ve 12 maliyet faktörüyle bcrypt parola hashleme
+  - Eski SHA-256 parola kayıtlarını başarılı girişte otomatik bcrypt'e yükseltme
 
 - **Merkezi Route Koruma**
   - Next.js Middleware ile otomatik sayfa koruma
@@ -162,8 +162,8 @@ Modern ve güvenli bir görev yönetim uygulaması. Kullanıcı kimlik doğrulam
 - **Database:** MySQL (mysql2 3.24.4)
 - **Authentication:** JSON Web Tokens (jsonwebtoken 9.0.3)
 - **Email:** Nodemailer (SMTP)
-- **Password Hashing:** Argon2id (19 MiB bellek, 2 iterasyon, 1 paralellik)
-- **Security:** Argon2id, Prepared Statements
+- **Password Hashing:** bcrypt (`bcryptjs`, cost factor 12)
+- **Security:** bcrypt, Prepared Statements
 
 ### Development
 - **Package Manager:** npm
@@ -209,10 +209,12 @@ SOURCE database/schema.sql;
 Mevcut bir kurulumu SHA-256 parola kayıtlarından yükseltiyorsanız önce kolon migrasyonunu çalıştırın:
 
 ```bash
-mysql -u root -p task-app-nextjs < database/migrations/001_expand_password_for_argon2.sql
+mysql -u root -p task-app-nextjs < database/migrations/001_expand_password_hash_column.sql
 ```
 
-Bu migrasyon mevcut hash'leri silmez. Eski 64 karakterlik SHA-256 kayıtları giriş sırasında güvenli ve sabit zamanlı biçimde doğrulanır; başarılı girişten hemen sonra aynı parola yeni, salt'lı Argon2id hash'iyle değiştirilir. Yeni kayıtlar ve parola sıfırlamaları doğrudan Argon2id kullanır.
+Bu migrasyon mevcut hash'leri silmez. Eski 64 karakterlik SHA-256 kayıtları giriş sırasında güvenli ve sabit zamanlı biçimde doğrulanır; başarılı girişten hemen sonra aynı parola yeni, salt'lı bcrypt hash'iyle değiştirilir. Yeni kayıtlar ve parola sıfırlamaları doğrudan bcrypt kullanır.
+
+> bcrypt girdiyi 72 byte ile sınırlar. Kayıt ve parola sıfırlama doğrulamaları bu sınırı hem istemci hem sunucu tarafında uygular.
 
 ### 4. Environment Değişkenlerini Ayarlayın
 
@@ -444,7 +446,7 @@ task-app-nextjs/
 users
 ├── id (PK)
 ├── email (UNIQUE)
-├── password (VARCHAR(255), Argon2id PHC hash)
+├── password (VARCHAR(255), bcrypt hash)
 ├── name
 ├── email_verified
 ├── email_verification_token
@@ -797,8 +799,8 @@ curl -X GET http://localhost:3000/api/user/tasks \
 
 - ✅ **JWT Authentication** - httpOnly cookie ile güvenli token yönetimi
 - ✅ **SQL Injection Koruması** - Prepared statements ile parametre binding
-- ✅ **Argon2id Parola Hashleme** - Her parola için benzersiz salt ve bellek maliyetli doğrulama
-- ✅ **Geriye Dönük Hash Migrasyonu** - Eski SHA-256 kayıtlarını başarılı girişte otomatik yükseltme
+- ✅ **bcrypt Parola Hashleme** - Her parola için benzersiz salt ve 12 maliyet faktörü
+- ✅ **Geriye Dönük Hash Migrasyonu** - Eski SHA-256 kayıtlarını başarılı girişte otomatik bcrypt'e yükseltme
 - ✅ **Token Expiration** - JWT token (7 gün sonra otomatik expire)
 - ✅ **Validasyon** - Client + Server side validasyon (Zod)
 - ✅ **Cookie Security** - httpOnly, SameSite, Secure flags
@@ -813,13 +815,13 @@ curl -X GET http://localhost:3000/api/user/tasks \
 |-------|----------|
 | `middleware.ts` | JWT token doğrulama ve route koruma |
 | `lib/jwt-helpers.ts` | JWT token oluşturma ve doğrulama fonksiyonları |
-| `lib/auth-helpers.ts` | Argon2id hash/doğrulama, eski SHA-256 geçişi ve e-posta validasyonu |
+| `lib/auth-helpers.ts` | bcrypt hash/doğrulama, eski SHA-256 geçişi ve e-posta validasyonu |
 | `lib/store/auth-store.ts` | Global auth state (Zustand) |
 | `lib/store/team-store.ts` | Global team state (Zustand) |
 | `lib/email.ts` | SMTP üzerinden e-posta gönderimi |
 | `lib/middleware/auth-config.ts` | Korumalı/public route tanımları |
 | `database/schema.sql` | MySQL veri tabanı şeması ve tablolar |
-| `database/migrations/001_expand_password_for_argon2.sql` | Mevcut parola kolonunu Argon2id PHC formatı için genişleten migrasyon |
+| `database/migrations/001_expand_password_hash_column.sql` | Mevcut parola kolonunu bcrypt hash formatı için genişleten migrasyon |
 | `components.json` | ShadCN UI konfigürasyonu |
 | `env.example` | Örnek environment değişkenleri |
 

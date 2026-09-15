@@ -1,20 +1,14 @@
 // Auth Helper Functions - Node.js Runtime (API Routes için)
 import crypto from 'crypto';
-import * as argon2 from 'argon2';
+import bcrypt from 'bcryptjs';
 
-const ARGON2_OPTIONS: argon2.HashOptions & { raw: false } = {
-    raw: false,
-    type: argon2.argon2id,
-    memoryCost: 19 * 1024,
-    timeCost: 2,
-    parallelism: 1,
-};
-
+const BCRYPT_COST = 12;
 const LEGACY_SHA256_PATTERN = /^[a-f0-9]{64}$/i;
+const BCRYPT_PATTERN = /^\$2[aby]\$\d{2}\$/;
 
-// Parolaları rastgele salt içeren, bellek maliyetli Argon2id ile hashle.
+// Parolaları benzersiz salt ve ayarlanabilir maliyet faktörüyle bcrypt kullanarak hashle.
 export async function hashPassword(password: string): Promise<string> {
-    return argon2.hash(password, ARGON2_OPTIONS);
+    return bcrypt.hash(password, BCRYPT_COST);
 }
 
 export function isLegacyPasswordHash(storedHash: string): boolean {
@@ -33,13 +27,13 @@ export async function verifyPassword(
         return { isValid, needsRehash: isValid };
     }
 
-    if (!storedHash.startsWith('$argon2id$')) {
+    if (!BCRYPT_PATTERN.test(storedHash)) {
         return { isValid: false, needsRehash: false };
     }
 
     try {
-        const isValid = await argon2.verify(storedHash, password);
-        const needsRehash = isValid && argon2.needsRehash(storedHash, ARGON2_OPTIONS);
+        const isValid = await bcrypt.compare(password, storedHash);
+        const needsRehash = isValid && bcrypt.getRounds(storedHash) !== BCRYPT_COST;
 
         return { isValid, needsRehash };
     } catch {
@@ -60,7 +54,7 @@ export function isValidEmail(email: string): boolean {
 
 // Şifre kontrolü (Minimum 8 karakter, en az 1 büyük harf, 1 küçük harf, 1 rakam)
 export function isValidPassword(password: string): boolean {
-    if (password.length < 8) return false;
+    if (password.length < 8 || Buffer.byteLength(password, 'utf8') > 72) return false;
 
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);

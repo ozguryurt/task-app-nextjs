@@ -10,6 +10,7 @@ const emailSchema = z
 const passwordSchema = z
     .string()
     .min(8, 'Şifre en az 8 karakter olmalıdır')
+    .refine((password) => new TextEncoder().encode(password).length <= 72, 'Şifre en fazla 72 byte olabilir')
     .regex(/[A-Z]/, 'Şifre en az bir büyük harf içermelidir')
     .regex(/[a-z]/, 'Şifre en az bir küçük harf içermelidir')
     .regex(/[0-9]/, 'Şifre en az bir rakam içermelidir');
