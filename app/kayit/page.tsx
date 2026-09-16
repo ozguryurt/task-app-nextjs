@@ -34,19 +34,17 @@ function RegisterPage() {
     };
 
     return (
-        <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8">
-            <div className="subtle-grid absolute inset-0 -z-10 opacity-70 [mask-image:radial-gradient(circle_at_center,black,transparent_75%)]" />
-            <div className="absolute left-1/2 top-1/3 -z-10 size-[30rem] -translate-x-1/2 rounded-full bg-primary/12 blur-[110px]" />
-            <Card className="w-full max-w-md border-white/90 bg-white/85 shadow-[0_24px_80px_rgba(46,40,100,0.13)]">
+        <div className="auth-shell">
+            <Card className="auth-card w-full max-w-md">
                 <CardHeader className="text-center">
-                    <Link href="/" className="mx-auto mb-3 flex size-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20"><Layers3 className="size-5" /></Link>
-                    <CardTitle className="text-xl">Çalışma alanınızı oluşturun</CardTitle>
+                    <Link href="/" className="mx-auto mb-3 flex size-9 items-center justify-center rounded-md bg-primary text-white"><Layers3 className="size-4" /></Link>
+                    <CardTitle className="text-lg">Çalışma alanınızı oluşturun</CardTitle>
                     <CardDescription>
                         Ekibinizle daha düzenli çalışmaya birkaç adım uzaktasınız.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="flex flex-col gap-4">
                             {/* Ad Soyad */}
                             <div className="grid gap-2">

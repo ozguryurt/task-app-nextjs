@@ -45,14 +45,14 @@ export function MemberListItem({
     };
 
     return (
-        <div className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-muted/60">
-            <div className="flex items-center gap-3 flex-1">
-                <div className="flex size-9 items-center justify-center rounded-xl bg-secondary text-primary">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md px-2 py-2 transition-colors hover:bg-muted/60">
+            <div className="flex min-w-0 items-center gap-3 flex-1">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary text-primary">
                     <span className="text-xs font-bold">
                         {member.name.charAt(0).toUpperCase()}
                     </span>
                 </div>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                         <p className="font-medium">{member.name}</p>
                         {isCurrentUser && (
@@ -61,7 +61,7 @@ export function MemberListItem({
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Mail className="w-3 h-3" />
-                        <span>{member.email}</span>
+                        <span className="truncate">{member.email}</span>
                         {member.email_verified ? (
                             <CheckCircle2 className="w-3 h-3 text-green-600" />
                         ) : (
@@ -71,7 +71,7 @@ export function MemberListItem({
                 </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
                 {isAdmin && !isCurrentUser ? (
                     <>
                         <Select
@@ -89,9 +89,10 @@ export function MemberListItem({
                         </Select>
                         <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon-sm"
                             onClick={() => onRemove(member.id, member.name)}
                             disabled={isUpdating}
+                            aria-label={`${member.name} adlı üyeyi kaldır`}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                             <Trash2 className="w-4 h-4" />

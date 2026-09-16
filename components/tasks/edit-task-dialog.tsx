@@ -135,7 +135,7 @@ export function EditTaskDialog({
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4 py-4">
+                    <div className="space-y-3 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="assigned_to">Atanan Kişi *</Label>
                             <Select
@@ -180,7 +180,7 @@ export function EditTaskDialog({
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label htmlFor="status">Durum</Label>
                                 <Select
@@ -219,7 +219,7 @@ export function EditTaskDialog({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                             <div className="space-y-2">
                                 <Label htmlFor="start_date">Başlangıç Tarihi</Label>
                                 <Input
@@ -273,4 +273,3 @@ export function EditTaskDialog({
         </Dialog>
     );
 }
-

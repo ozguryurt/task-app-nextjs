@@ -24,19 +24,19 @@ export function TaskListItem({
 }: TaskListItemProps) {
     const getStatusBadge = (status: string) => {
         const statusMap = {
-            pending: { label: 'Beklemede', className: 'bg-yellow-100 text-yellow-800' },
-            in_progress: { label: 'Devam Ediyor', className: 'bg-blue-100 text-blue-800' },
-            completed: { label: 'Tamamlandı', className: 'bg-green-100 text-green-800' },
-            cancelled: { label: 'İptal Edildi', className: 'bg-red-100 text-red-800' },
+            pending: { label: 'Beklemede', className: 'bg-amber-50 text-amber-800' },
+            in_progress: { label: 'Devam Ediyor', className: 'bg-indigo-50 text-indigo-800' },
+            completed: { label: 'Tamamlandı', className: 'bg-emerald-50 text-emerald-800' },
+            cancelled: { label: 'İptal Edildi', className: 'bg-slate-100 text-slate-600' },
         };
         return statusMap[status as keyof typeof statusMap] || statusMap.pending;
     };
 
     const getPriorityBadge = (priority: string) => {
         const priorityMap = {
-            low: { label: 'Düşük', className: 'bg-gray-100 text-gray-800' },
-            medium: { label: 'Orta', className: 'bg-orange-100 text-orange-800' },
-            high: { label: 'Yüksek', className: 'bg-red-100 text-red-800' },
+            low: { label: 'Düşük', className: 'bg-slate-100 text-slate-600' },
+            medium: { label: 'Orta', className: 'bg-amber-50 text-amber-800' },
+            high: { label: 'Yüksek', className: 'bg-rose-50 text-rose-800' },
         };
         return priorityMap[priority as keyof typeof priorityMap] || priorityMap.medium;
     };
@@ -59,10 +59,10 @@ export function TaskListItem({
     const canDelete = isAdmin || isTaskCreator;
 
     return (
-        <div className="rounded-xl border border-transparent bg-muted/45 p-4 transition-all hover:border-primary/10 hover:bg-white hover:shadow-sm">
-            <div className="flex items-start justify-between">
+        <div className="rounded-md border border-transparent bg-muted/60 p-3 transition-colors hover:border-border hover:bg-card">
+            <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="mb-2 flex flex-wrap items-center gap-1.5">
                         <h3 className="truncate text-sm font-semibold">
                             {task.title}
                         </h3>
@@ -80,7 +80,7 @@ export function TaskListItem({
                         </p>
                     )}
 
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
                             <User className="w-4 h-4" />
                             <span>
@@ -128,14 +128,15 @@ export function TaskListItem({
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 ml-4">
+                <div className="flex items-center gap-1">
                     {canEdit && (
                         <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon-sm"
                             onClick={() => onEdit(task)}
                             disabled={isUpdating}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            aria-label={`${task.title} görevini düzenle`}
+                            className="text-muted-foreground hover:text-primary"
                         >
                             <Edit className="w-4 h-4" />
                         </Button>
@@ -144,10 +145,11 @@ export function TaskListItem({
                     {canDelete && (
                         <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon-sm"
                             onClick={() => onDelete(task.id, task.title)}
                             disabled={isUpdating}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            aria-label={`${task.title} görevini sil`}
+                            className="text-muted-foreground hover:text-destructive"
                         >
                             <Trash2 className="w-4 h-4" />
                         </Button>

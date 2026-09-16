@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
@@ -14,6 +14,8 @@ import { MemberListItem } from '@/components/teams/member-list-item';
 import { CreateTaskDialog } from '@/components/tasks/create-task-dialog';
 import { EditTaskDialog } from '@/components/tasks/edit-task-dialog';
 import { TaskListItem } from '@/components/tasks/task-list-item';
+import { TaskFilterBar } from '@/components/tasks/task-filter-bar';
+import { defaultTaskFilters, filterTasks, type TaskFilterState } from '@/lib/task-filters';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ArrowLeft, Users, UserPlus, Trash2, Calendar, ClipboardList, Plus, Loader2, Layers3 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -33,6 +35,7 @@ export default function TeamDetailPage({ params }: PageProps) {
     const [isDeleteMemberDialogOpen, setIsDeleteMemberDialogOpen] = useState(false);
     const [memberToDelete, setMemberToDelete] = useState<{ id: number; name: string } | null>(null);
     const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
+    const [taskFilters, setTaskFilters] = useState<TaskFilterState>({ ...defaultTaskFilters });
     const [isEditTaskDialogOpen, setIsEditTaskDialogOpen] = useState(false);
     const [isDeleteTaskDialogOpen, setIsDeleteTaskDialogOpen] = useState(false);
     const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
@@ -60,6 +63,18 @@ export default function TeamDetailPage({ params }: PageProps) {
         isLoading: isLoadingTasks,
         isSubmitting: isSubmittingTask,
     } = useTasks(teamId);
+
+    const visibleTasks = useMemo(
+        () => filterTasks(tasks, taskFilters, (task) => `${task.assigned_to_name} ${task.assigned_by_name}`),
+        [tasks, taskFilters]
+    );
+    const taskAssignees = useMemo(
+        () => Array.from(new Map(tasks.map((task) => [task.assigned_to, {
+            id: task.assigned_to,
+            name: task.assigned_to_name,
+        }])).values()).sort((a, b) => a.name.localeCompare(b.name, 'tr-TR')),
+        [tasks]
+    );
 
     useEffect(() => {
         loadTeamAndMembers();
@@ -221,16 +236,16 @@ export default function TeamDetailPage({ params }: PageProps) {
     const isAdmin = userRole === 'admin';
 
     return (
-        <main className="min-h-screen pb-12">
-            <header className="border-b border-black/[0.04] bg-background/80 backdrop-blur-xl">
-                <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-                    <div className="flex items-center gap-2.5"><span className="flex size-9 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20"><Layers3 className="size-4.5" /></span><span className="text-sm font-bold tracking-tight">Taskflow</span></div>
+        <main className="min-h-screen pb-10">
+            <header className="border-b border-border bg-card/90 backdrop-blur-md">
+                <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
+                    <div className="flex items-center gap-2.5"><span className="flex size-8 items-center justify-center rounded-md bg-primary text-white"><Layers3 className="size-4" /></span><span className="text-sm font-semibold tracking-tight">Taskflow</span></div>
                     <Button variant="ghost" size="sm" onClick={() => router.push('/panel')}><ArrowLeft /> Dashboard</Button>
                 </div>
             </header>
-            <div className="container mx-auto max-w-6xl px-5 py-8">
+            <div className="container mx-auto max-w-6xl px-5 py-7">
                 {/* Header */}
-                <div className="mb-6">
+                <div className="mb-5">
                     <Button
                         variant="ghost"
                         onClick={() => router.push('/panel')}
@@ -242,11 +257,11 @@ export default function TeamDetailPage({ params }: PageProps) {
 
                     <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
                         <div className="flex-1">
-                            <h1 className="text-3xl font-bold tracking-[-0.035em]">{currentTeam.name}</h1>
+                            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{currentTeam.name}</h1>
                             {currentTeam.description && (
                                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{currentTeam.description}</p>
                             )}
-                            <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+                            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-1">
                                     <Calendar className="w-4 h-4" />
                                     <span>
@@ -273,9 +288,9 @@ export default function TeamDetailPage({ params }: PageProps) {
                 </div>
 
                 {/* Members Section */}
-                <Card className="mt-6">
+                <Card className="mt-5">
                     <CardHeader className="border-b">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <CardTitle>Takım Üyeleri</CardTitle>
                                 <CardDescription>
@@ -319,9 +334,9 @@ export default function TeamDetailPage({ params }: PageProps) {
                 </Card>
 
                 {/* Tasks Section */}
-                <Card className="mt-5">
+                <Card className="mt-4">
                     <CardHeader className="border-b">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <CardTitle>Görevler</CardTitle>
                                 <CardDescription>
@@ -347,19 +362,36 @@ export default function TeamDetailPage({ params }: PageProps) {
                                 <p className="text-sm text-muted-foreground">Henüz görev yok</p>
                             </div>
                         ) : (
-                            <div className="space-y-2">
-                                {tasks.map((task) => (
-                                    <TaskListItem
-                                        key={task.id}
-                                        task={task}
-                                        isAdmin={isAdmin}
-                                        currentUserId={user?.id || 0}
-                                        onEdit={handleEditTaskClick}
-                                        onDelete={handleDeleteTaskClick}
-                                        isUpdating={isSubmittingTask}
-                                    />
-                                ))}
-                            </div>
+                            <>
+                                <TaskFilterBar
+                                    filters={taskFilters}
+                                    onChange={setTaskFilters}
+                                    resultCount={visibleTasks.length}
+                                    totalCount={tasks.length}
+                                    searchPlaceholder="Görev veya kişi ara..."
+                                    assignees={taskAssignees}
+                                />
+                                {visibleTasks.length === 0 ? (
+                                    <div className="py-10 text-center">
+                                        <p className="text-sm font-medium">Eşleşen görev bulunamadı</p>
+                                        <p className="mt-1 text-xs text-muted-foreground">Aramanızı veya filtrelerinizi değiştirebilirsiniz.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {visibleTasks.map((task) => (
+                                            <TaskListItem
+                                                key={task.id}
+                                                task={task}
+                                                isAdmin={isAdmin}
+                                                currentUserId={user?.id || 0}
+                                                onEdit={handleEditTaskClick}
+                                                onDelete={handleDeleteTaskClick}
+                                                isUpdating={isSubmittingTask}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </>
                         )}
                     </CardContent>
                 </Card>
@@ -433,4 +465,3 @@ export default function TeamDetailPage({ params }: PageProps) {
         </main>
     );
 }
-

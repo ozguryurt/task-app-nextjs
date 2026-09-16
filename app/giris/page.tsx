@@ -34,19 +34,17 @@ function LoginPage() {
     };
 
     return (
-        <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-            <div className="subtle-grid absolute inset-0 -z-10 opacity-70 [mask-image:radial-gradient(circle_at_center,black,transparent_75%)]" />
-            <div className="absolute left-1/2 top-1/3 -z-10 size-[28rem] -translate-x-1/2 rounded-full bg-primary/12 blur-[110px]" />
-            <Card className="w-full max-w-sm border-white/90 bg-white/85 shadow-[0_24px_80px_rgba(46,40,100,0.13)]">
+        <div className="auth-shell">
+            <Card className="auth-card w-full max-w-sm">
                 <CardHeader className="text-center">
-                    <Link href="/" className="mx-auto mb-3 flex size-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20"><Layers3 className="size-5" /></Link>
-                    <CardTitle className="text-xl">Tekrar hoş geldiniz</CardTitle>
+                    <Link href="/" className="mx-auto mb-3 flex size-9 items-center justify-center rounded-md bg-primary text-white"><Layers3 className="size-4" /></Link>
+                    <CardTitle className="text-lg">Tekrar hoş geldiniz</CardTitle>
                     <CardDescription>
                         Çalışma alanınıza devam etmek için giriş yapın.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="flex flex-col gap-4">
                             {/* E-posta */}
                             <div className="grid gap-2">
@@ -69,7 +67,7 @@ function LoginPage() {
                                     <Label htmlFor="password">Şifre</Label>
                                     <Link
                                         href="/sifremi-unuttum"
-                                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                                        className="ml-auto inline-block text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
                                     >
                                         Şifremi unuttum
                                     </Link>

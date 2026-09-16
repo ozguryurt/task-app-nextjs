@@ -52,12 +52,11 @@ export default function ForgotPasswordPage() {
     };
 
     return (
-        <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-            <div className="subtle-grid absolute inset-0 -z-10 opacity-70 [mask-image:radial-gradient(circle_at_center,black,transparent_75%)]" />
-            <Card className="w-full max-w-sm border-white/90 bg-white/85 shadow-[0_24px_80px_rgba(46,40,100,0.13)]">
+        <div className="auth-shell">
+            <Card className="auth-card w-full max-w-sm">
                 <CardHeader className="text-center">
-                    <Link href="/" className="mx-auto mb-3 flex size-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20"><Layers3 className="size-5" /></Link>
-                    <CardTitle className="text-xl">Erişiminizi geri alın</CardTitle>
+                    <Link href="/" className="mx-auto mb-3 flex size-9 items-center justify-center rounded-md bg-primary text-white"><Layers3 className="size-4" /></Link>
+                    <CardTitle className="text-lg">Erişiminizi geri alın</CardTitle>
                     <CardDescription>
                         E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim.
                     </CardDescription>
@@ -95,4 +94,3 @@ export default function ForgotPasswordPage() {
         </div>
     )
 }
-

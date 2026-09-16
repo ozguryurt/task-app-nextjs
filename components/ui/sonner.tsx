@@ -38,17 +38,16 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
-          "--border-radius": "1rem",
+          "--border-radius": "0.625rem",
         } as React.CSSProperties
       }
       toastOptions={{
         classNames: {
-          toast:
-            "border backdrop-blur-xl shadow-[0_1px_2px_rgba(20,20,50,0.04),0_16px_40px_rgba(40,35,90,0.14)]",
+          toast: "border shadow-[0_6px_24px_rgba(20,27,50,0.1)]",
           title: "text-sm font-semibold",
           description: "text-xs",
-          actionButton: "rounded-lg",
-          cancelButton: "rounded-lg",
+          actionButton: "rounded-md",
+          cancelButton: "rounded-md",
         },
       }}
       {...props}
@@ -57,4 +56,3 @@ const Toaster = ({ ...props }: ToasterProps) => {
 }
 
 export { Toaster }
-

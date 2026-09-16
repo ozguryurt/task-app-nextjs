@@ -93,33 +93,33 @@ function VerifyEmailContent() {
 
     const renderIcon = () => {
         if (status === 'loading') {
-            return <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />;
+            return <Loader2 className="size-8 animate-spin text-primary" />;
         }
 
         if (status === 'success') {
-            return <MailCheck className="w-12 h-12 text-green-500" />;
+            return <MailCheck className="size-8 text-emerald-600" />;
         }
 
         if (status === 'error') {
-            return <MailWarning className="w-12 h-12 text-amber-500" />;
+            return <MailWarning className="size-8 text-amber-600" />;
         }
 
-        return <MailWarning className="w-12 h-12 text-muted-foreground/50" />;
+        return <MailWarning className="size-8 text-muted-foreground/50" />;
     };
 
     return (
-        <div className="subtle-grid min-h-screen flex items-center justify-center px-4 py-12">
-            <Card className="w-full max-w-xl border-white/90 bg-white/85 shadow-[0_24px_80px_rgba(46,40,100,0.13)]">
-                <CardHeader className="text-center space-y-2">
-                    <div className="flex justify-center mb-4">{renderIcon()}</div>
-                    <CardTitle className="text-2xl">E-posta Doğrulama</CardTitle>
+        <div className="auth-shell">
+            <Card className="auth-card w-full max-w-lg">
+                <CardHeader className="space-y-2 text-center">
+                    <div className="mb-2 flex justify-center">{renderIcon()}</div>
+                    <CardTitle className="text-lg">E-posta Doğrulama</CardTitle>
                     <CardDescription>
                         {status === 'success'
                             ? 'Hesabınız başarıyla doğrulandı. Hemen giriş yapabilirsiniz.'
                             : 'Hesabınızı aktive etmek için e-posta adresinizi doğrulayın.'}
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-4">
                     {status === 'loading' && (
                         <p className="text-center text-sm text-muted-foreground">Doğrulama işlemi devam ediyor...</p>
                     )}
@@ -156,11 +156,11 @@ function VerifyEmailContent() {
                             <div className="space-y-1 text-center text-sm text-muted-foreground">
                                 <p>E-posta adresinizi yanlış yazdıysanız yeni bir hesap oluşturabilirsiniz.</p>
                                 <div className="flex justify-center gap-2">
-                                    <Link href="/giris" className="text-blue-600 hover:underline">
+                                    <Link href="/giris" className="text-primary hover:underline">
                                         Giriş Yap
                                     </Link>
                                     <span>·</span>
-                                    <Link href="/kayit" className="text-blue-600 hover:underline">
+                                    <Link href="/kayit" className="text-primary hover:underline">
                                         Yeni Hesap Oluştur
                                     </Link>
                                 </div>
@@ -178,7 +178,7 @@ export default function VerifyEmailPage() {
         <Suspense
             fallback={(
                 <div className="min-h-screen flex items-center justify-center">
-                    <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+                    <Loader2 className="size-8 animate-spin text-primary" />
                 </div>
             )}
         >
@@ -186,4 +186,3 @@ export default function VerifyEmailPage() {
         </Suspense>
     );
 }
-
