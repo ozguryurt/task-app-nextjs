@@ -27,7 +27,7 @@ export default function Home() {
 
       <section className="relative">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[0.92fr_1.08fr] lg:py-24">
-          <div className="max-w-xl">
+          <div className="motion-reveal max-w-xl">
             <Badge variant="outline" className="mb-5 rounded-full border-border bg-card px-3 py-1 text-muted-foreground">
               Ekip yönetimi, sadeleştirildi
             </Badge>
@@ -48,7 +48,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-2xl lg:mx-0">
+          <div className="motion-reveal relative mx-auto w-full max-w-2xl [animation-delay:100ms] lg:mx-0">
             <Card className="overflow-hidden border-border bg-card p-0 shadow-[0_18px_45px_rgba(23,31,59,0.08)]">
               <div className="flex h-10 items-center justify-between border-b bg-muted/40 px-4">
                 <div className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-muted-foreground/30" /><span className="size-1.5 rounded-full bg-muted-foreground/30" /><span className="size-1.5 rounded-full bg-muted-foreground/30" /></div>
@@ -67,7 +67,7 @@ export default function Home() {
           <div><p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">Temel özellikler</p><h2 className="mt-2 text-2xl font-semibold tracking-tight">Ekibiniz için gereken netlik</h2></div>
           <p className="max-w-md text-sm leading-6 text-muted-foreground">Dağınık konuşmaları, belirsiz sorumlulukları ve kaçan teslim tarihlerini geride bırakın.</p>
         </div>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="motion-stagger grid gap-3 md:grid-cols-3">
           {features.map(({ icon: Icon, title, description }) => (
             <Card key={title} className="transition-colors hover:border-primary/25">
               <CardContent>

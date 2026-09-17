@@ -60,7 +60,7 @@ export default function DashboardPage() {
                     <Button onClick={() => setIsCreateDialogOpen(true)}><Plus /> Yeni takım</Button>
                 </div>
 
-                <section className="mb-4 grid gap-3 sm:grid-cols-3">
+                <section className="motion-stagger mb-4 grid gap-3 sm:grid-cols-3">
                     <Card className="py-3"><CardContent className="flex items-center justify-between"><div><p className="text-xs text-muted-foreground">Takımlar</p><p className="mt-1 text-xl font-semibold tracking-tight">{teams.length}</p></div><Users className="size-4 text-muted-foreground" /></CardContent></Card>
                     <Card className="py-3"><CardContent className="flex items-center justify-between"><div><p className="text-xs text-muted-foreground">Aktif görevler</p><p className="mt-1 text-xl font-semibold tracking-tight">{activeTasks.length}</p></div><ClipboardList className="size-4 text-muted-foreground" /></CardContent></Card>
                     <Card className="py-3"><CardContent className="flex items-center justify-between"><div><p className="text-xs text-muted-foreground">Tamamlanan</p><p className="mt-1 text-xl font-semibold tracking-tight">{completedTasks.length}</p></div><CheckCircle2 className="size-4 text-muted-foreground" /></CardContent></Card>
@@ -89,7 +89,7 @@ export default function DashboardPage() {
                                             <p className="mt-1 text-xs text-muted-foreground">Aramanızı veya filtrelerinizi değiştirebilirsiniz.</p>
                                         </div>
                                     ) : (
-                                        <div className="max-h-[480px] space-y-1 overflow-y-auto pr-1">
+                                        <div className="motion-stagger max-h-[480px] space-y-1 overflow-y-auto pr-1">
                                             {visibleTasks.map((task) => <UserTaskItem key={task.id} task={task} />)}
                                         </div>
                                     )}
@@ -115,7 +115,7 @@ export default function DashboardPage() {
                         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{[1,2,3].map((item) => <div key={item} className="h-32 animate-pulse rounded-xl bg-muted" />)}</div>
                     ) : teams.length === 0 ? (
                         <Card><CardContent className="flex flex-col items-center py-9 text-center"><span className="mb-3 flex size-9 items-center justify-center rounded-md bg-secondary text-primary"><Users className="size-4" /></span><h3 className="font-semibold">İlk takımını oluştur</h3><p className="mb-4 mt-1 max-w-sm text-sm text-muted-foreground">Ekip arkadaşlarını davet et, görevleri paylaş ve ilerlemeyi tek yerden takip et.</p><Button onClick={() => setIsCreateDialogOpen(true)}><Plus /> Takım oluştur</Button></CardContent></Card>
-                    ) : <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{teams.map((team) => <TeamCard key={team.id} team={team} />)}</div>}
+                    ) : <div className="motion-stagger grid gap-4 md:grid-cols-2 lg:grid-cols-3">{teams.map((team) => <TeamCard key={team.id} team={team} />)}</div>}
                 </section>
 
                 <CreateTeamDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} onSuccess={fetchTeams} />

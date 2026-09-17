@@ -12,8 +12,8 @@ interface TeamCardProps {
 
 export function TeamCard({ team }: TeamCardProps) {
     return (
-        <Link href={`/panel/takimlar/${team.id}`} className="block h-full">
-            <Card className="group h-full cursor-pointer transition-colors hover:border-primary/30">
+        <Link href={`/panel/takimlar/${team.id}`} className="block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40">
+            <Card className="group h-full cursor-pointer hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_14px_34px_rgba(23,31,59,0.08)] active:translate-y-0">
                 <CardHeader className="pb-1">
                     <div className="flex items-start justify-between">
                         <div className="min-w-0 flex-1">
@@ -39,7 +39,7 @@ export function TeamCard({ team }: TeamCardProps) {
                             <span>{new Date(team.created_at).toLocaleDateString('tr-TR')}</span>
                         </div>
                       </div>
-                      <ArrowUpRight className="size-4 group-hover:text-primary" />
+                      <ArrowUpRight className="size-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
                     </div>
                 </CardContent>
             </Card>

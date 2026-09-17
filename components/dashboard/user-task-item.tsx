@@ -46,7 +46,7 @@ export function UserTaskItem({ task }: UserTaskItemProps) {
     return (
         <button
             type="button"
-            className="group w-full rounded-md border border-transparent bg-muted/60 p-3 text-left transition-colors hover:border-border hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            className="motion-row group w-full rounded-md border border-transparent bg-muted/60 p-3 text-left hover:border-border hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:translate-y-0"
             onClick={handleClick}
         >
                 <div className="flex items-start justify-between gap-3">

@@ -18,7 +18,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
                 ref={ref}
                 role="alert"
                 className={cn(
-                    "relative w-full rounded-lg border px-4 py-3 text-sm",
+                    "motion-reveal relative w-full rounded-lg border px-4 py-3 text-sm",
                     variantStyles[variant],
                     className
                 )}

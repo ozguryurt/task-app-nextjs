@@ -32,7 +32,7 @@ export function SiteFooter({ className }: { className?: string }) {
                     <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground/80">Ürün</h3>
                     <ul className="mt-4 space-y-2.5">
                         {productLinks.map((link) => (
-                            <li key={link.href}>
+                            <li key={link.href} className="transition-transform duration-200 hover:translate-x-0.5">
                                 <Link
                                     href={link.href}
                                     className="text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"

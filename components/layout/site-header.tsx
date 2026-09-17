@@ -9,10 +9,10 @@ import { cn } from '@/lib/utils';
  */
 export function SiteHeader({ className }: { className?: string }) {
     return (
-        <header className={cn('relative z-20 border-b border-border bg-card/90 backdrop-blur-md', className)}>
+        <header className={cn('motion-reveal relative z-20 border-b border-border bg-card/90 backdrop-blur-md', className)}>
             <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5 sm:px-8">
-                <Link href="/" className="flex items-center gap-2.5">
-                    <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                <Link href="/" className="group flex items-center gap-2.5">
+                    <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground transition-transform duration-300 ease-out group-hover:rotate-3 group-hover:scale-105">
                         <Layers3 className="size-4" />
                     </span>
                     <span className="text-[15px] font-bold tracking-tight">{SITE_INFO.brand}</span>

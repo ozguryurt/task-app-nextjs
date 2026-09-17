@@ -316,7 +316,7 @@ export default function TeamDetailPage({ params }: PageProps) {
                                 <p className="text-sm text-muted-foreground">Henüz üye yok</p>
                             </div>
                         ) : (
-                            <div className="space-y-1">
+                            <div className="motion-stagger space-y-1">
                                 {currentTeamMembers.map((member) => (
                                     <MemberListItem
                                         key={member.id}
@@ -377,7 +377,7 @@ export default function TeamDetailPage({ params }: PageProps) {
                                         <p className="mt-1 text-xs text-muted-foreground">Aramanızı veya filtrelerinizi değiştirebilirsiniz.</p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-2">
+                                    <div className="motion-stagger space-y-2">
                                         {visibleTasks.map((task) => (
                                             <TaskListItem
                                                 key={task.id}

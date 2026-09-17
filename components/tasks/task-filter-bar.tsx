@@ -39,7 +39,7 @@ export function TaskFilterBar({
     const isFiltered = hasActiveTaskFilters(filters);
 
     return (
-        <div className="mb-4 space-y-2.5 border-b pb-4">
+        <div className="motion-reveal mb-4 space-y-2.5 border-b pb-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <div className="relative min-w-0 flex-1 sm:min-w-52">
                     <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
