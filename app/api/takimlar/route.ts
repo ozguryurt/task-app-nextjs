@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyJWT } from '@/lib/jwt-helpers';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { rejectOversizedRequest } from '@/lib/security';
 
 // Kullanıcının tüm takımlarını çek
 export async function GET(request: NextRequest) {
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const result = verifyJWT(token);
+        const result = await verifyJWT(token);
         if (!result.valid || !result.payload) {
             return NextResponse.json(
                 { error: result.error || 'Geçersiz token' },
@@ -58,6 +59,9 @@ export async function GET(request: NextRequest) {
 // Yeni takım oluştur
 export async function POST(request: NextRequest) {
     try {
+        const rejectedBody = rejectOversizedRequest(request);
+        if (rejectedBody) return rejectedBody;
+
         const token = request.cookies.get('auth-token')?.value;
 
         if (!token) {
@@ -67,7 +71,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const result = verifyJWT(token);
+        const result = await verifyJWT(token);
         if (!result.valid || !result.payload) {
             return NextResponse.json(
                 { error: result.error || 'Geçersiz token' },
@@ -77,17 +81,18 @@ export async function POST(request: NextRequest) {
 
         const userId = result.payload.userId;
         const body = await request.json();
-        const { name, description } = body;
+        const name = typeof body.name === 'string' ? body.name.trim() : '';
+        const description = typeof body.description === 'string' ? body.description.trim() : '';
 
         // Validasyon
-        if (!name || name.trim().length === 0) {
+        if (!name) {
             return NextResponse.json(
                 { error: 'Takım adı zorunludur' },
                 { status: 400 }
             );
         }
 
-        if (name.length > 255) {
+        if (name.length > 255 || description.length > 10_000) {
             return NextResponse.json(
                 { error: 'Takım adı çok uzun' },
                 { status: 400 }
@@ -103,7 +108,7 @@ export async function POST(request: NextRequest) {
             // Takımı oluştur
             const [result] = await connection.query<ResultSetHeader>(
                 'INSERT INTO teams (name, description, created_by) VALUES (?, ?, ?)',
-                [name.trim(), description?.trim() || null, userId]
+                [name, description || null, userId]
             );
 
             const teamId = result.insertId;

@@ -47,9 +47,11 @@ MySQL sunucusu, npm ve Node.js gerekir. Next.js 16 için en az Node.js **20.9.0*
    ```sql
    USE `task-app-nextjs`;
    SOURCE database/migrations/001_expand_password_hash_column.sql;
+   SOURCE database/migrations/002_add_session_version.sql;
+   SOURCE database/migrations/003_add_verification_attempts.sql;
    ```
 
-   Migrasyon mevcut hash'leri topluca dönüştürmez. Eski SHA-256 kayıtları, kullanıcı doğru şifreyle ilk kez giriş yaptığında otomatik olarak bcrypt'e yükseltilir.
+   İlk migrasyon mevcut hash'leri topluca dönüştürmez. Eski SHA-256 kayıtları, kullanıcı doğru şifreyle ilk kez giriş yaptığında otomatik olarak bcrypt'e yükseltilir. İkinci migrasyon, şifre değiştiğinde eski JWT oturumlarını iptal edebilmek için `session_version` alanını ekler. Üçüncü migrasyon, 6 haneli kodlarda kod başına deneme sınırını kalıcı olarak tutar.
 
 3. [`env.example`](env.example) dosyasını `.env.local` olarak kopyalayıp kendi değerlerinizi girin. PowerShell'de:
 
@@ -57,7 +59,7 @@ MySQL sunucusu, npm ve Node.js gerekir. Next.js 16 için en az Node.js **20.9.0*
    Copy-Item env.example .env.local
    ```
 
-   macOS/Linux'ta `cp env.example .env.local` kullanabilirsiniz. Özellikle `DB_*` değişkenlerini ve tahmin edilmesi güç, benzersiz bir `JWT_SECRET` değerini ayarlayın. `NEXT_PUBLIC_APP_URL` yerelde `http://localhost:3000` olabilir.
+   macOS/Linux'ta `cp env.example .env.local` kullanabilirsiniz. Özellikle `DB_*` değişkenlerini ve tahmin edilmesi güç, benzersiz `JWT_SECRET` / `OTP_SECRET` değerlerini ayarlayın.
 
 4. Geliştirme sunucusunu başlatın:
 
@@ -72,8 +74,8 @@ MySQL sunucusu, npm ve Node.js gerekir. Next.js 16 için en az Node.js **20.9.0*
 | Değişken | Amaç |
 | --- | --- |
 | `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | MySQL bağlantısı. |
-| `JWT_SECRET` | JWT imzalama/doğrulama anahtarı; canlı ortamda mutlaka güçlü bir değer verin. |
-| `NEXT_PUBLIC_APP_URL` | E-posta doğrulama bağlantılarında kullanılan uygulama adresi. |
+| `JWT_SECRET` | JWT imzalama/doğrulama anahtarı; uygulama en az 32 karakterlik bir değer olmadan oturum üretmez. |
+| `OTP_SECRET` | 6 haneli kodları HMAC ile korur; boşsa `JWT_SECRET` kullanılır. Canlı ortamda ayrı ve en az 32 karakterlik değer önerilir. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` | Doğrulama e-postasının SMTP üzerinden gönderimi. |
 | `NODE_ENV` | Ortam türü; normalde Next.js tarafından belirlenir. |
 
@@ -85,8 +87,8 @@ MySQL sunucusu, npm ve Node.js gerekir. Next.js 16 için en az Node.js **20.9.0*
 | --- | --- |
 | `/` | Açılış sayfası. |
 | `/kayit`, `/giris` | Hesap oluşturma ve giriş. |
-| `/eposta-dogrulama` | E-posta doğrulama. |
-| `/sifremi-unuttum` | Şifre sıfırlama talebi arayüzü; aşağıdaki sınırlamaya bakın. |
+| `/eposta-dogrulama` | E-posta adresi ve 6 haneli kodla hesap doğrulama. |
+| `/sifremi-unuttum` | Kod isteme ve kodla yeni şifre belirleme. |
 | `/panel` | Takımlar ve kullanıcıya atanan görevler. |
 | `/panel/takimlar/[takimId]` | Takım üyeleri ve görevleri. |
 
@@ -103,9 +105,9 @@ Tüm yollar `/api` önekini kullanır. Korumalı uçlar oturum çerezini gerekti
 | POST | `/kimlik/kayit` | Kayıt. |
 | POST | `/kimlik/giris` | Giriş. |
 | POST | `/kimlik/cikis` | Çıkış. |
-| GET, POST | `/kimlik/eposta-dogrulama` | E-posta doğrulama / yeniden doğrulama talebi. |
-| POST | `/kimlik/sifremi-unuttum` | Şifre sıfırlama token'ı oluşturma; aşağıdaki uyarıya bakın. |
-| GET, POST | `/kimlik/sifre-sifirla` | Token doğrulama / yeni şifre belirleme. |
+| POST | `/kimlik/eposta-dogrulama` | Kod yoksa yeni kod gönderme; `email` ve `code` varsa hesabı doğrulama. |
+| POST | `/kimlik/sifremi-unuttum` | E-posta adresine 6 haneli şifre sıfırlama kodu gönderme. |
+| POST | `/kimlik/sifre-sifirla` | E-posta, kod ve yeni şifreyle parolayı güncelleme. |
 | GET, POST | `/takimlar` | Takımları listeleme / oluşturma. |
 | GET, PUT, DELETE | `/takimlar/[takimId]` | Takım detayı / güncelleme / silme. |
 | GET, POST | `/takimlar/[takimId]/uyeler` | Üyeleri listeleme / ekleme. |
@@ -125,11 +127,11 @@ Content-Type: application/json
 
 ## Şifreler ve güvenlik durumu
 
-Yeni parolalar `bcryptjs` ile **12 maliyet faktörü** kullanılarak hash'lenir; düz metin veya yeni SHA-256 hash'i saklanmaz. Parola en az 8 karakter olmalı; büyük harf, küçük harf ve rakam içermeli ve bcrypt sınırı nedeniyle UTF-8 olarak 72 baytı aşmamalıdır. Eski SHA-256 hash'leri yalnızca geçiş dönemi için doğrulanır ve başarılı girişte bcrypt'e çevrilir.
+Yeni parolalar `bcryptjs` ile **12 maliyet faktörü** kullanılarak hash'lenir; düz metin veya yeni SHA-256 hash'i saklanmaz. Parola en az 8 karakter olmalı; büyük harf, küçük harf ve rakam içermeli ve bcrypt sınırı nedeniyle UTF-8 olarak 72 baytı aşmamalıdır. Eski SHA-256 hash'leri yalnızca geçiş dönemi için doğrulanır ve başarılı girişte bcrypt'e çevrilir. E-posta doğrulama ve şifre sıfırlama kodları 6 hanelidir, 5 dakika geçerlidir, kod başına en fazla 5 deneme kabul edilir ve veritabanında sunucu anahtarlı HMAC özeti olarak saklanır.
 
-Oturum JWT'si `auth-token` adlı `httpOnly`, `SameSite=Lax` çerezde saklanır; `Secure` niteliği canlı ortamda etkinleşir ve çerez 7 gün geçerlidir. Canlı ortam için HTTPS ve güçlü bir `JWT_SECRET` gereklidir.
+Oturum JWT'si `auth-token` adlı `httpOnly`, `SameSite=Lax` çerezde saklanır; `Secure` niteliği canlı ortamda etkinleşir ve çerez 7 gün geçerlidir. Token algoritması, yayıncı ve hedef kitle değerleri doğrulanır; kullanıcı devre dışı bırakıldığında veya şifresi değiştiğinde mevcut oturum reddedilir. Canlı ortam için HTTPS ve güçlü bir `JWT_SECRET` gereklidir.
 
-**Bilinen eksik:** Şifre sıfırlama talebi şu anda e-posta göndermez; token'ı API yanıtında döndürür. Bu davranış canlı ortam için uygun değildir. Sıfırlama akışını üretimde kullanmadan önce token'ı yalnızca e-posta ile ileten güvenli gönderim akışı ve kullanıcı arayüzü tamamlanmalı, yanıt içindeki token kaldırılmalıdır. Doğrulama e-postalarının gönderimi ise SMTP yapılandırmasına bağlıdır.
+Kimlik uçlarında istek hız sınırlaması, durum değiştiren API isteklerinde aynı kaynak kontrolü, 32 KB gövde sınırı ve uygulama genelinde CSP, HSTS, clickjacking/MIME/referrer güvenlik başlıkları bulunur. Şifre sıfırlama ve doğrulama e-postalarının gönderimi SMTP yapılandırmasına bağlıdır. Uygulama birden fazla sunucu örneğinde çalıştırılacaksa bellek içi hız sınırlayıcı yerine Redis gibi ortak bir depo kullanılmalıdır.
 
 ## Proje yapısı
 
@@ -154,7 +156,7 @@ npm run build
 npm run start
 npm run lint
 npx tsc --noEmit
-node --experimental-strip-types --test tests/task-filters.test.mjs
+node --experimental-strip-types --test tests/task-filters.test.mjs tests/security.test.mjs
 ```
 
-`npm run start`, önceden alınmış üretim derlemesini başlatır. Filtre testi, `lib/task-filters.ts` içindeki arama, filtreleme ve sıralamayı sınar. Mevcut TypeScript 7 / ESLint araç zinciri uyumsuzluğu nedeniyle `npm run lint` bazı ortamlarda yapılandırma aşamasında hata verebilir; bu, lint kontrolünün geçtiği anlamına gelmez.
+`npm run start`, önceden alınmış üretim derlemesini başlatır. Node test komutu, görev filtreleri ile güvenlik yardımcılarının doğrulamalarını çalıştırır.

@@ -13,15 +13,5 @@ const pool = mysql.createPool({
     keepAliveInitialDelay: 0
 });
 
-// Bağlantı testi
-pool.getConnection()
-    .then(connection => {
-        //console.log('✅ MySQL bağlantısı başarılı');
-        connection.release();
-    })
-    .catch(err => {
-        console.error('❌ MySQL bağlantı hatası:', err.message);
-    });
-
 export default pool;
 

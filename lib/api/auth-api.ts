@@ -23,8 +23,14 @@ interface ForgotPasswordData {
 }
 
 interface ResetPasswordData {
-    token: string;
+    email: string;
+    code: string;
     newPassword: string;
+}
+
+interface EmailCodeData {
+    email: string;
+    code: string;
 }
 
 interface VerifyEmailData {
@@ -76,10 +82,11 @@ export async function loginUser(data: LoginData) {
     });
 }
 
-// E-posta doğrulama (token ile)
-export async function verifyEmail(token: string) {
-    return apiRequest(`/eposta-dogrulama?token=${token}`, {
-        method: 'GET',
+// E-posta doğrulama (6 haneli kod ile)
+export async function verifyEmail(data: EmailCodeData) {
+    return apiRequest('/eposta-dogrulama', {
+        method: 'POST',
+        body: JSON.stringify(data),
     });
 }
 
@@ -99,13 +106,6 @@ export async function forgotPassword(data: ForgotPasswordData) {
     });
 }
 
-// Şifre sıfırlama token doğrulama
-export async function verifyResetToken(token: string) {
-    return apiRequest(`/sifre-sifirla?token=${token}`, {
-        method: 'GET',
-    });
-}
-
 // Yeni şifre belirleme
 export async function resetPassword(data: ResetPasswordData) {
     return apiRequest('/sifre-sifirla', {
@@ -118,6 +118,7 @@ export async function resetPassword(data: ResetPasswordData) {
 export async function logoutUser() {
     return apiRequest('/cikis', {
         method: 'POST',
+        cache: 'no-store',
     });
 }
 

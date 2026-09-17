@@ -14,13 +14,16 @@ CREATE TABLE IF NOT EXISTS users (
     email_verified BOOLEAN DEFAULT FALSE,
     email_verification_token VARCHAR(255) DEFAULT NULL,
     email_verification_expires DATETIME DEFAULT NULL,
+    email_verification_attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
     
     -- Şifre sıfırlama alanları
     password_reset_token VARCHAR(255) DEFAULT NULL,
     password_reset_expires DATETIME DEFAULT NULL,
+    password_reset_attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
     
     -- Hesap durumu
     is_active BOOLEAN DEFAULT TRUE,
+    session_version INT UNSIGNED NOT NULL DEFAULT 0,
     
     -- Zaman verileri
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

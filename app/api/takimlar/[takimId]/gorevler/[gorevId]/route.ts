@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { verifyJWT } from '@/lib/jwt-helpers';
+import { updateTaskSchema } from '@/lib/validations/task-schema';
+import { rejectOversizedRequest } from '@/lib/security';
 
 interface TaskRow extends RowDataPacket {
     id: number;
@@ -55,7 +57,7 @@ export async function GET(
             );
         }
 
-        const { valid, payload, error } = verifyJWT(token);
+        const { valid, payload, error } = await verifyJWT(token);
         if (!valid || !payload) {
             return NextResponse.json(
                 { error: error || 'Geçersiz token' },
@@ -119,6 +121,9 @@ export async function PUT(
     { params }: { params: Promise<{ takimId: string; gorevId: string }> }
 ) {
     try {
+        const rejectedBody = rejectOversizedRequest(request);
+        if (rejectedBody) return rejectedBody;
+
         const { takimId: teamId, gorevId: taskId } = await params;
         const teamIdNum = parseInt(teamId);
         const taskIdNum = parseInt(taskId);
@@ -139,7 +144,7 @@ export async function PUT(
             );
         }
 
-        const { valid, payload, error } = verifyJWT(token);
+        const { valid, payload, error } = await verifyJWT(token);
         if (!valid || !payload) {
             return NextResponse.json(
                 { error: error || 'Geçersiz token' },
@@ -188,7 +193,28 @@ export async function PUT(
             );
         }
 
-        const body = await request.json();
+        const rawBody: unknown = await request.json();
+        const parsedBody = updateTaskSchema.safeParse(rawBody);
+        if (!parsedBody.success) {
+            return NextResponse.json(
+                { error: parsedBody.error.issues[0]?.message || 'Geçersiz görev verisi' },
+                { status: 400 }
+            );
+        }
+
+        const body = parsedBody.data;
+
+        // Atanan kişi yalnızca kendi görevinin durumunu değiştirebilir.
+        if (!isAdmin && !isTaskCreator) {
+            const attemptedFields = Object.keys(body);
+            if (attemptedFields.some((field) => field !== 'status')) {
+                return NextResponse.json(
+                    { error: 'Atanan kullanıcı yalnızca görev durumunu güncelleyebilir' },
+                    { status: 403 }
+                );
+            }
+        }
+
         const {
             assigned_to,
             title,
@@ -225,11 +251,11 @@ export async function PUT(
         }
         if (title !== undefined) {
             updateFields.push('title = ?');
-            updateValues.push(title);
+            updateValues.push(title.trim());
         }
         if (description !== undefined) {
             updateFields.push('description = ?');
-            updateValues.push(description || null);
+            updateValues.push(description?.trim() || null);
         }
         if (status !== undefined) {
             updateFields.push('status = ?');
@@ -328,7 +354,7 @@ export async function DELETE(
             );
         }
 
-        const { valid, payload, error } = verifyJWT(token);
+        const { valid, payload, error } = await verifyJWT(token);
         if (!valid || !payload) {
             return NextResponse.json(
                 { error: error || 'Geçersiz token' },
@@ -394,4 +420,3 @@ export async function DELETE(
         );
     }
 }
-

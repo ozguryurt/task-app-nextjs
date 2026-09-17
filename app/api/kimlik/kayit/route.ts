@@ -1,16 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { hashPassword, generateToken, isValidEmail, isValidPassword, getTokenExpiry } from '@/lib/auth-helpers';
-import { RowDataPacket } from 'mysql2';
+import { generateVerificationCode, getCodeExpiry, hashPassword, isValidEmail, isValidPassword } from '@/lib/auth-helpers';
+import type { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { sendVerificationEmail } from '@/lib/email';
+import { enforceRateLimit } from '@/lib/rate-limit';
+import { hashOneTimeCode, normalizeEmail, rejectOversizedRequest } from '@/lib/security';
 
 export async function POST(request: NextRequest) {
     try {
+        const rejectedBody = rejectOversizedRequest(request);
+        if (rejectedBody) return rejectedBody;
+
+        const rateLimited = enforceRateLimit(request, {
+            scope: 'register',
+            limit: 5,
+            windowMs: 60 * 60 * 1000,
+        });
+        if (rateLimited) return rateLimited;
+
         const body = await request.json();
-        const { email, password, name } = body;
+        const email = normalizeEmail(body.email);
+        const password = typeof body.password === 'string' ? body.password : '';
+        const name = typeof body.name === 'string' ? body.name.trim() : '';
 
         // Validasyon kontrolü
-        if (!email || !password || !name) {
+        if (!email || !password || !name || name.length > 255) {
             return NextResponse.json(
                 { success: false, message: 'Tüm alanları doldurunuz' },
                 { status: 400 }
@@ -52,37 +66,30 @@ export async function POST(request: NextRequest) {
         // Şifreyi hashle
         const hashedPassword = await hashPassword(password);
 
-        // E-posta doğrulama token'ı oluştur
-        const verificationToken = generateToken();
-        const verificationExpiry = getTokenExpiry(24); // 24 saat geçerli
+        const verificationCode = generateVerificationCode();
+        const verificationExpiry = getCodeExpiry();
 
         // Kullanıcıyı veritabanına ekle (SQL Injection korumalı - Prepared Statement)
-        const [result] = await pool.query(
+        const [result] = await pool.query<ResultSetHeader>(
             `INSERT INTO users 
-        (email, password, name, email_verification_token, email_verification_expires) 
-       VALUES (?, ?, ?, ?, ?)`,
-            [email, hashedPassword, name, verificationToken, verificationExpiry]
+        (email, password, name, email_verification_token, email_verification_expires, email_verification_attempts)
+       VALUES (?, ?, ?, ?, ?, 0)`,
+            [email, hashedPassword, name, hashOneTimeCode(email, 'email-verification', verificationCode), verificationExpiry]
         );
-
-        const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/eposta-dogrulama?token=${verificationToken}`;
 
         try {
             await sendVerificationEmail({
                 to: email,
                 name,
-                verificationLink,
+                code: verificationCode,
             });
         } catch (emailError) {
             console.error('Doğrulama e-postası gönderilemedi:', emailError);
         }
 
-        const responseData: Record<string, unknown> = {
-            userId: (result as any).insertId,
+        const responseData = {
+            userId: result.insertId,
         };
-
-        if (process.env.NODE_ENV === 'development') {
-            responseData.verificationToken = verificationToken;
-        }
 
         return NextResponse.json(
             {
@@ -93,13 +100,12 @@ export async function POST(request: NextRequest) {
             { status: 201 }
         );
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Kayıt hatası:', error);
         return NextResponse.json(
             {
                 success: false,
                 message: 'Kayıt sırasında bir hata oluştu',
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
             },
             { status: 500 }
         );

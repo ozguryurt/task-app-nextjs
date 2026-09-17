@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyJWT } from '@/lib/jwt-helpers';
 import { RowDataPacket } from 'mysql2';
+import { isValidEmail } from '@/lib/auth-helpers';
+import { normalizeEmail, rejectOversizedRequest } from '@/lib/security';
 
 // Takım üyelerini çek
 export async function GET(
@@ -19,7 +21,7 @@ export async function GET(
             );
         }
 
-        const result = verifyJWT(token);
+        const result = await verifyJWT(token);
         if (!result.valid || !result.payload) {
             return NextResponse.json(
                 { error: result.error || 'Geçersiz token' },
@@ -82,6 +84,9 @@ export async function POST(
     { params }: { params: Promise<{ takimId: string }> }
 ) {
     try {
+        const rejectedBody = rejectOversizedRequest(request);
+        if (rejectedBody) return rejectedBody;
+
         const { takimId: teamId } = await params;
         const token = request.cookies.get('auth-token')?.value;
 
@@ -92,7 +97,7 @@ export async function POST(
             );
         }
 
-        const result = verifyJWT(token);
+        const result = await verifyJWT(token);
         if (!result.valid || !result.payload) {
             return NextResponse.json(
                 { error: result.error || 'Geçersiz token' },
@@ -116,10 +121,11 @@ export async function POST(
         }
 
         const body = await request.json();
-        const { email, role = 'member' } = body;
+        const email = normalizeEmail(body.email);
+        const role = body.role ?? 'member';
 
         // Validasyon
-        if (!email || email.trim().length === 0) {
+        if (!email || !isValidEmail(email)) {
             return NextResponse.json(
                 { error: 'E-posta adresi zorunludur' },
                 { status: 400 }
@@ -136,7 +142,7 @@ export async function POST(
         // Kullanıcıyı bul
         const [users] = await pool.query<RowDataPacket[]>(
             'SELECT id, name, email FROM users WHERE email = ? AND is_active = true',
-            [email.trim()]
+            [email]
         );
 
         if (users.length === 0) {

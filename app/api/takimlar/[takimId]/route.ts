@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyJWT } from '@/lib/jwt-helpers';
 import { RowDataPacket } from 'mysql2';
+import { rejectOversizedRequest } from '@/lib/security';
 
 // Takım detaylarını çek
 export async function GET(
@@ -19,7 +20,7 @@ export async function GET(
             );
         }
 
-        const result = verifyJWT(token);
+        const result = await verifyJWT(token);
         if (!result.valid || !result.payload) {
             return NextResponse.json(
                 { error: result.error || 'Geçersiz token' },
@@ -87,6 +88,9 @@ export async function PUT(
     { params }: { params: Promise<{ takimId: string }> }
 ) {
     try {
+        const rejectedBody = rejectOversizedRequest(request);
+        if (rejectedBody) return rejectedBody;
+
         const { takimId: teamId } = await params;
         const token = request.cookies.get('auth-token')?.value;
 
@@ -97,7 +101,7 @@ export async function PUT(
             );
         }
 
-        const result = verifyJWT(token);
+        const result = await verifyJWT(token);
         if (!result.valid || !result.payload) {
             return NextResponse.json(
                 { error: result.error || 'Geçersiz token' },
@@ -121,17 +125,18 @@ export async function PUT(
         }
 
         const body = await request.json();
-        const { name, description } = body;
+        const name = typeof body.name === 'string' ? body.name.trim() : '';
+        const description = typeof body.description === 'string' ? body.description.trim() : '';
 
         // Validasyon
-        if (!name || name.trim().length === 0) {
+        if (!name) {
             return NextResponse.json(
                 { error: 'Takım adı zorunludur' },
                 { status: 400 }
             );
         }
 
-        if (name.length > 255) {
+        if (name.length > 255 || description.length > 10_000) {
             return NextResponse.json(
                 { error: 'Takım adı çok uzun' },
                 { status: 400 }
@@ -141,7 +146,7 @@ export async function PUT(
         // Takımı güncelle
         await pool.query(
             'UPDATE teams SET name = ?, description = ? WHERE id = ?',
-            [name.trim(), description?.trim() || null, teamId]
+            [name, description || null, teamId]
         );
 
         return NextResponse.json(
@@ -173,7 +178,7 @@ export async function DELETE(
             );
         }
 
-        const result = verifyJWT(token);
+        const result = await verifyJWT(token);
         if (!result.valid || !result.payload) {
             return NextResponse.json(
                 { error: result.error || 'Geçersiz token' },

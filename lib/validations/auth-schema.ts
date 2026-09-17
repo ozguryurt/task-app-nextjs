@@ -4,6 +4,7 @@ import { z } from 'zod';
 const emailSchema = z
     .string()
     .min(1, 'E-posta adresi gereklidir')
+    .max(254, 'E-posta adresi çok uzun')
     .email('Geçerli bir e-posta adresi giriniz');
 
 // Şifre kontrolü (Minimum 8 karakter, en az 1 büyük harf, 1 küçük harf, 1 rakam)

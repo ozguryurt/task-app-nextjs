@@ -1,173 +1,191 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from '@/lib/db';
-import { isTokenValid } from '@/lib/auth-helpers';
-import { RowDataPacket } from 'mysql2';
+import {
+    generateVerificationCode,
+    getCodeExpiry,
+    isExpiryValid,
+    isValidEmail,
+    isValidVerificationCode,
+} from '@/lib/auth-helpers';
 import { sendVerificationEmail } from '@/lib/email';
+import { enforceRateLimit } from '@/lib/rate-limit';
+import {
+    hashOneTimeCode,
+    hashToken,
+    normalizeEmail,
+    rejectOversizedRequest,
+    verifyOneTimeCode,
+} from '@/lib/security';
 
-export async function GET(request: NextRequest) {
-    try {
-        const { searchParams } = new URL(request.url);
-        const token = searchParams.get('token');
+const MAX_CODE_ATTEMPTS = 5;
+const GENERIC_SEND_MESSAGE = 'Hesap uygunsa 6 haneli doğrulama kodu e-posta adresine gönderildi';
 
-        if (!token) {
-            return NextResponse.json(
-                { success: false, message: 'Doğrulama token\'ı gereklidir' },
-                { status: 400 }
-            );
-        }
-
-        // Token ile kullanıcıyı bul (SQL Injection korumalı)
-        const [users] = await pool.query<RowDataPacket[]>(
-            `SELECT id, email, email_verified, email_verification_expires 
-       FROM users 
-       WHERE email_verification_token = ?`,
-            [token]
-        );
-
-        if (users.length === 0) {
-            return NextResponse.json(
-                { success: false, message: 'Geçersiz doğrulama token\'ı' },
-                { status: 404 }
-            );
-        }
-
-        const user = users[0];
-
-        // Zaten doğrulanmış mı kontrol et
-        if (user.email_verified) {
-            return NextResponse.json(
-                { success: true, message: 'E-posta adresi zaten doğrulanmış' },
-                { status: 200 }
-            );
-        }
-
-        // Token süresi dolmuş mu kontrol et
-        if (!isTokenValid(user.email_verification_expires)) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message: 'Doğrulama token\'ının süresi dolmuş. Lütfen yeni bir doğrulama e-postası talep edin'
-                },
-                { status: 410 }
-            );
-        }
-
-        // E-posta adresini doğrulanmış olarak işaretle (SQL Injection korumalı)
-        await pool.query(
-            `UPDATE users 
-       SET email_verified = TRUE, 
-           email_verification_token = NULL, 
-           email_verification_expires = NULL 
-       WHERE id = ?`,
-            [user.id]
-        );
-
-        return NextResponse.json(
-            {
-                success: true,
-                message: 'E-posta adresiniz başarıyla doğrulandı! Artık giriş yapabilirsiniz.',
-                data: {
-                    email: user.email
-                }
-            },
-            { status: 200 }
-        );
-
-    } catch (error: any) {
-        console.error('E-posta doğrulama hatası:', error);
-        return NextResponse.json(
-            {
-                success: false,
-                message: 'E-posta doğrulama sırasında bir hata oluştu',
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
-            },
-            { status: 500 }
-        );
-    }
-}
-
-// Yeni doğrulama e-postası gönder
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json();
-        const { email } = body;
+        const rejectedBody = rejectOversizedRequest(request);
+        if (rejectedBody) return rejectedBody;
 
-        if (!email) {
+        const body = await request.json();
+        const email = normalizeEmail(body.email);
+        const code = typeof body.code === 'string' ? body.code.trim() : undefined;
+
+        if (!email || !isValidEmail(email)) {
             return NextResponse.json(
-                { success: false, message: 'E-posta adresi gereklidir' },
+                { success: false, message: 'Geçerli bir e-posta adresi gereklidir' },
                 { status: 400 }
             );
         }
 
-        // Kullanıcıyı bul (SQL Injection korumalı)
+        if (code !== undefined) {
+            const rateLimited = enforceRateLimit(request, {
+                scope: 'verify-email-code',
+                identifier: hashToken(email),
+                limit: 8,
+                windowMs: 15 * 60 * 1000,
+            });
+            if (rateLimited) return rateLimited;
+
+            if (!isValidVerificationCode(code)) {
+                return NextResponse.json(
+                    { success: false, message: 'Kod 6 rakamdan oluşmalıdır' },
+                    { status: 400 }
+                );
+            }
+
+            const [users] = await pool.query<RowDataPacket[]>(
+                `SELECT id, email_verified, email_verification_token, email_verification_expires,
+                        email_verification_attempts
+                 FROM users WHERE email = ? LIMIT 1`,
+                [email]
+            );
+
+            if (users.length === 0) {
+                return NextResponse.json(
+                    { success: false, message: 'Kod geçersiz veya süresi dolmuş' },
+                    { status: 400 }
+                );
+            }
+
+            const user = users[0];
+            if (user.email_verified) {
+                return NextResponse.json(
+                    { success: false, message: 'Kod geçersiz veya süresi dolmuş' },
+                    { status: 400 }
+                );
+            }
+
+            const storedCode = typeof user.email_verification_token === 'string'
+                ? user.email_verification_token
+                : '';
+            const attempts = Number(user.email_verification_attempts) || 0;
+            const isExpired = !isExpiryValid(user.email_verification_expires);
+            const isValidCode = !isExpired && attempts < MAX_CODE_ATTEMPTS &&
+                verifyOneTimeCode(storedCode, email, 'email-verification', code);
+
+            if (!isValidCode) {
+                if (storedCode && !isExpired && attempts < MAX_CODE_ATTEMPTS) {
+                    await pool.query(
+                        `UPDATE users
+                         SET email_verification_token = IF(email_verification_attempts + 1 >= ?, NULL, email_verification_token),
+                             email_verification_expires = IF(email_verification_attempts + 1 >= ?, NULL, email_verification_expires),
+                             email_verification_attempts = LEAST(email_verification_attempts + 1, ?)
+                         WHERE id = ?
+                           AND email_verification_token = ?
+                           AND email_verification_expires > NOW()
+                           AND email_verification_attempts < ?`,
+                        [
+                            MAX_CODE_ATTEMPTS,
+                            MAX_CODE_ATTEMPTS,
+                            MAX_CODE_ATTEMPTS,
+                            user.id,
+                            storedCode,
+                            MAX_CODE_ATTEMPTS,
+                        ]
+                    );
+                }
+
+                return NextResponse.json(
+                    { success: false, message: 'Kod geçersiz veya süresi dolmuş' },
+                    { status: 400 }
+                );
+            }
+
+            const [result] = await pool.query<ResultSetHeader>(
+                `UPDATE users
+                 SET email_verified = TRUE,
+                     email_verification_token = NULL,
+                     email_verification_expires = NULL,
+                     email_verification_attempts = 0
+                 WHERE id = ?
+                   AND email_verified = FALSE
+                   AND email_verification_token = ?
+                   AND email_verification_expires > NOW()
+                   AND email_verification_attempts < ?`,
+                [user.id, storedCode, MAX_CODE_ATTEMPTS]
+            );
+
+            if (result.affectedRows !== 1) {
+                return NextResponse.json(
+                    { success: false, message: 'Kod geçersiz veya süresi dolmuş' },
+                    { status: 400 }
+                );
+            }
+
+            return NextResponse.json({
+                success: true,
+                message: 'E-posta adresiniz başarıyla doğrulandı',
+            });
+        }
+
+        const rateLimited = enforceRateLimit(request, {
+            scope: 'send-email-code',
+            identifier: hashToken(email),
+            limit: 3,
+            windowMs: 60 * 60 * 1000,
+        });
+        if (rateLimited) return rateLimited;
+
         const [users] = await pool.query<RowDataPacket[]>(
-            'SELECT id, email, name, email_verified FROM users WHERE email = ?',
+            'SELECT id, email, name, email_verified FROM users WHERE email = ? LIMIT 1',
             [email]
         );
 
-        if (users.length === 0) {
-            return NextResponse.json(
-                { success: false, message: 'Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı' },
-                { status: 404 }
-            );
+        if (users.length === 0 || users[0].email_verified) {
+            return NextResponse.json({ success: true, message: GENERIC_SEND_MESSAGE });
         }
 
         const user = users[0];
-
-        if (user.email_verified) {
-            return NextResponse.json(
-                { success: true, message: 'E-posta adresi zaten doğrulanmış' },
-                { status: 200 }
-            );
-        }
-
-        // Yeni token oluştur
-        const { generateToken, getTokenExpiry } = await import('@/lib/auth-helpers');
-        const verificationToken = generateToken();
-        const verificationExpiry = getTokenExpiry(24);
-
-        // Token'ı güncelle (SQL Injection korumalı)
+        const verificationCode = generateVerificationCode();
         await pool.query(
-            `UPDATE users 
-       SET email_verification_token = ?, 
-           email_verification_expires = ? 
-       WHERE id = ?`,
-            [verificationToken, verificationExpiry, user.id]
+            `UPDATE users
+             SET email_verification_token = ?,
+                 email_verification_expires = ?,
+                 email_verification_attempts = 0
+             WHERE id = ?`,
+            [
+                hashOneTimeCode(email, 'email-verification', verificationCode),
+                getCodeExpiry(),
+                user.id,
+            ]
         );
-
-        const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/eposta-dogrulama?token=${verificationToken}`;
 
         try {
             await sendVerificationEmail({
                 to: user.email,
                 name: user.name || user.email,
-                verificationLink,
+                code: verificationCode,
             });
         } catch (emailError) {
-            console.error('Doğrulama e-postası gönderilemedi:', emailError);
+            console.error('Doğrulama kodu e-postası gönderilemedi:', emailError);
         }
 
+        return NextResponse.json({ success: true, message: GENERIC_SEND_MESSAGE });
+    } catch (error: unknown) {
+        console.error('E-posta doğrulama hatası:', error);
         return NextResponse.json(
-            {
-                success: true,
-                message: 'Yeni doğrulama e-postası gönderildi',
-                data: {
-                    verificationToken: process.env.NODE_ENV === 'development' ? verificationToken : undefined
-                }
-            },
-            { status: 200 }
-        );
-
-    } catch (error: any) {
-        console.error('Doğrulama e-postası gönderme hatası:', error);
-        return NextResponse.json(
-            {
-                success: false,
-                message: 'Doğrulama e-postası gönderilirken bir hata oluştu',
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
-            },
+            { success: false, message: 'E-posta doğrulama sırasında bir hata oluştu' },
             { status: 500 }
         );
     }
 }
-

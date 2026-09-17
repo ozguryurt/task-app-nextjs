@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { verifyJWT } from '@/lib/jwt-helpers';
+import { createTaskSchema } from '@/lib/validations/task-schema';
+import { rejectOversizedRequest } from '@/lib/security';
 
 interface TaskRow extends RowDataPacket {
     id: number;
@@ -54,7 +56,7 @@ export async function GET(
             );
         }
 
-        const { valid, payload, error } = verifyJWT(token);
+        const { valid, payload, error } = await verifyJWT(token);
         if (!valid || !payload) {
             return NextResponse.json(
                 { error: error || 'Geçersiz token' },
@@ -113,6 +115,9 @@ export async function POST(
     { params }: { params: Promise<{ takimId: string }> }
 ) {
     try {
+        const rejectedBody = rejectOversizedRequest(request);
+        if (rejectedBody) return rejectedBody;
+
         const { takimId: teamId } = await params;
         const teamIdNum = parseInt(teamId);
 
@@ -132,7 +137,7 @@ export async function POST(
             );
         }
 
-        const { valid, payload, error } = verifyJWT(token);
+        const { valid, payload, error } = await verifyJWT(token);
         if (!valid || !payload) {
             return NextResponse.json(
                 { error: error || 'Geçersiz token' },
@@ -164,7 +169,14 @@ export async function POST(
             );
         }
 
-        const body = await request.json();
+        const parsedBody = createTaskSchema.safeParse(await request.json());
+        if (!parsedBody.success) {
+            return NextResponse.json(
+                { error: parsedBody.error.issues[0]?.message || 'Geçersiz görev verisi' },
+                { status: 400 }
+            );
+        }
+
         const {
             assigned_to,
             title,
@@ -174,15 +186,7 @@ export async function POST(
             start_date,
             end_date,
             due_date,
-        } = body;
-
-        // Validasyon
-        if (!assigned_to || !title) {
-            return NextResponse.json(
-                { error: 'Atanan kişi ve başlık zorunludur' },
-                { status: 400 }
-            );
-        }
+        } = parsedBody.data;
 
         // Atanan kişinin takım üyesi olup olmadığını kontrol et
         const [assignedMemberRows] = await pool.query<TeamMemberRow[]>(
@@ -208,7 +212,7 @@ export async function POST(
                 assigned_to,
                 userId,
                 title,
-                description || null,
+                description?.trim() || null,
                 status,
                 priority,
                 start_date || null,
@@ -248,4 +252,3 @@ export async function POST(
         );
     }
 }
-

@@ -41,13 +41,17 @@ export async function verifyPassword(
     }
 }
 
-// Email verification için rastgele token oluşturma
-export function generateToken(): string {
-    return crypto.randomBytes(32).toString('hex');
+export function generateVerificationCode(): string {
+    return crypto.randomInt(0, 1_000_000).toString().padStart(6, '0');
+}
+
+export function isValidVerificationCode(code: string): boolean {
+    return /^\d{6}$/.test(code);
 }
 
 // E-posta formatını doğrula
 export function isValidEmail(email: string): boolean {
+    if (email.length > 254) return false;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
@@ -63,15 +67,12 @@ export function isValidPassword(password: string): boolean {
     return hasUpperCase && hasLowerCase && hasNumber;
 }
 
-// Token son kullanma tarihi oluştur - Email verification için (saat cinsinden)
-export function getTokenExpiry(hours: number = 24): Date {
-    const expiry = new Date();
-    expiry.setHours(expiry.getHours() + hours);
-    return expiry;
+export function getCodeExpiry(minutes: number = 5): Date {
+    return new Date(Date.now() + minutes * 60 * 1000);
 }
 
-// Email verification için tokenin geçerliliğini kontrol et
-export function isTokenValid(expiryDate: Date | null): boolean {
+// Tek kullanımlık kodun geçerlilik süresini kontrol et.
+export function isExpiryValid(expiryDate: Date | null): boolean {
     if (!expiryDate) return false;
     return new Date() < new Date(expiryDate);
 }

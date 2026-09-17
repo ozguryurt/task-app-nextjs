@@ -20,7 +20,7 @@ function isPublicRoute(pathname: string): boolean {
 }
 
 // Cookie'den JWT token'ı kontrol eder ve doğrular
-function isAuthenticated(request: NextRequest): boolean {
+async function isAuthenticated(request: NextRequest): Promise<boolean> {
     // Auth cookie'sinden JWT token'ı al
     const authToken = request.cookies.get('auth-token');
 
@@ -29,16 +29,38 @@ function isAuthenticated(request: NextRequest): boolean {
     }
 
     // JWT token'ı doğrula
-    const verification = verifyJWT(authToken.value);
+    const verification = await verifyJWT(authToken.value);
 
     return verification.valid;
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // API route'larını middleware'den geçirme
+    // Çerez tabanlı API oturumlarını çapraz site isteklerine karşı koru.
     if (pathname.startsWith('/api/')) {
+        const unsafeMethod = !['GET', 'HEAD', 'OPTIONS'].includes(request.method);
+        if (unsafeMethod) {
+            const fetchSite = request.headers.get('sec-fetch-site');
+            const origin = request.headers.get('origin');
+            let hasInvalidOrigin = false;
+
+            if (origin) {
+                try {
+                    hasInvalidOrigin = new URL(origin).origin !== request.nextUrl.origin;
+                } catch {
+                    hasInvalidOrigin = true;
+                }
+            }
+
+            if (fetchSite === 'cross-site' || hasInvalidOrigin) {
+                return NextResponse.json(
+                    { error: 'Çapraz site isteğine izin verilmiyor' },
+                    { status: 403 }
+                );
+            }
+        }
+
         return NextResponse.next();
     }
 
@@ -51,7 +73,7 @@ export function proxy(request: NextRequest) {
         return NextResponse.next();
     }
 
-    const isUserAuthenticated = isAuthenticated(request);
+    const isUserAuthenticated = await isAuthenticated(request);
 
     // Korumalı route kontrolü
     if (isProtectedRoute(pathname)) {
@@ -81,12 +103,11 @@ export const config = {
     matcher: [
         /*
          * Aşağıdakiler HARİÇ tüm routelarda çalışır:
-         * - api (API routes)
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
          */
-        '/((?!api|_next/static|_next/image|favicon.ico).*)',
+        '/((?!_next/static|_next/image|favicon.ico).*)',
     ]
 };
 

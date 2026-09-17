@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const { valid, payload, error } = verifyJWT(token);
+        const { valid, payload, error } = await verifyJWT(token);
         if (!valid || !payload) {
             return NextResponse.json(
                 { error: error || 'Geçersiz token' },
@@ -95,4 +95,3 @@ export async function GET(request: NextRequest) {
         );
     }
 }
-

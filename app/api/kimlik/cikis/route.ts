@@ -5,7 +5,12 @@ export async function POST() {
         // JWT cookie'sini temizle
         const response = NextResponse.json(
             { success: true, message: 'Çıkış başarılı' },
-            { status: 200 }
+            {
+                status: 200,
+                headers: {
+                    'Cache-Control': 'no-store, max-age=0',
+                },
+            }
         );
 
         // httpOnly cookie'yi sil
@@ -13,8 +18,9 @@ export async function POST() {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 0, // Hemen sil
-            path: '/'
+            maxAge: 0,
+            expires: new Date(0),
+            path: '/',
         });
 
         return response;

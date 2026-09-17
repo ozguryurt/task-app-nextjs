@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyJWT } from '@/lib/jwt-helpers';
 import { RowDataPacket } from 'mysql2';
+import { rejectOversizedRequest } from '@/lib/security';
 
 // Üye rolünü güncelle (sadece admin)
 export async function PUT(
@@ -9,6 +10,9 @@ export async function PUT(
     { params }: { params: Promise<{ takimId: string; uyeId: string }> }
 ) {
     try {
+        const rejectedBody = rejectOversizedRequest(request);
+        if (rejectedBody) return rejectedBody;
+
         const { takimId: teamId, uyeId: memberId } = await params;
         const token = request.cookies.get('auth-token')?.value;
 
@@ -19,7 +23,7 @@ export async function PUT(
             );
         }
 
-        const result = verifyJWT(token);
+        const result = await verifyJWT(token);
         if (!result.valid || !result.payload) {
             return NextResponse.json(
                 { error: result.error || 'Geçersiz token' },
@@ -109,7 +113,7 @@ export async function DELETE(
             );
         }
 
-        const result = verifyJWT(token);
+        const result = await verifyJWT(token);
         if (!result.valid || !result.payload) {
             return NextResponse.json(
                 { error: result.error || 'Geçersiz token' },

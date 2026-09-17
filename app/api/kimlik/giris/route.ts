@@ -3,11 +3,26 @@ import pool from '@/lib/db';
 import { hashPassword, isValidEmail, verifyPassword } from '@/lib/auth-helpers';
 import { signJWT } from '@/lib/jwt-helpers';
 import { RowDataPacket } from 'mysql2';
+import { enforceRateLimit } from '@/lib/rate-limit';
+import { hashToken, normalizeEmail, rejectOversizedRequest } from '@/lib/security';
+
+const DUMMY_PASSWORD_HASH = '$2b$12$4N4Tb.C3J566qE.XSruYhOqvRcsG1chM62kdNQEDW08N.ICyUFKIK';
 
 export async function POST(request: NextRequest) {
     try {
+        const rejectedBody = rejectOversizedRequest(request);
+        if (rejectedBody) return rejectedBody;
+
+        const rateLimited = enforceRateLimit(request, {
+            scope: 'login',
+            limit: 10,
+            windowMs: 15 * 60 * 1000,
+        });
+        if (rateLimited) return rateLimited;
+
         const body = await request.json();
-        const { email, password } = body;
+        const email = normalizeEmail(body.email);
+        const password = typeof body.password === 'string' ? body.password : '';
 
         // Validasyon kontrolü
         if (!email || !password) {
@@ -25,15 +40,24 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        const accountRateLimited = enforceRateLimit(request, {
+            scope: 'login-account',
+            identifier: hashToken(email),
+            limit: 5,
+            windowMs: 15 * 60 * 1000,
+        });
+        if (accountRateLimited) return accountRateLimited;
+
         // Kullanıcıyı e-posta ile bul; parola uygulama katmanında güvenli biçimde doğrulanır.
         const [users] = await pool.query<RowDataPacket[]>(
-            `SELECT id, email, password, name, email_verified, is_active, created_at 
+            `SELECT id, email, password, name, email_verified, is_active, session_version, created_at
        FROM users 
        WHERE email = ?`,
             [email]
         );
 
         if (users.length === 0) {
+            await verifyPassword(password, DUMMY_PASSWORD_HASH);
             return NextResponse.json(
                 { success: false, message: 'E-posta veya şifre hatalı' },
                 { status: 401 }
@@ -81,7 +105,8 @@ export async function POST(request: NextRequest) {
             {
                 userId: user.id,
                 email: user.email,
-                name: user.name
+                name: user.name,
+                sessionVersion: user.session_version,
             },
             '7d' // 7 gün geçerli
         );
@@ -121,7 +146,6 @@ export async function POST(request: NextRequest) {
             {
                 success: false,
                 message: 'Giriş sırasında bir hata oluştu',
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
             },
             { status: 500 }
         );

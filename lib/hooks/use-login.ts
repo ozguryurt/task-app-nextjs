@@ -24,6 +24,14 @@ export function useLogin() {
                 router.push(AUTH_CONFIG.redirects.afterLogin);
                 return { success: true, message: response.message };
             } else {
+                if ('requiresVerification' in response && response.requiresVerification === true) {
+                    toast.info('E-posta doğrulaması gerekli', {
+                        description: 'E-postanıza gönderilen 6 haneli kodu girin.',
+                    });
+                    router.push(`/eposta-dogrulama?email=${encodeURIComponent(data.email)}`);
+                    return { success: false, message: response.message };
+                }
+
                 const errorMessage = response.message || 'Giriş başarısız';
                 setError(errorMessage);
                 toast.error(errorMessage);
@@ -46,4 +54,3 @@ export function useLogin() {
         clearError: () => setError(null),
     };
 }
-

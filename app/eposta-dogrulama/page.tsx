@@ -1,173 +1,130 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { CheckCircle2, Layers3, MailCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { Loader2, MailCheck, MailWarning } from 'lucide-react';
-
-type VerificationStatus = 'idle' | 'loading' | 'success' | 'error';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { resendVerificationEmail, verifyEmail } from '@/lib/api/auth-api';
 
 function VerifyEmailContent() {
-    const searchParams = useSearchParams();
     const router = useRouter();
-    const token = searchParams.get('token');
-
-    const [status, setStatus] = useState<VerificationStatus>(token ? 'loading' : 'idle');
-    const [resendEmail, setResendEmail] = useState('');
+    const searchParams = useSearchParams();
+    const [email, setEmail] = useState(searchParams.get('email') ?? '');
+    const [code, setCode] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isResending, setIsResending] = useState(false);
+    const [isVerified, setIsVerified] = useState(false);
 
-    const verifyEmail = async (verificationToken: string) => {
+    const handleVerify = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (!email || !/^\d{6}$/.test(code)) {
+            toast.error('E-posta adresinizi ve 6 haneli kodu kontrol edin.');
+            return;
+        }
+
+        setIsSubmitting(true);
         try {
-            setStatus('loading');
-            const response = await fetch(`/api/kimlik/eposta-dogrulama?token=${verificationToken}`, {
-                cache: 'no-store',
-            });
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'E-posta doğrulanamadı');
+            const response = await verifyEmail({ email, code });
+            if (!response.success) {
+                toast.error(response.message || 'Kod doğrulanamadı');
+                return;
             }
 
-            setStatus('success');
-            toast.success('E-posta adresiniz doğrulandı', {
-                description: data.message || 'Artık hesabınıza giriş yapabilirsiniz.',
-            });
-        } catch (error) {
-            setStatus('error');
-            const errorMessage = error instanceof Error ? error.message : 'Doğrulama sırasında bir hata oluştu';
-            toast.error(errorMessage);
+            setIsVerified(true);
+            toast.success('E-posta adresiniz doğrulandı');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    useEffect(() => {
-        if (!token) {
-            setStatus('idle');
-            toast.error('Geçersiz doğrulama bağlantısı', {
-                description: 'E-postanızı kontrol edin veya yeni bir doğrulama e-postası talep edin.',
-            });
+    const handleResend = async () => {
+        if (!email) {
+            toast.error('Önce e-posta adresinizi girin.');
             return;
         }
 
-        verifyEmail(token);
-    }, [token]);
-
-    const handleResend = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
-        if (!resendEmail) {
-            toast.error('E-posta adresi gerekli', { description: 'Lütfen e-posta adresinizi girin.' });
-            return;
-        }
-
+        setIsResending(true);
         try {
-            setIsResending(true);
-            const response = await fetch('/api/kimlik/eposta-dogrulama', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email: resendEmail }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Doğrulama e-postası gönderilemedi');
+            const response = await resendVerificationEmail({ email });
+            if (!response.success) {
+                toast.error(response.message || 'Kod gönderilemedi');
+                return;
             }
 
-            toast.success('Doğrulama e-postası gönderildi', {
-                description: data.message || 'E-posta adresinizi kontrol edin.',
+            setCode('');
+            toast.success('Yeni doğrulama kodu gönderildi', {
+                description: 'Kod 5 dakika geçerlidir.',
             });
-        } catch (error) {
-            const errorMessage =
-                error instanceof Error ? error.message : 'Doğrulama e-postası gönderilirken bir hata oluştu';
-            toast.error(errorMessage);
         } finally {
             setIsResending(false);
         }
     };
 
-    const renderIcon = () => {
-        if (status === 'loading') {
-            return <Loader2 className="size-8 animate-spin text-primary" />;
-        }
-
-        if (status === 'success') {
-            return <MailCheck className="size-8 text-emerald-600" />;
-        }
-
-        if (status === 'error') {
-            return <MailWarning className="size-8 text-amber-600" />;
-        }
-
-        return <MailWarning className="size-8 text-muted-foreground/50" />;
-    };
-
     return (
         <div className="auth-shell">
-            <Card className="auth-card w-full max-w-lg">
-                <CardHeader className="space-y-2 text-center">
-                    <div className="mb-2 flex justify-center">{renderIcon()}</div>
-                    <CardTitle className="text-lg">E-posta Doğrulama</CardTitle>
+            <Card className="auth-card w-full max-w-sm">
+                <CardHeader className="text-center">
+                    <span className="mx-auto mb-3 flex size-10 items-center justify-center rounded-md bg-secondary text-primary">
+                        {isVerified ? <CheckCircle2 className="size-5" /> : <MailCheck className="size-5" />}
+                    </span>
+                    <CardTitle className="text-lg">E-posta doğrulama</CardTitle>
                     <CardDescription>
-                        {status === 'success'
-                            ? 'Hesabınız başarıyla doğrulandı. Hemen giriş yapabilirsiniz.'
-                            : 'Hesabınızı aktive etmek için e-posta adresinizi doğrulayın.'}
+                        {isVerified
+                            ? 'Hesabınız doğrulandı. Artık giriş yapabilirsiniz.'
+                            : 'E-posta adresinize gönderilen 6 haneli kodu 5 dakika içinde girin.'}
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    {status === 'loading' && (
-                        <p className="text-center text-sm text-muted-foreground">Doğrulama işlemi devam ediyor...</p>
-                    )}
-
-                    {status === 'success' && (
-                        <div className="flex flex-col gap-3">
-                            <Button onClick={() => router.push('/giris')}>Giriş Yap</Button>
-                            <Button variant="outline" onClick={() => router.push('/panel')}>
-                                Panele Dön
+                <CardContent>
+                    {isVerified ? (
+                        <Button className="w-full" onClick={() => router.replace('/giris')}>Giriş yap</Button>
+                    ) : (
+                        <form onSubmit={handleVerify} className="space-y-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="email">E-posta</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    autoComplete="email"
+                                    value={email}
+                                    onChange={(event) => setEmail(event.target.value)}
+                                    disabled={isSubmitting}
+                                    required
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="code">Doğrulama kodu</Label>
+                                <Input
+                                    id="code"
+                                    type="text"
+                                    inputMode="numeric"
+                                    autoComplete="one-time-code"
+                                    pattern="[0-9]{6}"
+                                    maxLength={6}
+                                    value={code}
+                                    onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    placeholder="000000"
+                                    className="text-center text-lg tracking-[0.35em]"
+                                    disabled={isSubmitting}
+                                    required
+                                />
+                            </div>
+                            <Button type="submit" className="w-full" disabled={isSubmitting || code.length !== 6}>
+                                {isSubmitting ? 'Doğrulanıyor...' : 'E-postayı doğrula'}
                             </Button>
-                        </div>
-                    )}
-
-                    {status !== 'success' && (
-                        <div className="space-y-4">
-                            <div>
-                                <p className="mb-2 text-sm text-muted-foreground">Doğrulama e-postasını bulamadınız mı?</p>
-                                <form onSubmit={handleResend} className="space-y-3">
-                                    <div className="space-y-2">
-                                        <Input
-                                            type="email"
-                                            placeholder="E-posta adresiniz"
-                                            value={resendEmail}
-                                            onChange={(e) => setResendEmail(e.target.value)}
-                                            required
-                                        />
-                                    </div>
-                                    <Button type="submit" disabled={isResending} className="w-full">
-                                        {isResending ? 'Gönderiliyor...' : 'Yeni Doğrulama E-postası Gönder'}
-                                    </Button>
-                                </form>
-                            </div>
-
-                            <div className="space-y-1 text-center text-sm text-muted-foreground">
-                                <p>E-posta adresinizi yanlış yazdıysanız yeni bir hesap oluşturabilirsiniz.</p>
-                                <div className="flex justify-center gap-2">
-                                    <Link href="/giris" className="text-primary hover:underline">
-                                        Giriş Yap
-                                    </Link>
-                                    <span>·</span>
-                                    <Link href="/kayit" className="text-primary hover:underline">
-                                        Yeni Hesap Oluştur
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
+                            <Button type="button" variant="ghost" className="w-full" onClick={handleResend} disabled={isResending}>
+                                {isResending ? 'Gönderiliyor...' : 'Yeni kod gönder'}
+                            </Button>
+                        </form>
                     )}
                 </CardContent>
+                <CardFooter className="justify-center border-t pt-4 text-xs text-muted-foreground">
+                    <Link href="/" className="flex items-center gap-1.5 hover:text-primary"><Layers3 className="size-3.5" /> Taskflow ana sayfa</Link>
+                </CardFooter>
             </Card>
         </div>
     );
@@ -175,13 +132,7 @@ function VerifyEmailContent() {
 
 export default function VerifyEmailPage() {
     return (
-        <Suspense
-            fallback={(
-                <div className="min-h-screen flex items-center justify-center">
-                    <Loader2 className="size-8 animate-spin text-primary" />
-                </div>
-            )}
-        >
+        <Suspense fallback={<div className="auth-shell"><p className="text-sm text-muted-foreground">Yükleniyor...</p></div>}>
             <VerifyEmailContent />
         </Suspense>
     );

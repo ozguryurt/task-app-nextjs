@@ -1,61 +1,109 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from '@/lib/db';
-import { hashPassword, isTokenValid, isValidPassword, verifyPassword } from '@/lib/auth-helpers';
-import { RowDataPacket } from 'mysql2';
+import {
+    hashPassword,
+    isExpiryValid,
+    isValidEmail,
+    isValidPassword,
+    isValidVerificationCode,
+    verifyPassword,
+} from '@/lib/auth-helpers';
+import { enforceRateLimit } from '@/lib/rate-limit';
+import {
+    hashToken,
+    normalizeEmail,
+    rejectOversizedRequest,
+    verifyOneTimeCode,
+} from '@/lib/security';
+
+const MAX_CODE_ATTEMPTS = 5;
 
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json();
-        const { token, newPassword } = body;
+        const rejectedBody = rejectOversizedRequest(request);
+        if (rejectedBody) return rejectedBody;
 
-        // Validasyon kontrolü
-        if (!token || !newPassword) {
+        const body = await request.json();
+        const email = normalizeEmail(body.email);
+        const code = typeof body.code === 'string' ? body.code.trim() : '';
+        const newPassword = typeof body.newPassword === 'string' ? body.newPassword : '';
+
+        if (!isValidEmail(email) || !isValidVerificationCode(code) || !newPassword) {
             return NextResponse.json(
-                { success: false, message: 'Token ve yeni şifre gereklidir' },
+                { success: false, message: 'E-posta, 6 haneli kod ve yeni şifre gereklidir' },
                 { status: 400 }
             );
         }
 
-        // Şifre güvenlik kontrolü
+        const rateLimited = enforceRateLimit(request, {
+            scope: 'reset-password-code',
+            identifier: hashToken(email),
+            limit: 8,
+            windowMs: 15 * 60 * 1000,
+        });
+        if (rateLimited) return rateLimited;
+
         if (!isValidPassword(newPassword)) {
             return NextResponse.json(
-                {
-                    success: false,
-                    message: 'Şifre 8-72 byte arasında olmalı ve büyük harf, küçük harf ve rakam içermelidir'
-                },
+                { success: false, message: 'Şifre 8-72 byte arasında olmalı ve büyük harf, küçük harf ve rakam içermelidir' },
                 { status: 400 }
             );
         }
 
-        // Token ile kullanıcıyı bul (SQL Injection korumalı)
         const [users] = await pool.query<RowDataPacket[]>(
-            `SELECT id, email, password, password_reset_expires 
-       FROM users 
-       WHERE password_reset_token = ?`,
-            [token]
+            `SELECT id, password, is_active, email_verified, password_reset_token,
+                    password_reset_expires, password_reset_attempts
+             FROM users WHERE email = ? LIMIT 1`,
+            [email]
         );
 
         if (users.length === 0) {
             return NextResponse.json(
-                { success: false, message: 'Geçersiz şifre sıfırlama token\'ı' },
-                { status: 404 }
+                { success: false, message: 'Kod geçersiz veya süresi dolmuş' },
+                { status: 400 }
             );
         }
 
         const user = users[0];
+        const storedCode = typeof user.password_reset_token === 'string'
+            ? user.password_reset_token
+            : '';
+        const attempts = Number(user.password_reset_attempts) || 0;
+        const isExpired = !isExpiryValid(user.password_reset_expires);
+        const isValidCode = Boolean(user.is_active && user.email_verified) &&
+            !isExpired &&
+            attempts < MAX_CODE_ATTEMPTS &&
+            verifyOneTimeCode(storedCode, email, 'password-reset', code);
 
-        // Token süresi dolmuş mu kontrol et
-        if (!isTokenValid(user.password_reset_expires)) {
+        if (!isValidCode) {
+            if (storedCode && !isExpired && attempts < MAX_CODE_ATTEMPTS) {
+                await pool.query(
+                    `UPDATE users
+                     SET password_reset_token = IF(password_reset_attempts + 1 >= ?, NULL, password_reset_token),
+                         password_reset_expires = IF(password_reset_attempts + 1 >= ?, NULL, password_reset_expires),
+                         password_reset_attempts = LEAST(password_reset_attempts + 1, ?)
+                     WHERE id = ?
+                       AND password_reset_token = ?
+                       AND password_reset_expires > NOW()
+                       AND password_reset_attempts < ?`,
+                    [
+                        MAX_CODE_ATTEMPTS,
+                        MAX_CODE_ATTEMPTS,
+                        MAX_CODE_ATTEMPTS,
+                        user.id,
+                        storedCode,
+                        MAX_CODE_ATTEMPTS,
+                    ]
+                );
+            }
+
             return NextResponse.json(
-                {
-                    success: false,
-                    message: 'Şifre sıfırlama token\'ının süresi dolmuş. Lütfen yeni bir talep oluşturun'
-                },
-                { status: 410 }
+                { success: false, message: 'Kod geçersiz veya süresi dolmuş' },
+                { status: 400 }
             );
         }
 
-        // Yeni şifre eski şifre ile aynı mı kontrol et
         const currentPasswordVerification = await verifyPassword(newPassword, user.password);
         if (currentPasswordVerification.isValid) {
             return NextResponse.json(
@@ -65,106 +113,36 @@ export async function POST(request: NextRequest) {
         }
 
         const newHashedPassword = await hashPassword(newPassword);
-
-        // Şifreyi güncelle ve token'ı temizle (SQL Injection korumalı)
-        await pool.query(
-            `UPDATE users 
-       SET password = ?, 
-           password_reset_token = NULL, 
-           password_reset_expires = NULL 
-       WHERE id = ?`,
-            [newHashedPassword, user.id]
+        const [result] = await pool.query<ResultSetHeader>(
+            `UPDATE users
+             SET password = ?,
+                 session_version = session_version + 1,
+                 password_reset_token = NULL,
+                 password_reset_expires = NULL,
+                 password_reset_attempts = 0
+             WHERE id = ?
+               AND password_reset_token = ?
+               AND password_reset_expires > NOW()
+               AND password_reset_attempts < ?`,
+            [newHashedPassword, user.id, storedCode, MAX_CODE_ATTEMPTS]
         );
 
-        return NextResponse.json(
-            {
-                success: true,
-                message: 'Şifreniz başarıyla güncellendi! Artık yeni şifrenizle giriş yapabilirsiniz.',
-                data: {
-                    email: user.email
-                }
-            },
-            { status: 200 }
-        );
-
-    } catch (error: any) {
-        console.error('Şifre sıfırlama hatası:', error);
-        return NextResponse.json(
-            {
-                success: false,
-                message: 'Şifre sıfırlama sırasında bir hata oluştu',
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
-            },
-            { status: 500 }
-        );
-    }
-}
-
-// Token doğrulama endpoint'i (şifre sıfırlama sayfasında token geçerliliğini kontrol etmek için)
-export async function GET(request: NextRequest) {
-    try {
-        const { searchParams } = new URL(request.url);
-        const token = searchParams.get('token');
-
-        if (!token) {
+        if (result.affectedRows !== 1) {
             return NextResponse.json(
-                { success: false, message: 'Token gereklidir' },
+                { success: false, message: 'Kod geçersiz veya süresi dolmuş' },
                 { status: 400 }
             );
         }
 
-        // Token ile kullanıcıyı bul (SQL Injection korumalı)
-        const [users] = await pool.query<RowDataPacket[]>(
-            `SELECT id, email, password_reset_expires 
-       FROM users 
-       WHERE password_reset_token = ?`,
-            [token]
-        );
-
-        if (users.length === 0) {
-            return NextResponse.json(
-                { success: false, message: 'Geçersiz token', valid: false },
-                { status: 404 }
-            );
-        }
-
-        const user = users[0];
-
-        // Token süresi dolmuş mu kontrol et
-        if (!isTokenValid(user.password_reset_expires)) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message: 'Token\'ın süresi dolmuş',
-                    valid: false
-                },
-                { status: 410 }
-            );
-        }
-
+        return NextResponse.json({
+            success: true,
+            message: 'Şifreniz başarıyla güncellendi',
+        });
+    } catch (error: unknown) {
+        console.error('Şifre sıfırlama hatası:', error);
         return NextResponse.json(
-            {
-                success: true,
-                message: 'Token geçerli',
-                valid: true,
-                data: {
-                    email: user.email
-                }
-            },
-            { status: 200 }
-        );
-
-    } catch (error: any) {
-        console.error('Token doğrulama hatası:', error);
-        return NextResponse.json(
-            {
-                success: false,
-                message: 'Token doğrulama sırasında bir hata oluştu',
-                valid: false,
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
-            },
+            { success: false, message: 'Şifre sıfırlama sırasında bir hata oluştu' },
             { status: 500 }
         );
     }
 }
-
