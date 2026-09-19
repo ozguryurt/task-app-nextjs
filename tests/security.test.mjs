@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { generateVerificationCode, getCodeExpiry } from '../lib/auth-helpers.ts';
 import { escapeHtml, hashOneTimeCode, hashToken, verifyOneTimeCode } from '../lib/security-core.ts';
+import { getAllowedRequestOrigins, isRequestOriginAllowed } from '../lib/request-origin.ts';
 import { createTaskSchema, updateTaskSchema } from '../lib/validations/task-schema.ts';
 
 test('ham güvenlik tokenı yerine sabit uzunlukta özet üretilir', () => {
@@ -50,4 +51,31 @@ test('görev oluşturma yalnızca izin verilen enum ve alanları kabul eder', ()
 
     assert.equal(invalidStatus.success, false);
     assert.equal(unknownField.success, false);
+});
+
+test('reverse proxy arkasında public origin kabul edilir', () => {
+    assert.equal(isRequestOriginAllowed({
+        origin: 'https://task.example.com',
+        internalOrigin: 'http://localhost:3000',
+        host: 'localhost:3000',
+        forwardedHost: 'task.example.com',
+        forwardedProto: 'https',
+    }), true);
+});
+
+test('APP_ORIGIN tanımlandığında proxy başlıkları allowlist değerini genişletemez', () => {
+    const input = {
+        internalOrigin: 'http://localhost:3000',
+        host: 'evil.example',
+        forwardedHost: 'evil.example',
+        forwardedProto: 'https',
+        configuredOrigins: 'https://task.example.com, https://www.task.example.com',
+    };
+
+    assert.deepEqual(
+        [...getAllowedRequestOrigins(input)].sort(),
+        ['https://task.example.com', 'https://www.task.example.com']
+    );
+    assert.equal(isRequestOriginAllowed({ ...input, origin: 'https://task.example.com' }), true);
+    assert.equal(isRequestOriginAllowed({ ...input, origin: 'https://evil.example' }), false);
 });

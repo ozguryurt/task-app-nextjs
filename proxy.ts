@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { AUTH_CONFIG } from '@/lib/middleware/auth-config';
 import { verifyJWT } from '@/lib/jwt-helpers';
+import { isRequestOriginAllowed } from '@/lib/request-origin';
 
 
 const { protectedRoutes, authRoutes, publicRoutes } = AUTH_CONFIG;
@@ -46,11 +47,14 @@ export async function proxy(request: NextRequest) {
             let hasInvalidOrigin = false;
 
             if (origin) {
-                try {
-                    hasInvalidOrigin = new URL(origin).origin !== request.nextUrl.origin;
-                } catch {
-                    hasInvalidOrigin = true;
-                }
+                hasInvalidOrigin = !isRequestOriginAllowed({
+                    origin,
+                    internalOrigin: request.nextUrl.origin,
+                    host: request.headers.get('host'),
+                    forwardedHost: request.headers.get('x-forwarded-host'),
+                    forwardedProto: request.headers.get('x-forwarded-proto'),
+                    configuredOrigins: process.env.APP_ORIGIN,
+                });
             }
 
             if (fetchSite === 'cross-site' || hasInvalidOrigin) {

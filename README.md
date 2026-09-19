@@ -76,10 +76,21 @@ MySQL sunucusu, npm ve Node.js gerekir. Next.js 16 için en az Node.js **20.9.0*
 | `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | MySQL bağlantısı. |
 | `JWT_SECRET` | JWT imzalama/doğrulama anahtarı; uygulama en az 32 karakterlik bir değer olmadan oturum üretmez. |
 | `OTP_SECRET` | 6 haneli kodları HMAC ile korur; boşsa `JWT_SECRET` kullanılır. Canlı ortamda ayrı ve en az 32 karakterlik değer önerilir. |
+| `APP_ORIGIN` | Uygulamanın dışarıdan erişilen tam adresi (ör. `https://task.example.com`). cPanel/reverse proxy kurulumlarında CSRF origin kontrolü için ayarlanmalıdır. Birden fazla adres virgülle ayrılabilir. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` | Doğrulama e-postasının SMTP üzerinden gönderimi. |
 | `NODE_ENV` | Ortam türü; normalde Next.js tarafından belirlenir. |
 
 `NEXT_PUBLIC_*` değişkenleri istemciye açıktır; bu alanlara gizli anahtar koymayın. Gerçek `.env.local` dosyasını sürüm kontrolüne eklemeyin.
+
+### cPanel / reverse proxy notu
+
+Canlı ortamda `APP_ORIGIN` değerini kullanıcıların tarayıcıda açtığı HTTPS adresiyle aynı olacak şekilde tanımlayın:
+
+```env
+APP_ORIGIN=https://task.example.com
+```
+
+Bu değer değiştirildikten sonra Node.js uygulamasını cPanel üzerinden yeniden başlatın. Proxy, `Host` ve `X-Forwarded-*` başlıklarını uygulamaya aktarmaya devam etmelidir; `APP_ORIGIN` tanımlandığında güvenlik kontrolünün esas allowlist değeri bu değişken olur.
 
 ## Sayfalar ve kullanım
 
