@@ -31,9 +31,9 @@ interface EditTaskDialogProps {
         description?: string;
         status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
         priority?: 'low' | 'medium' | 'high';
-        start_date?: string;
-        end_date?: string;
-        due_date?: string;
+        start_date?: string | null;
+        end_date?: string | null;
+        due_date?: string | null;
     }) => Promise<boolean>;
     task: Task | null;
     members: TeamMember[];
@@ -88,7 +88,16 @@ export function EditTaskDialog({
             return;
         }
 
-        const updateData: any = {};
+        const updateData: {
+            assigned_to?: number;
+            title?: string;
+            description?: string;
+            status?: Task['status'];
+            priority?: Task['priority'];
+            start_date?: string | null;
+            end_date?: string | null;
+            due_date?: string | null;
+        } = {};
 
         if (task) {
             if (parseInt(assignedTo) !== task.assigned_to) {
@@ -115,6 +124,11 @@ export function EditTaskDialog({
             if (dueDate !== (task.due_date || '')) {
                 updateData.due_date = dueDate || null;
             }
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            onOpenChange(false);
+            return;
         }
 
         const success = await onSubmit(updateData);
@@ -185,7 +199,7 @@ export function EditTaskDialog({
                                 <Label htmlFor="status">Durum</Label>
                                 <Select
                                     value={status}
-                                    onValueChange={(value) => setStatus(value as any)}
+                                    onValueChange={(value) => setStatus(value as Task['status'])}
                                     disabled={isSubmitting}
                                 >
                                     <SelectTrigger id="status" className="w-full">
@@ -204,7 +218,7 @@ export function EditTaskDialog({
                                 <Label htmlFor="priority">Öncelik</Label>
                                 <Select
                                     value={priority}
-                                    onValueChange={(value) => setPriority(value as any)}
+                                    onValueChange={(value) => setPriority(value as Task['priority'])}
                                     disabled={isSubmitting}
                                 >
                                     <SelectTrigger id="priority" className="w-full">

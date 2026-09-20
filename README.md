@@ -8,6 +8,8 @@ Taskflow, ekiplerin görevleri oluşturup atayabildiği, durum ve teslim tarihle
 - Takım oluşturma, üye ekleme/çıkarma ve `admin` / `member` rolleri.
 - Takım görevlerini oluşturma, atama, düzenleme ve silme; durum, öncelik ve tarih alanları.
 - Paneldeki **Bana atanan görevler** ve takım detayındaki **Görevler** bölümlerinde arama, durum/öncelik filtreleri, sıralama ve filtreleri temizleme. Takım detayında ayrıca atanan kişiye göre filtreleme bulunur. Filtreler, yüklenen görevler üzerinde tarayıcıda çalışır.
+- Takım görevlerinde liste, sürükle-bırak destekli Kanban ve aylık takvim görünümleri. Mobil Kanban kartlarında durum seçimi bulunur; takvim görevleri teslim tarihine göre yerleştirir.
+- Her görev için açıklama, sorumlular, durum/öncelik, tarih planı ve zaman çizelgesini gösteren detay ekranı; yetkiye bağlı durum değiştirme, düzenleme ve silme işlemleri.
 - İşlem geri bildirimleri için Sonner bildirimleri ve mobil uyumlu arayüz.
 
 ## Teknoloji ve gereksinimler
@@ -102,6 +104,7 @@ Bu değer değiştirildikten sonra Node.js uygulamasını cPanel üzerinden yeni
 | `/sifremi-unuttum` | Kod isteme ve kodla yeni şifre belirleme. |
 | `/panel` | Takımlar ve kullanıcıya atanan görevler. |
 | `/panel/takimlar/[takimId]` | Takım üyeleri ve görevleri. |
+| `/panel/takimlar/[takimId]/gorevler/[gorevId]` | Görev ayrıntıları ve yetkili görev işlemleri. |
 
 `proxy.ts`, oturum açmamış kullanıcıları korumalı panel sayfalarından `/giris` yoluna yönlendirir. API uçları `proxy.ts` içinde atlanır; yetki kontrolleri ilgili Route Handler'larda yapılır.
 

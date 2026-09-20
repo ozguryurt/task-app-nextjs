@@ -15,6 +15,9 @@ import { CreateTaskDialog } from '@/components/tasks/create-task-dialog';
 import { EditTaskDialog } from '@/components/tasks/edit-task-dialog';
 import { TaskListItem } from '@/components/tasks/task-list-item';
 import { TaskFilterBar } from '@/components/tasks/task-filter-bar';
+import { TaskKanbanBoard } from '@/components/tasks/task-kanban-board';
+import { TaskCalendarView } from '@/components/tasks/task-calendar-view';
+import { TaskViewSwitcher, type TaskView } from '@/components/tasks/task-view-switcher';
 import { defaultTaskFilters, filterTasks, type TaskFilterState } from '@/lib/task-filters';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ArrowLeft, Users, UserPlus, Trash2, Calendar, ClipboardList, Plus, Loader2, Layers3 } from 'lucide-react';
@@ -36,6 +39,7 @@ export default function TeamDetailPage({ params }: PageProps) {
     const [memberToDelete, setMemberToDelete] = useState<{ id: number; name: string } | null>(null);
     const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
     const [taskFilters, setTaskFilters] = useState<TaskFilterState>({ ...defaultTaskFilters });
+    const [taskView, setTaskView] = useState<TaskView>('list');
     const [isEditTaskDialogOpen, setIsEditTaskDialogOpen] = useState(false);
     const [isDeleteTaskDialogOpen, setIsDeleteTaskDialogOpen] = useState(false);
     const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
@@ -183,6 +187,11 @@ export default function TeamDetailPage({ params }: PageProps) {
             setTaskToEdit(null);
         }
         return success;
+    };
+
+    const handleTaskStatusChange = async (task: Task, status: Task['status']) => {
+        if (task.status === status) return true;
+        return updateTask(task.id, { status });
     };
 
     const handleDeleteTaskClick = (taskId: number, taskTitle: string) => {
@@ -345,12 +354,15 @@ export default function TeamDetailPage({ params }: PageProps) {
                                         : 'Takım görevlerini görüntüleyin'}
                                 </CardDescription>
                             </div>
-                            {isAdmin && (
-                                <Button onClick={() => setIsCreateTaskDialogOpen(true)}>
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Görev Oluştur
-                                </Button>
-                            )}
+                            <div className="flex flex-wrap items-center gap-2">
+                                <TaskViewSwitcher value={taskView} onChange={setTaskView} />
+                                {isAdmin && (
+                                    <Button onClick={() => setIsCreateTaskDialogOpen(true)}>
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Görev Oluştur
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -376,6 +388,20 @@ export default function TeamDetailPage({ params }: PageProps) {
                                         <p className="text-sm font-medium">Eşleşen görev bulunamadı</p>
                                         <p className="mt-1 text-xs text-muted-foreground">Aramanızı veya filtrelerinizi değiştirebilirsiniz.</p>
                                     </div>
+                                ) : taskView === 'kanban' ? (
+                                    <TaskKanbanBoard
+                                        tasks={visibleTasks}
+                                        isAdmin={isAdmin}
+                                        currentUserId={user?.id || 0}
+                                        isUpdating={isSubmittingTask}
+                                        onStatusChange={handleTaskStatusChange}
+                                        onEdit={handleEditTaskClick}
+                                        onDelete={handleDeleteTaskClick}
+                                    />
+                                ) : taskView === 'calendar' ? (
+                                    <TaskCalendarView
+                                        tasks={visibleTasks}
+                                    />
                                 ) : (
                                     <div className="motion-stagger space-y-2">
                                         {visibleTasks.map((task) => (

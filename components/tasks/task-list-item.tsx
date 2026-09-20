@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Task } from '@/lib/store/team-store';
@@ -63,9 +64,12 @@ export function TaskListItem({
             <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                     <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                        <h3 className="truncate text-sm font-semibold">
+                        <Link
+                            href={`/panel/takimlar/${task.team_id}/gorevler/${task.id}`}
+                            className="truncate text-sm font-semibold underline-offset-4 hover:text-primary hover:underline"
+                        >
                             {task.title}
-                        </h3>
+                        </Link>
                         <Badge className={statusInfo.className}>
                             {statusInfo.label}
                         </Badge>

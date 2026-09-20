@@ -29,9 +29,9 @@ export interface CreateTaskData {
     description?: string;
     status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
     priority?: 'low' | 'medium' | 'high';
-    start_date?: string;
-    end_date?: string;
-    due_date?: string;
+    start_date?: string | null;
+    end_date?: string | null;
+    due_date?: string | null;
 }
 
 export interface UpdateTaskData {
@@ -40,9 +40,9 @@ export interface UpdateTaskData {
     description?: string;
     status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
     priority?: 'low' | 'medium' | 'high';
-    start_date?: string;
-    end_date?: string;
-    due_date?: string;
+    start_date?: string | null;
+    end_date?: string | null;
+    due_date?: string | null;
 }
 
 export function useTasks(teamId: number) {
@@ -211,4 +211,3 @@ export function useTasks(teamId: number) {
         error,
     };
 }
-

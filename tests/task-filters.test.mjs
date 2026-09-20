@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { defaultTaskFilters, filterTasks, hasActiveTaskFilters } from '../lib/task-filters.ts';
+import { createMonthGrid, taskDateKey, toLocalDateKey } from '../lib/task-calendar.ts';
 
 const tasks = [
     {
@@ -44,4 +45,19 @@ test('öncelik sıralaması girdiyi değiştirmez ve sıfırlama durumu doğru h
     assert.deepEqual(tasks.map((task) => task.id), originalOrder);
     assert.equal(hasActiveTaskFilters(defaultTaskFilters), false);
     assert.equal(hasActiveTaskFilters({ ...defaultTaskFilters, query: ' görev ' }), true);
+});
+
+test('takvim haftayı pazartesi başlatır ve altı haftalık görünüm üretir', () => {
+    const grid = createMonthGrid(new Date(2026, 8, 1), new Date(2026, 8, 21));
+
+    assert.equal(grid.length, 42);
+    assert.equal(toLocalDateKey(grid[0].date), '2026-08-31');
+    assert.equal(grid.find((day) => day.isToday)?.key, '2026-09-21');
+    assert.equal(grid.filter((day) => day.isCurrentMonth).length, 30);
+});
+
+test('görev tarihi saat diliminden etkilenmeden gün anahtarına çevrilir', () => {
+    assert.equal(taskDateKey('2026-09-21'), '2026-09-21');
+    assert.equal(taskDateKey('2026-09-21T00:00:00.000Z'), '2026-09-21');
+    assert.equal(taskDateKey(null), null);
 });
