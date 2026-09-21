@@ -7,6 +7,8 @@ export interface TaskFilterState {
     status: TaskStatusFilter;
     priority: TaskPriorityFilter;
     assignedTo: string;
+    projectId: string;
+    labelId: string;
     sort: TaskSort;
 }
 
@@ -15,6 +17,8 @@ export const defaultTaskFilters: TaskFilterState = {
     status: 'all',
     priority: 'all',
     assignedTo: 'all',
+    projectId: 'all',
+    labelId: 'all',
     sort: 'newest',
 };
 
@@ -26,6 +30,8 @@ interface FilterableTask {
     priority: Exclude<TaskPriorityFilter, 'all'>;
     due_date: string | null;
     created_at: string;
+    project_id?: number | null;
+    labels?: Array<{ id: number }>;
 }
 
 const priorityRank: Record<Exclude<TaskPriorityFilter, 'all'>, number> = {
@@ -52,6 +58,8 @@ export function filterTasks<T extends FilterableTask>(
             if (filters.status !== 'all' && task.status !== filters.status) return false;
             if (filters.priority !== 'all' && task.priority !== filters.priority) return false;
             if (filters.assignedTo !== 'all' && String(task.assigned_to) !== filters.assignedTo) return false;
+            if (filters.projectId !== 'all' && String(task.project_id) !== filters.projectId) return false;
+            if (filters.labelId !== 'all' && !task.labels?.some((label) => String(label.id) === filters.labelId)) return false;
             if (!query) return true;
 
             const searchableText = [
@@ -80,5 +88,6 @@ export function filterTasks<T extends FilterableTask>(
 
 export function hasActiveTaskFilters(filters: TaskFilterState): boolean {
     return filters.query.trim() !== '' || filters.status !== 'all' ||
-        filters.priority !== 'all' || filters.assignedTo !== 'all' || filters.sort !== 'newest';
+        filters.priority !== 'all' || filters.assignedTo !== 'all' || filters.projectId !== 'all' ||
+        filters.labelId !== 'all' || filters.sort !== 'newest';
 }

@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Select,
     SelectContent,
@@ -20,7 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { TeamMember, Task } from '@/lib/store/team-store';
+import { TeamMember, Task, type TaskLabel, type TaskProject } from '@/lib/store/team-store';
 
 interface EditTaskDialogProps {
     open: boolean;
@@ -34,9 +35,13 @@ interface EditTaskDialogProps {
         start_date?: string | null;
         end_date?: string | null;
         due_date?: string | null;
+        project_id?: number | null;
+        label_ids?: number[];
     }) => Promise<boolean>;
     task: Task | null;
     members: TeamMember[];
+    projects?: TaskProject[];
+    labels?: TaskLabel[];
     isSubmitting?: boolean;
 }
 
@@ -46,6 +51,8 @@ export function EditTaskDialog({
     onSubmit,
     task,
     members,
+    projects = [],
+    labels = [],
     isSubmitting = false,
 }: EditTaskDialogProps) {
     const [assignedTo, setAssignedTo] = useState('');
@@ -56,6 +63,8 @@ export function EditTaskDialog({
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [dueDate, setDueDate] = useState('');
+    const [projectId, setProjectId] = useState('none');
+    const [labelIds, setLabelIds] = useState<number[]>([]);
 
     useEffect(() => {
         if (task) {
@@ -69,6 +78,8 @@ export function EditTaskDialog({
             setStartDate(task.start_date ? formatDateForInput(task.start_date) : '');
             setEndDate(task.end_date ? formatDateForInput(task.end_date) : '');
             setDueDate(task.due_date ? formatDateForInput(task.due_date) : '');
+            setProjectId(task.project_id ? String(task.project_id) : 'none');
+            setLabelIds(task.labels?.map((label) => label.id) ?? []);
         }
     }, [task]);
 
@@ -97,6 +108,8 @@ export function EditTaskDialog({
             start_date?: string | null;
             end_date?: string | null;
             due_date?: string | null;
+            project_id?: number | null;
+            label_ids?: number[];
         } = {};
 
         if (task) {
@@ -124,6 +137,11 @@ export function EditTaskDialog({
             if (dueDate !== (task.due_date || '')) {
                 updateData.due_date = dueDate || null;
             }
+            const currentProjectId = task.project_id ? String(task.project_id) : 'none';
+            if (projectId !== currentProjectId) updateData.project_id = projectId === 'none' ? null : Number(projectId);
+            const currentLabelIds = (task.labels ?? []).map((label) => label.id).sort((a, b) => a - b);
+            const nextLabelIds = [...labelIds].sort((a, b) => a - b);
+            if (currentLabelIds.join(',') !== nextLabelIds.join(',')) updateData.label_ids = nextLabelIds;
         }
 
         if (Object.keys(updateData).length === 0) {
@@ -232,6 +250,13 @@ export function EditTaskDialog({
                                 </Select>
                             </div>
                         </div>
+
+                        {(projects.length > 0 || labels.length > 0) && (
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                {projects.length > 0 && <div className="space-y-2"><Label>Proje</Label><Select value={projectId} onValueChange={setProjectId} disabled={isSubmitting}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Projesiz</SelectItem>{projects.map((project) => <SelectItem key={project.id} value={String(project.id)}>{project.name}</SelectItem>)}</SelectContent></Select></div>}
+                                {labels.length > 0 && <div className="space-y-2"><Label>Etiketler</Label><div className="flex min-h-9 flex-wrap items-center gap-2 rounded-md border px-2.5 py-1.5">{labels.map((label) => <label key={label.id} className="flex cursor-pointer items-center gap-1.5 text-xs"><Checkbox checked={labelIds.includes(label.id)} onCheckedChange={(checked) => setLabelIds((current) => checked ? [...current, label.id] : current.filter((id) => id !== label.id))} /><span className="size-2 rounded-full" style={{ backgroundColor: label.color }} />{label.name}</label>)}</div></div>}
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                             <div className="space-y-2">

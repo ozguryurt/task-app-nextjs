@@ -14,7 +14,7 @@ const productLinks = [
  */
 export function SiteFooter({ className }: { className?: string }) {
     return (
-        <footer className={cn('border-t border-border bg-card', className)}>
+        <footer className={cn('border-t border-border/70 bg-card/75 backdrop-blur-sm', className)}>
             <div className="mx-auto grid max-w-6xl gap-7 px-5 py-9 sm:px-8 md:grid-cols-[1.5fr_1fr]">
                 <div>
                     <div className="flex items-center gap-2.5">

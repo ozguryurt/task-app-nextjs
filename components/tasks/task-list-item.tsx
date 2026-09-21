@@ -60,7 +60,7 @@ export function TaskListItem({
     const canDelete = isAdmin || isTaskCreator;
 
     return (
-        <div className="motion-row rounded-md border border-transparent bg-muted/60 p-3 hover:border-border hover:bg-card">
+        <div className="motion-row rounded-lg border border-border/55 bg-muted/35 p-3.5 hover:border-primary/15 hover:bg-card">
             <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                     <div className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -76,6 +76,8 @@ export function TaskListItem({
                         <Badge className={priorityInfo.className}>
                             {priorityInfo.label}
                         </Badge>
+                        {task.project_name && <Badge variant="outline" style={{ borderColor: task.project_color || undefined }}>{task.project_name}</Badge>}
+                        {task.labels?.map((label) => <Badge key={label.id} variant="outline" style={{ borderColor: label.color, color: label.color }}>{label.name}</Badge>)}
                     </div>
 
                     {task.description && (

@@ -44,25 +44,25 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.977 0.003 265);
-  --foreground: oklch(0.22 0.019 265);
+  --radius: 0.75rem;
+  --background: oklch(0.975 0.004 260);
+  --foreground: oklch(0.205 0.025 265);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.22 0.019 265);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.43 0.15 265);
+  --primary: oklch(0.46 0.17 264);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.953 0.009 265);
-  --secondary-foreground: oklch(0.31 0.045 265);
-  --muted: oklch(0.963 0.004 265);
-  --muted-foreground: oklch(0.51 0.019 265);
-  --accent: oklch(0.945 0.012 265);
+  --secondary: oklch(0.955 0.015 264);
+  --secondary-foreground: oklch(0.34 0.075 264);
+  --muted: oklch(0.956 0.006 260);
+  --muted-foreground: oklch(0.49 0.023 263);
+  --accent: oklch(0.945 0.02 264);
   --accent-foreground: oklch(0.29 0.055 265);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.905 0.006 265);
-  --input: oklch(0.885 0.008 265);
-  --ring: oklch(0.57 0.12 265);
+  --border: oklch(0.9 0.01 260);
+  --input: oklch(0.875 0.012 260);
+  --ring: oklch(0.56 0.14 264);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -123,6 +123,10 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at 8% -10%, color-mix(in oklab, var(--primary) 7%, transparent) 0, transparent 30rem),
+      linear-gradient(180deg, color-mix(in oklab, var(--card) 45%, transparent), transparent 18rem);
+    min-height: 100dvh;
   }
 
   a {
@@ -206,15 +210,56 @@
 
   .motion-row:hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 22px rgb(23 31 59 / 0.055);
+    box-shadow: 0 10px 28px rgb(23 31 59 / 0.07);
   }
 
   .auth-shell {
-    @apply flex min-h-screen items-center justify-center px-4 py-8;
+    @apply relative isolate flex min-h-screen items-center justify-center overflow-hidden px-4 py-10;
+  }
+
+  .auth-shell::before {
+    content: "";
+    @apply pointer-events-none absolute inset-0 -z-10;
+    background:
+      radial-gradient(circle at 18% 18%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 27rem),
+      radial-gradient(circle at 88% 85%, color-mix(in oklab, var(--primary) 7%, transparent), transparent 24rem);
+  }
+
+  .auth-shell::after {
+    content: "";
+    @apply pointer-events-none absolute inset-0 -z-10 opacity-40;
+    background-image: linear-gradient(to right, color-mix(in oklab, var(--border) 55%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklab, var(--border) 55%, transparent) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: linear-gradient(to bottom, black, transparent 70%);
   }
 
   .auth-card {
-    @apply border-border bg-card;
+    @apply border-white/80 bg-card/95 shadow-[0_24px_80px_rgba(23,31,59,0.13)] backdrop-blur-xl;
+  }
+
+  .app-shell {
+    @apply min-h-screen pb-12;
+  }
+
+  .app-header {
+    @apply sticky top-0 z-30 border-b border-border/70 bg-card/80 backdrop-blur-xl supports-[backdrop-filter]:bg-card/75;
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.7);
+  }
+
+  .app-container {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .page-heading {
+    @apply text-2xl font-semibold tracking-[-0.035em] sm:text-3xl;
+  }
+
+  .section-kicker {
+    @apply text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/80;
+  }
+
+  .surface-muted {
+    @apply rounded-xl border border-border/70 bg-muted/45;
   }
 }
 

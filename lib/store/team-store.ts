@@ -23,9 +23,38 @@ export interface TeamMember {
     email_verified: boolean;
 }
 
+export interface TaskProject {
+    id: number;
+    team_id: number;
+    name: string;
+    description: string | null;
+    color: string;
+}
+
+export interface TaskLabel {
+    id: number;
+    team_id: number;
+    name: string;
+    color: string;
+}
+
+export interface TaskTemplate {
+    id: number;
+    team_id: number;
+    project_id: number | null;
+    project_name: string | null;
+    name: string;
+    title: string;
+    description: string | null;
+    priority: 'low' | 'medium' | 'high';
+}
+
 export interface Task {
     id: number;
     team_id: number;
+    project_id: number | null;
+    project_name: string | null;
+    project_color: string | null;
     assigned_to: number;
     assigned_by: number;
     title: string;
@@ -42,6 +71,7 @@ export interface Task {
     assigned_to_email: string;
     assigned_by_name: string;
     assigned_by_email: string;
+    labels: TaskLabel[];
 }
 
 interface TeamStore {

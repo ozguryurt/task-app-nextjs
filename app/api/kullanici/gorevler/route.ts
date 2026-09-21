@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { RowDataPacket } from 'mysql2';
 import { verifyJWT } from '@/lib/jwt-helpers';
+import { attachTaskLabels } from '@/lib/task-metadata-db';
 
 interface UserTaskRow extends RowDataPacket {
     id: number;
     team_id: number;
     team_name: string;
+    project_id: number | null;
+    project_name: string | null;
+    project_color: string | null;
     assigned_to: number;
     assigned_by: number;
     assigned_by_name: string;
@@ -50,6 +54,9 @@ export async function GET(request: NextRequest) {
                 t.id,
                 t.team_id,
                 tm.name as team_name,
+                t.project_id,
+                p.name as project_name,
+                p.color as project_color,
                 t.assigned_to,
                 t.assigned_by,
                 u.name as assigned_by_name,
@@ -65,6 +72,7 @@ export async function GET(request: NextRequest) {
                 t.updated_at
             FROM tasks t
             INNER JOIN teams tm ON t.team_id = tm.id
+            LEFT JOIN projects p ON t.project_id = p.id
             INNER JOIN users u ON t.assigned_by = u.id
             WHERE t.assigned_to = ?
             ORDER BY 
@@ -85,7 +93,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            tasks,
+            tasks: await attachTaskLabels(tasks),
         });
     } catch (error) {
         console.error('Kullanıcı görevleri getirilirken hata:', error);

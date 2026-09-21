@@ -1,10 +1,14 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useTeamStore } from '../store/team-store';
+import type { TaskLabel } from '../store/team-store';
 
 export interface Task {
     id: number;
     team_id: number;
+    project_id: number | null;
+    project_name: string | null;
+    project_color: string | null;
     assigned_to: number;
     assigned_by: number;
     title: string;
@@ -21,9 +25,12 @@ export interface Task {
     assigned_to_email: string;
     assigned_by_name: string;
     assigned_by_email: string;
+    labels: TaskLabel[];
 }
 
 export interface CreateTaskData {
+    project_id?: number | null;
+    label_ids?: number[];
     assigned_to: number;
     title: string;
     description?: string;
@@ -35,6 +42,8 @@ export interface CreateTaskData {
 }
 
 export interface UpdateTaskData {
+    project_id?: number | null;
+    label_ids?: number[];
     assigned_to?: number;
     title?: string;
     description?: string;

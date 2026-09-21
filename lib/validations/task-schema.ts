@@ -7,6 +7,8 @@ const optionalDate = z.union([
 ]).optional();
 
 const taskFields = {
+    project_id: z.number().int().positive().nullable().optional(),
+    label_ids: z.array(z.number().int().positive()).max(20, 'En fazla 20 etiket seçilebilir').optional(),
     assigned_to: z.coerce.number().int().positive(),
     title: z.string().trim().min(1, 'Görev başlığı zorunludur').max(255, 'Görev başlığı çok uzun'),
     description: z.string().max(10_000, 'Görev açıklaması çok uzun').nullable().optional(),

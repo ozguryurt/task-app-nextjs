@@ -18,6 +18,7 @@ import {
     type TaskSort,
     type TaskStatusFilter,
 } from '@/lib/task-filters';
+import type { TaskLabel, TaskProject } from '@/lib/store/team-store';
 
 interface TaskFilterBarProps {
     filters: TaskFilterState;
@@ -26,6 +27,8 @@ interface TaskFilterBarProps {
     totalCount: number;
     searchPlaceholder?: string;
     assignees?: Array<{ id: number; name: string }>;
+    projects?: TaskProject[];
+    labels?: TaskLabel[];
 }
 
 export function TaskFilterBar({
@@ -35,11 +38,13 @@ export function TaskFilterBar({
     totalCount,
     searchPlaceholder = 'Görevlerde ara...',
     assignees,
+    projects,
+    labels,
 }: TaskFilterBarProps) {
     const isFiltered = hasActiveTaskFilters(filters);
 
     return (
-        <div className="motion-reveal mb-4 space-y-2.5 border-b pb-4">
+        <div className="motion-reveal mb-4 space-y-3 rounded-xl border border-border/70 bg-muted/25 p-3.5">
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <div className="relative min-w-0 flex-1 sm:min-w-52">
                     <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -82,6 +87,18 @@ export function TaskFilterBar({
                                 <SelectItem key={assignee.id} value={String(assignee.id)}>{assignee.name}</SelectItem>
                             ))}
                         </SelectContent>
+                    </Select>
+                )}
+                {projects && projects.length > 0 && (
+                    <Select value={filters.projectId} onValueChange={(projectId) => onChange({ ...filters, projectId })}>
+                        <SelectTrigger aria-label="Projeye göre filtrele" className="w-full sm:w-36"><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="all">Tüm projeler</SelectItem>{projects.map((project) => <SelectItem key={project.id} value={String(project.id)}>{project.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                )}
+                {labels && labels.length > 0 && (
+                    <Select value={filters.labelId} onValueChange={(labelId) => onChange({ ...filters, labelId })}>
+                        <SelectTrigger aria-label="Etikete göre filtrele" className="w-full sm:w-36"><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="all">Tüm etiketler</SelectItem>{labels.map((label) => <SelectItem key={label.id} value={String(label.id)}>{label.name}</SelectItem>)}</SelectContent>
                     </Select>
                 )}
                 <Select value={filters.sort} onValueChange={(sort) => onChange({ ...filters, sort: sort as TaskSort })}>

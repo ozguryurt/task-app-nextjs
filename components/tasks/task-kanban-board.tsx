@@ -144,6 +144,8 @@ export function TaskKanbanBoard({
 
                                         <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                                             <Badge className={cn('border-0 text-[10px]', priorityClasses[task.priority])}>{priorityLabels[task.priority]}</Badge>
+                                            {task.project_name && <Badge variant="outline" className="text-[10px]" style={{ borderColor: task.project_color || undefined }}>{task.project_name}</Badge>}
+                                            {task.labels?.slice(0, 2).map((label) => <span key={label.id} className="size-2 rounded-full" title={label.name} style={{ backgroundColor: label.color }} />)}
                                             {task.due_date && (
                                                 <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                                                     <CalendarDays className="size-3" /> {new Date(task.due_date).toLocaleDateString('tr-TR')}

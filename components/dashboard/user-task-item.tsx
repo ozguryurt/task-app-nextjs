@@ -46,7 +46,7 @@ export function UserTaskItem({ task }: UserTaskItemProps) {
     return (
         <button
             type="button"
-            className="motion-row group w-full rounded-md border border-transparent bg-muted/60 p-3 text-left hover:border-border hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:translate-y-0"
+            className="motion-row group w-full rounded-lg border border-border/55 bg-muted/35 p-3.5 text-left hover:border-primary/15 hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 active:translate-y-0"
             onClick={handleClick}
         >
                 <div className="flex items-start justify-between gap-3">
@@ -74,6 +74,8 @@ export function UserTaskItem({ task }: UserTaskItemProps) {
                     <Badge className={`${priorityInfo.className} border-0`}>
                         {priorityInfo.label}
                     </Badge>
+                    {task.project_name && <Badge variant="outline" style={{ borderColor: task.project_color || undefined }}>{task.project_name}</Badge>}
+                    {task.labels?.map((label) => <Badge key={label.id} variant="outline" style={{ borderColor: label.color, color: label.color }}>{label.name}</Badge>)}
                 </div>
 
                 <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-2.5 text-[11px] text-muted-foreground">

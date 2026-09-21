@@ -82,11 +82,30 @@ CREATE TABLE IF NOT EXISTS team_members (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================
+-- PROJECTS TABLE
+-- =====================
+CREATE TABLE IF NOT EXISTS projects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    team_id INT NOT NULL,
+    name VARCHAR(120) NOT NULL,
+    description TEXT DEFAULT NULL,
+    color CHAR(7) NOT NULL DEFAULT '#6366f1',
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_team_project_name (team_id, name),
+    INDEX idx_projects_team (team_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================
 -- TASKS TABLE (İleride görev atama sistemi ekleneceği için)
 -- =====================
 CREATE TABLE IF NOT EXISTS tasks (
     id INT AUTO_INCREMENT PRIMARY KEY,
     team_id INT NOT NULL,
+    project_id INT DEFAULT NULL,
     assigned_to INT NOT NULL,
     assigned_by INT NOT NULL,
     title VARCHAR(255) NOT NULL,
@@ -106,11 +125,13 @@ CREATE TABLE IF NOT EXISTS tasks (
     
     -- Foreign Keys
     FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL,
     FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (assigned_by) REFERENCES users(id) ON DELETE CASCADE,
     
     -- İndeksler
     INDEX idx_team_id (team_id),
+    INDEX idx_project_id (project_id),
     INDEX idx_assigned_to (assigned_to),
     INDEX idx_assigned_by (assigned_by),
     INDEX idx_status (status),
@@ -118,5 +139,49 @@ CREATE TABLE IF NOT EXISTS tasks (
     INDEX idx_start_date (start_date),
     INDEX idx_end_date (end_date),
     INDEX idx_due_date (due_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================
+-- TASK LABELS
+-- =====================
+CREATE TABLE IF NOT EXISTS task_labels (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    team_id INT NOT NULL,
+    name VARCHAR(60) NOT NULL,
+    color CHAR(7) NOT NULL DEFAULT '#64748b',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_team_label_name (team_id, name),
+    INDEX idx_task_labels_team (team_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS task_label_assignments (
+    task_id INT NOT NULL,
+    label_id INT NOT NULL,
+    PRIMARY KEY (task_id, label_id),
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (label_id) REFERENCES task_labels(id) ON DELETE CASCADE,
+    INDEX idx_task_label_assignments_label (label_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================
+-- TASK TEMPLATES
+-- =====================
+CREATE TABLE IF NOT EXISTS task_templates (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    team_id INT NOT NULL,
+    project_id INT DEFAULT NULL,
+    name VARCHAR(120) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT DEFAULT NULL,
+    priority ENUM('low', 'medium', 'high') DEFAULT 'medium' NOT NULL,
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_team_template_name (team_id, name),
+    INDEX idx_task_templates_team (team_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

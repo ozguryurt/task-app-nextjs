@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Select,
     SelectContent,
@@ -20,7 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { TeamMember } from '@/lib/store/team-store';
+import { TeamMember, type TaskLabel, type TaskProject, type TaskTemplate } from '@/lib/store/team-store';
 
 interface CreateTaskDialogProps {
     open: boolean;
@@ -34,8 +35,13 @@ interface CreateTaskDialogProps {
         start_date?: string;
         end_date?: string;
         due_date?: string;
+        project_id?: number | null;
+        label_ids?: number[];
     }) => Promise<boolean>;
     members: TeamMember[];
+    projects?: TaskProject[];
+    labels?: TaskLabel[];
+    templates?: TaskTemplate[];
     isSubmitting?: boolean;
 }
 
@@ -44,6 +50,9 @@ export function CreateTaskDialog({
     onOpenChange,
     onSubmit,
     members,
+    projects = [],
+    labels = [],
+    templates = [],
     isSubmitting = false,
 }: CreateTaskDialogProps) {
     const [assignedTo, setAssignedTo] = useState('');
@@ -54,6 +63,20 @@ export function CreateTaskDialog({
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [dueDate, setDueDate] = useState('');
+    const [projectId, setProjectId] = useState('none');
+    const [labelIds, setLabelIds] = useState<number[]>([]);
+    const [templateId, setTemplateId] = useState('none');
+
+    const applyTemplate = (value: string) => {
+        setTemplateId(value);
+        if (value === 'none') return;
+        const template = templates.find((item) => item.id === Number(value));
+        if (!template) return;
+        setTitle(template.title);
+        setDescription(template.description || '');
+        setPriority(template.priority);
+        setProjectId(template.project_id ? String(template.project_id) : 'none');
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -71,6 +94,8 @@ export function CreateTaskDialog({
             start_date: startDate || undefined,
             end_date: endDate || undefined,
             due_date: dueDate || undefined,
+            project_id: projectId === 'none' ? null : Number(projectId),
+            label_ids: labelIds,
         });
 
         // Form başarılı olursa temizle
@@ -89,6 +114,9 @@ export function CreateTaskDialog({
         setStartDate('');
         setEndDate('');
         setDueDate('');
+        setProjectId('none');
+        setLabelIds([]);
+        setTemplateId('none');
     };
 
     const handleOpenChange = (newOpen: boolean) => {
@@ -110,6 +138,15 @@ export function CreateTaskDialog({
                     </DialogHeader>
 
                     <div className="space-y-3 py-4">
+                        {templates.length > 0 && (
+                            <div className="space-y-2">
+                                <Label>Görev şablonu</Label>
+                                <Select value={templateId} onValueChange={applyTemplate} disabled={isSubmitting}>
+                                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                                    <SelectContent><SelectItem value="none">Şablon kullanma</SelectItem>{templates.map((template) => <SelectItem key={template.id} value={String(template.id)}>{template.name}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </div>
+                        )}
                         <div className="space-y-2">
                             <Label htmlFor="assigned_to">Atanan Kişi *</Label>
                             <Select
@@ -192,6 +229,13 @@ export function CreateTaskDialog({
                                 </Select>
                             </div>
                         </div>
+
+                        {(projects.length > 0 || labels.length > 0) && (
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                {projects.length > 0 && <div className="space-y-2"><Label>Proje</Label><Select value={projectId} onValueChange={setProjectId} disabled={isSubmitting}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Projesiz</SelectItem>{projects.map((project) => <SelectItem key={project.id} value={String(project.id)}>{project.name}</SelectItem>)}</SelectContent></Select></div>}
+                                {labels.length > 0 && <div className="space-y-2"><Label>Etiketler</Label><div className="flex min-h-9 flex-wrap items-center gap-2 rounded-md border px-2.5 py-1.5">{labels.map((label) => <label key={label.id} className="flex cursor-pointer items-center gap-1.5 text-xs"><Checkbox checked={labelIds.includes(label.id)} onCheckedChange={(checked) => setLabelIds((current) => checked ? [...current, label.id] : current.filter((id) => id !== label.id))} /><span className="size-2 rounded-full" style={{ backgroundColor: label.color }} />{label.name}</label>)}</div></div>}
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                             <div className="space-y-2">

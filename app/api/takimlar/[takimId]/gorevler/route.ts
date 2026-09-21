@@ -4,10 +4,14 @@ import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { verifyJWT } from '@/lib/jwt-helpers';
 import { createTaskSchema } from '@/lib/validations/task-schema';
 import { rejectOversizedRequest } from '@/lib/security';
+import { attachTaskLabels } from '@/lib/task-metadata-db';
 
 interface TaskRow extends RowDataPacket {
     id: number;
     team_id: number;
+    project_id: number | null;
+    project_name: string | null;
+    project_color: string | null;
     assigned_to: number;
     assigned_by: number;
     title: string;
@@ -83,11 +87,14 @@ export async function GET(
         const [tasks] = await pool.query<TaskRow[]>(
             `SELECT 
                 t.*,
+                p.name as project_name,
+                p.color as project_color,
                 u1.name as assigned_to_name,
                 u1.email as assigned_to_email,
                 u2.name as assigned_by_name,
                 u2.email as assigned_by_email
             FROM tasks t
+            LEFT JOIN projects p ON t.project_id = p.id
             LEFT JOIN users u1 ON t.assigned_to = u1.id
             LEFT JOIN users u2 ON t.assigned_by = u2.id
             WHERE t.team_id = ?
@@ -97,7 +104,7 @@ export async function GET(
 
         return NextResponse.json({
             success: true,
-            tasks,
+            tasks: await attachTaskLabels(tasks),
             userRole: memberRows[0].role,
         });
     } catch (error) {
@@ -178,6 +185,8 @@ export async function POST(
         }
 
         const {
+            project_id,
+            label_ids = [],
             assigned_to,
             title,
             description,
@@ -201,46 +210,73 @@ export async function POST(
             );
         }
 
-        // Görevi oluştur
-        const [result] = await pool.query<ResultSetHeader>(
-            `INSERT INTO tasks (
-                team_id, assigned_to, assigned_by, title, description,
-                status, priority, start_date, end_date, due_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                teamIdNum,
-                assigned_to,
-                userId,
-                title,
-                description?.trim() || null,
-                status,
-                priority,
-                start_date || null,
-                end_date || null,
-                due_date || null,
-            ]
-        );
+        if (project_id) {
+            const [projects] = await pool.query<RowDataPacket[]>('SELECT id FROM projects WHERE id = ? AND team_id = ?', [project_id, teamIdNum]);
+            if (projects.length === 0) return NextResponse.json({ error: 'Geçersiz proje' }, { status: 400 });
+        }
+
+        const uniqueLabelIds = [...new Set(label_ids)];
+        if (uniqueLabelIds.length > 0) {
+            const placeholders = uniqueLabelIds.map(() => '?').join(',');
+            const [labels] = await pool.query<RowDataPacket[]>(
+                `SELECT id FROM task_labels WHERE team_id = ? AND id IN (${placeholders})`,
+                [teamIdNum, ...uniqueLabelIds]
+            );
+            if (labels.length !== uniqueLabelIds.length) return NextResponse.json({ error: 'Geçersiz etiket seçimi' }, { status: 400 });
+        }
+
+        const connection = await pool.getConnection();
+        let taskId: number;
+        try {
+            await connection.beginTransaction();
+            const [result] = await connection.query<ResultSetHeader>(
+                `INSERT INTO tasks (
+                    team_id, project_id, assigned_to, assigned_by, title, description,
+                    status, priority, start_date, end_date, due_date
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [teamIdNum, project_id ?? null, assigned_to, userId, title, description?.trim() || null,
+                    status, priority, start_date || null, end_date || null, due_date || null]
+            );
+            taskId = result.insertId;
+            if (uniqueLabelIds.length > 0) {
+                await connection.query(
+                    `INSERT INTO task_label_assignments (task_id, label_id) VALUES ${uniqueLabelIds.map(() => '(?, ?)').join(',')}`,
+                    uniqueLabelIds.flatMap((labelId) => [taskId, labelId])
+                );
+            }
+            await connection.commit();
+        } catch (transactionError) {
+            await connection.rollback();
+            throw transactionError;
+        } finally {
+            connection.release();
+        }
 
         // Oluşturulan görevi getir
         const [tasks] = await pool.query<TaskRow[]>(
             `SELECT 
                 t.*,
+                p.name as project_name,
+                p.color as project_color,
                 u1.name as assigned_to_name,
                 u1.email as assigned_to_email,
                 u2.name as assigned_by_name,
                 u2.email as assigned_by_email
             FROM tasks t
+            LEFT JOIN projects p ON t.project_id = p.id
             LEFT JOIN users u1 ON t.assigned_to = u1.id
             LEFT JOIN users u2 ON t.assigned_by = u2.id
             WHERE t.id = ?`,
-            [result.insertId]
+            [taskId]
         );
+
+        const [createdTask] = await attachTaskLabels(tasks);
 
         return NextResponse.json(
             {
                 success: true,
                 message: 'Görev başarıyla oluşturuldu',
-                task: tasks[0],
+                task: createdTask,
             },
             { status: 201 }
         );

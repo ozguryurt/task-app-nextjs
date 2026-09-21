@@ -13,6 +13,7 @@ import { CreateTeamDialog } from '@/components/teams/create-team-dialog';
 import { TeamCard } from '@/components/teams/team-card';
 import { UserTaskItem } from '@/components/dashboard/user-task-item';
 import { TaskFilterBar } from '@/components/tasks/task-filter-bar';
+import { TaskAnalytics } from '@/components/dashboard/task-analytics';
 import { defaultTaskFilters, filterTasks, type TaskFilterState } from '@/lib/task-filters';
 import { CalendarDays, CheckCircle2, ClipboardList, Layers3, LogOut, Mail, Plus, Users, UserRound } from 'lucide-react';
 
@@ -34,36 +35,36 @@ export default function DashboardPage() {
     const activeTasks = userTasks.filter((task) => task.status !== 'completed' && task.status !== 'cancelled');
     const completedTasks = userTasks.filter((task) => task.status === 'completed');
     const visibleTasks = useMemo(
-        () => filterTasks(userTasks, taskFilters, (task) => `${task.team_name} ${task.assigned_by_name}`),
+        () => filterTasks(userTasks, taskFilters, (task) => `${task.team_name} ${task.assigned_by_name} ${task.project_name ?? ''} ${task.labels?.map((label) => label.name).join(' ') ?? ''}`),
         [userTasks, taskFilters]
     );
 
     return (
-        <main className="min-h-screen pb-10">
-            <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur-md">
-                <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-5 sm:px-8">
+        <main className="app-shell">
+            <header className="app-header">
+                <div className="app-container flex h-16 items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                        <span className="flex size-8 items-center justify-center rounded-md bg-primary text-white"><Layers3 className="size-4" /></span>
+                        <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-white shadow-[0_6px_16px_rgba(55,70,180,0.24)]"><Layers3 className="size-4" /></span>
                         <div><p className="text-sm font-semibold tracking-tight">Taskflow</p><p className="text-[10px] text-muted-foreground">Çalışma alanı</p></div>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="hidden text-right sm:block"><p className="text-xs font-semibold">{user?.name}</p><p className="text-[11px] text-muted-foreground">{user?.email}</p></div>
-                        <span className="flex size-8 items-center justify-center rounded-full border bg-secondary text-xs font-semibold text-primary">{user?.name?.charAt(0).toUpperCase() || 'U'}</span>
+                        <span className="flex size-9 items-center justify-center rounded-full border border-primary/15 bg-secondary text-xs font-semibold text-primary shadow-sm">{user?.name?.charAt(0).toUpperCase() || 'U'}</span>
                         <Button onClick={handleLogout} variant="ghost" size="icon" disabled={isSubmitting} aria-label="Çıkış yap"><LogOut /></Button>
                     </div>
                 </div>
             </header>
 
-            <div className="mx-auto max-w-7xl px-5 py-7 sm:px-8">
-                <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-                    <div><p className="mb-1 text-xs font-medium text-muted-foreground">Genel bakış</p><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Merhaba, {user?.name?.split(' ')[0]}.</h1><p className="mt-1 text-sm text-muted-foreground">Bugünün önceliklerini ve ekiplerini tek ekrandan yönet.</p></div>
+            <div className="app-container py-8 sm:py-10">
+                <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+                    <div><p className="section-kicker mb-2">Genel bakış</p><h1 className="page-heading">Merhaba, {user?.name?.split(' ')[0]}.</h1><p className="mt-2 text-sm text-muted-foreground">Bugünün önceliklerini ve ekiplerini tek ekrandan yönet.</p></div>
                     <Button onClick={() => setIsCreateDialogOpen(true)}><Plus /> Yeni takım</Button>
                 </div>
 
-                <section className="motion-stagger mb-4 grid gap-3 sm:grid-cols-3">
-                    <Card className="py-3"><CardContent className="flex items-center justify-between"><div><p className="text-xs text-muted-foreground">Takımlar</p><p className="mt-1 text-xl font-semibold tracking-tight">{teams.length}</p></div><Users className="size-4 text-muted-foreground" /></CardContent></Card>
-                    <Card className="py-3"><CardContent className="flex items-center justify-between"><div><p className="text-xs text-muted-foreground">Aktif görevler</p><p className="mt-1 text-xl font-semibold tracking-tight">{activeTasks.length}</p></div><ClipboardList className="size-4 text-muted-foreground" /></CardContent></Card>
-                    <Card className="py-3"><CardContent className="flex items-center justify-between"><div><p className="text-xs text-muted-foreground">Tamamlanan</p><p className="mt-1 text-xl font-semibold tracking-tight">{completedTasks.length}</p></div><CheckCircle2 className="size-4 text-muted-foreground" /></CardContent></Card>
+                <section className="motion-stagger mb-5 grid gap-3 sm:grid-cols-3">
+                    <Card className="overflow-hidden py-4"><CardContent className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Takımlar</p><p className="mt-1.5 text-2xl font-semibold tracking-[-0.04em]">{teams.length}</p></div><span className="flex size-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600"><Users className="size-4" /></span></CardContent></Card>
+                    <Card className="overflow-hidden py-4"><CardContent className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Aktif görevler</p><p className="mt-1.5 text-2xl font-semibold tracking-[-0.04em]">{activeTasks.length}</p></div><span className="flex size-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><ClipboardList className="size-4" /></span></CardContent></Card>
+                    <Card className="overflow-hidden py-4"><CardContent className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Tamamlanan</p><p className="mt-1.5 text-2xl font-semibold tracking-[-0.04em]">{completedTasks.length}</p></div><span className="flex size-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><CheckCircle2 className="size-4" /></span></CardContent></Card>
                 </section>
 
                 <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -108,6 +109,8 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
                 </section>
+
+                <TaskAnalytics tasks={userTasks} />
 
                 <section className="mt-7">
                     <div className="mb-4 flex items-end justify-between"><div><p className="text-xs font-medium text-muted-foreground">Çalışma alanları</p><h2 className="mt-1 text-lg font-semibold tracking-tight">Takımlarım</h2></div><span className="text-xs text-muted-foreground">{teams.length} takım</span></div>

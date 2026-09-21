@@ -4,10 +4,14 @@ import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { verifyJWT } from '@/lib/jwt-helpers';
 import { updateTaskSchema } from '@/lib/validations/task-schema';
 import { rejectOversizedRequest } from '@/lib/security';
+import { attachTaskLabels } from '@/lib/task-metadata-db';
 
 interface TaskRow extends RowDataPacket {
     id: number;
     team_id: number;
+    project_id: number | null;
+    project_name: string | null;
+    project_color: string | null;
     assigned_to: number;
     assigned_by: number;
     title: string;
@@ -84,11 +88,14 @@ export async function GET(
         const [tasks] = await pool.query<TaskRow[]>(
             `SELECT 
                 t.*,
+                p.name as project_name,
+                p.color as project_color,
                 u1.name as assigned_to_name,
                 u1.email as assigned_to_email,
                 u2.name as assigned_by_name,
                 u2.email as assigned_by_email
             FROM tasks t
+            LEFT JOIN projects p ON t.project_id = p.id
             LEFT JOIN users u1 ON t.assigned_to = u1.id
             LEFT JOIN users u2 ON t.assigned_by = u2.id
             WHERE t.id = ? AND t.team_id = ?`,
@@ -102,9 +109,10 @@ export async function GET(
             );
         }
 
+        const [task] = await attachTaskLabels(tasks);
         return NextResponse.json({
             success: true,
-            task: tasks[0],
+            task,
         });
     } catch (error) {
         console.error('Görev getirilirken hata:', error);
@@ -216,6 +224,8 @@ export async function PUT(
         }
 
         const {
+            project_id,
+            label_ids,
             assigned_to,
             title,
             description,
@@ -225,6 +235,21 @@ export async function PUT(
             end_date,
             due_date,
         } = body;
+
+        if (project_id) {
+            const [projects] = await pool.query<RowDataPacket[]>('SELECT id FROM projects WHERE id = ? AND team_id = ?', [project_id, teamIdNum]);
+            if (projects.length === 0) return NextResponse.json({ error: 'Geçersiz proje' }, { status: 400 });
+        }
+
+        const uniqueLabelIds = label_ids ? [...new Set(label_ids)] : undefined;
+        if (uniqueLabelIds && uniqueLabelIds.length > 0) {
+            const placeholders = uniqueLabelIds.map(() => '?').join(',');
+            const [labels] = await pool.query<RowDataPacket[]>(
+                `SELECT id FROM task_labels WHERE team_id = ? AND id IN (${placeholders})`,
+                [teamIdNum, ...uniqueLabelIds]
+            );
+            if (labels.length !== uniqueLabelIds.length) return NextResponse.json({ error: 'Geçersiz etiket seçimi' }, { status: 400 });
+        }
 
         // Eğer assigned_to değiştiriliyorsa, yeni kişinin takım üyesi olup olmadığını kontrol et
         if (assigned_to && assigned_to !== existingTasks[0].assigned_to) {
@@ -243,7 +268,12 @@ export async function PUT(
 
         // Güncelleme sorgusu oluştur
         const updateFields: string[] = [];
-        const updateValues: any[] = [];
+        const updateValues: Array<string | number | null> = [];
+
+        if (project_id !== undefined) {
+            updateFields.push('project_id = ?');
+            updateValues.push(project_id);
+        }
 
         if (assigned_to !== undefined) {
             updateFields.push('assigned_to = ?');
@@ -285,39 +315,62 @@ export async function PUT(
             updateValues.push(due_date || null);
         }
 
-        if (updateFields.length === 0) {
+        if (updateFields.length === 0 && label_ids === undefined) {
             return NextResponse.json(
                 { error: 'Güncellenecek alan bulunamadı' },
                 { status: 400 }
             );
         }
 
-        updateValues.push(taskIdNum, teamIdNum);
-
-        await pool.query(
-            `UPDATE tasks SET ${updateFields.join(', ')} WHERE id = ? AND team_id = ?`,
-            updateValues
-        );
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
+            if (updateFields.length > 0) {
+                await connection.query(
+                    `UPDATE tasks SET ${updateFields.join(', ')} WHERE id = ? AND team_id = ?`,
+                    [...updateValues, taskIdNum, teamIdNum]
+                );
+            }
+            if (uniqueLabelIds !== undefined) {
+                await connection.query('DELETE FROM task_label_assignments WHERE task_id = ?', [taskIdNum]);
+                if (uniqueLabelIds.length > 0) {
+                    await connection.query(
+                        `INSERT INTO task_label_assignments (task_id, label_id) VALUES ${uniqueLabelIds.map(() => '(?, ?)').join(',')}`,
+                        uniqueLabelIds.flatMap((labelId) => [taskIdNum, labelId])
+                    );
+                }
+            }
+            await connection.commit();
+        } catch (transactionError) {
+            await connection.rollback();
+            throw transactionError;
+        } finally {
+            connection.release();
+        }
 
         // Güncellenmiş görevi getir
         const [tasks] = await pool.query<TaskRow[]>(
             `SELECT 
                 t.*,
+                p.name as project_name,
+                p.color as project_color,
                 u1.name as assigned_to_name,
                 u1.email as assigned_to_email,
                 u2.name as assigned_by_name,
                 u2.email as assigned_by_email
             FROM tasks t
+            LEFT JOIN projects p ON t.project_id = p.id
             LEFT JOIN users u1 ON t.assigned_to = u1.id
             LEFT JOIN users u2 ON t.assigned_by = u2.id
             WHERE t.id = ?`,
             [taskIdNum]
         );
 
+        const [updatedTask] = await attachTaskLabels(tasks);
         return NextResponse.json({
             success: true,
             message: 'Görev başarıyla güncellendi',
-            task: tasks[0],
+            task: updatedTask,
         });
     } catch (error) {
         console.error('Görev güncellenirken hata:', error);

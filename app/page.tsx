@@ -25,13 +25,13 @@ export default function Home() {
     <main className="min-h-screen overflow-hidden">
       <SiteHeader />
 
-      <section className="relative">
+      <section className="relative before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:-z-10 before:h-[38rem] before:bg-[radial-gradient(circle_at_70%_15%,rgba(79,70,229,0.10),transparent_42%)]">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[0.92fr_1.08fr] lg:py-24">
           <div className="motion-reveal max-w-xl">
-            <Badge variant="outline" className="mb-5 rounded-full border-border bg-card px-3 py-1 text-muted-foreground">
+            <Badge variant="outline" className="mb-5 rounded-full border-primary/15 bg-primary/[0.035] px-3 py-1 text-primary">
               Ekip yönetimi, sadeleştirildi
             </Badge>
-            <h1 className="text-balance text-4xl font-semibold leading-[1.12] tracking-[-0.045em] sm:text-5xl lg:text-[3.45rem]">
+            <h1 className="text-balance text-4xl font-semibold leading-[1.08] tracking-[-0.055em] sm:text-5xl lg:text-[3.6rem]">
               Ekibinizin odağını tek bir yerde toplayın.
             </h1>
             <p className="mt-5 max-w-lg text-pretty text-sm leading-7 text-muted-foreground sm:text-base">
@@ -49,7 +49,7 @@ export default function Home() {
           </div>
 
           <div className="motion-reveal relative mx-auto w-full max-w-2xl [animation-delay:100ms] lg:mx-0">
-            <Card className="overflow-hidden border-border bg-card p-0 shadow-[0_18px_45px_rgba(23,31,59,0.08)]">
+            <Card className="overflow-hidden border-white/80 bg-card p-0 shadow-[0_28px_80px_rgba(23,31,59,0.14)] ring-1 ring-primary/[0.04]">
               <div className="flex h-10 items-center justify-between border-b bg-muted/40 px-4">
                 <div className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-muted-foreground/30" /><span className="size-1.5 rounded-full bg-muted-foreground/30" /><span className="size-1.5 rounded-full bg-muted-foreground/30" /></div>
                 <span className="text-[11px] font-medium text-muted-foreground">Proje görünümü</span><span className="w-8" />

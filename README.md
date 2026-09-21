@@ -10,6 +10,8 @@ Taskflow, ekiplerin görevleri oluşturup atayabildiği, durum ve teslim tarihle
 - Paneldeki **Bana atanan görevler** ve takım detayındaki **Görevler** bölümlerinde arama, durum/öncelik filtreleri, sıralama ve filtreleri temizleme. Takım detayında ayrıca atanan kişiye göre filtreleme bulunur. Filtreler, yüklenen görevler üzerinde tarayıcıda çalışır.
 - Takım görevlerinde liste, sürükle-bırak destekli Kanban ve aylık takvim görünümleri. Mobil Kanban kartlarında durum seçimi bulunur; takvim görevleri teslim tarihine göre yerleştirir.
 - Her görev için açıklama, sorumlular, durum/öncelik, tarih planı ve zaman çizelgesini gösteren detay ekranı; yetkiye bağlı durum değiştirme, düzenleme ve silme işlemleri.
+- Panelde tamamlanma oranı, geciken/yaklaşan görevler, durum dağılımı ve takım bazlı iş yükünü özetleyen dashboard analitiği.
+- Takım bazlı projeler, renkli görev etiketleri ve tekrar eden iş akışlarını hızlandıran görev şablonları. Proje ve etiketler görev oluşturma/düzenleme akışlarında seçilebilir ve görev listesinde filtrelenebilir.
 - İşlem geri bildirimleri için Sonner bildirimleri ve mobil uyumlu arayüz.
 
 ## Teknoloji ve gereksinimler
@@ -51,9 +53,10 @@ MySQL sunucusu, npm ve Node.js gerekir. Next.js 16 için en az Node.js **20.9.0*
    SOURCE database/migrations/001_expand_password_hash_column.sql;
    SOURCE database/migrations/002_add_session_version.sql;
    SOURCE database/migrations/003_add_verification_attempts.sql;
+   SOURCE database/migrations/004_add_projects_labels_templates.sql;
    ```
 
-   İlk migrasyon mevcut hash'leri topluca dönüştürmez. Eski SHA-256 kayıtları, kullanıcı doğru şifreyle ilk kez giriş yaptığında otomatik olarak bcrypt'e yükseltilir. İkinci migrasyon, şifre değiştiğinde eski JWT oturumlarını iptal edebilmek için `session_version` alanını ekler. Üçüncü migrasyon, 6 haneli kodlarda kod başına deneme sınırını kalıcı olarak tutar.
+   İlk migrasyon mevcut hash'leri topluca dönüştürmez. Eski SHA-256 kayıtları, kullanıcı doğru şifreyle ilk kez giriş yaptığında otomatik olarak bcrypt'e yükseltilir. İkinci migrasyon, şifre değiştiğinde eski JWT oturumlarını iptal edebilmek için `session_version` alanını ekler. Üçüncü migrasyon, 6 haneli kodlarda kod başına deneme sınırını kalıcı olarak tutar. Dördüncü migrasyon proje, etiket, görev-etiket ilişkisi ve görev şablonu tablolarını oluşturur; görevlere isteğe bağlı proje ilişkisi ekler.
 
 3. [`env.example`](env.example) dosyasını `.env.local` olarak kopyalayıp kendi değerlerinizi girin. PowerShell'de:
 
@@ -108,7 +111,7 @@ Bu değer değiştirildikten sonra Node.js uygulamasını cPanel üzerinden yeni
 
 `proxy.ts`, oturum açmamış kullanıcıları korumalı panel sayfalarından `/giris` yoluna yönlendirir. API uçları `proxy.ts` içinde atlanır; yetki kontrolleri ilgili Route Handler'larda yapılır.
 
-Görev durumları `pending`, `in_progress`, `completed`, `cancelled`; öncelikler `low`, `medium`, `high` değerlerini kullanır. Görev filtresindeki arama başlık ve açıklamada çalışır; panelde takım/atayan, takım detayında ise atanan/atayan adları da aranabilir. Sıralama seçenekleri en yeni, en eski, yakın teslim tarihi ve önceliktir.
+Görev durumları `pending`, `in_progress`, `completed`, `cancelled`; öncelikler `low`, `medium`, `high` değerlerini kullanır. Görev filtresindeki arama başlık ve açıklamada çalışır; panelde takım/atayan, takım detayında ise atanan/atayan adları da aranabilir. Takım detayında proje ve etiket filtreleri bulunur. Sıralama seçenekleri en yeni, en eski, yakın teslim tarihi ve önceliktir. Proje, etiket ve şablon yönetimi takım yöneticilerine açıktır; üyeler yapılandırılmış öğeleri görevlerde kullanabilir.
 
 ## API
 
@@ -128,6 +131,7 @@ Tüm yollar `/api` önekini kullanır. Korumalı uçlar oturum çerezini gerekti
 | PUT, DELETE | `/takimlar/[takimId]/uyeler/[uyeId]` | Üye rolünü güncelleme / üyeyi çıkarma. |
 | GET, POST | `/takimlar/[takimId]/gorevler` | Görevleri listeleme / oluşturma. |
 | GET, PUT, DELETE | `/takimlar/[takimId]/gorevler/[gorevId]` | Görev detayı / güncelleme / silme. |
+| GET, POST, DELETE | `/takimlar/[takimId]/gorev-yapilandirma` | Proje, etiket ve görev şablonlarını listeleme / oluşturma / silme. |
 | GET | `/kullanici/gorevler` | Kullanıcıya atanan görevler. |
 
 Örneğin giriş isteği:

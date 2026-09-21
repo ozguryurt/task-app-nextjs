@@ -20,7 +20,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EditTaskDialog } from '@/components/tasks/edit-task-dialog';
 import { useAuthStore } from '@/lib/store/auth-store';
-import type { Task, TeamMember } from '@/lib/store/team-store';
+import type { Task, TeamMember, TaskLabel, TaskProject } from '@/lib/store/team-store';
 import type { UpdateTaskData } from '@/lib/hooks/use-tasks';
 import { cn } from '@/lib/utils';
 
@@ -58,6 +58,8 @@ export default function TaskDetailPage({ params }: PageProps) {
     const { user } = useAuthStore();
     const [task, setTask] = useState<Task | null>(null);
     const [members, setMembers] = useState<TeamMember[]>([]);
+    const [projects, setProjects] = useState<TaskProject[]>([]);
+    const [labels, setLabels] = useState<TaskLabel[]>([]);
     const [teamName, setTeamName] = useState('Takım');
     const [userRole, setUserRole] = useState<'admin' | 'member' | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -80,25 +82,30 @@ export default function TaskDetailPage({ params }: PageProps) {
                 setIsLoading(true);
                 setError(null);
                 const requestOptions = { credentials: 'include' as const, signal: controller.signal };
-                const [taskResponse, teamResponse, membersResponse] = await Promise.all([
+                const [taskResponse, teamResponse, membersResponse, metadataResponse] = await Promise.all([
                     fetch(`/api/takimlar/${teamId}/gorevler/${taskId}`, requestOptions),
                     fetch(`/api/takimlar/${teamId}`, requestOptions),
                     fetch(`/api/takimlar/${teamId}/uyeler`, requestOptions),
+                    fetch(`/api/takimlar/${teamId}/gorev-yapilandirma`, requestOptions),
                 ]);
-                const [taskData, teamData, membersData] = await Promise.all([
+                const [taskData, teamData, membersData, metadataData] = await Promise.all([
                     taskResponse.json(),
                     teamResponse.json(),
                     membersResponse.json(),
+                    metadataResponse.json(),
                 ]);
 
                 if (!taskResponse.ok) throw new Error(taskData.error || 'Görev yüklenemedi');
                 if (!teamResponse.ok) throw new Error(teamData.error || 'Takım yüklenemedi');
                 if (!membersResponse.ok) throw new Error(membersData.error || 'Takım üyeleri yüklenemedi');
+                if (!metadataResponse.ok) throw new Error(metadataData.error || 'Görev yapılandırması yüklenemedi');
 
                 setTask(taskData.task);
                 setTeamName(teamData.team.name);
                 setUserRole(teamData.userRole);
                 setMembers(membersData.members ?? []);
+                setProjects(metadataData.projects ?? []);
+                setLabels(metadataData.labels ?? []);
             } catch (loadError) {
                 if (loadError instanceof DOMException && loadError.name === 'AbortError') return;
                 setError(loadError instanceof Error ? loadError.message : 'Görev yüklenemedi');
@@ -177,18 +184,18 @@ export default function TaskDetailPage({ params }: PageProps) {
     const canDelete = isAdmin || isCreator;
 
     return (
-        <main className="min-h-screen pb-10">
-            <header className="sticky top-0 z-20 border-b bg-card/90 backdrop-blur-md">
-                <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
+        <main className="app-shell">
+            <header className="app-header">
+                <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
                     <button type="button" onClick={() => router.push('/panel')} className="group flex items-center gap-2.5">
-                        <span className="flex size-8 items-center justify-center rounded-md bg-primary text-white transition-transform group-hover:rotate-3"><Layers3 className="size-4" /></span>
-                        <span className="text-sm font-semibold">Taskflow</span>
+                        <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-white shadow-[0_6px_16px_rgba(55,70,180,0.24)] transition-transform group-hover:rotate-3"><Layers3 className="size-4" /></span>
+                        <div className="text-left"><span className="block text-sm font-semibold">Taskflow</span><span className="block text-[10px] text-muted-foreground">Görev detayı</span></div>
                     </button>
                     <Button variant="ghost" size="sm" onClick={() => router.push(`/panel/takimlar/${teamId}`)}><ArrowLeft /> {teamName}</Button>
                 </div>
             </header>
 
-            <div className="mx-auto max-w-6xl px-5 py-7">
+            <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <Button variant="ghost" className="px-0 text-muted-foreground hover:translate-y-0 hover:bg-transparent hover:text-foreground" onClick={() => router.push(`/panel/takimlar/${teamId}`)}><ArrowLeft /> Görevlere dön</Button>
                     <div className="flex items-center gap-2">
@@ -204,6 +211,8 @@ export default function TaskDetailPage({ params }: PageProps) {
                                 <div className="mb-2 flex flex-wrap items-center gap-2">
                                     <Badge className={cn('border-0', statusInfo[task.status].className)}>{statusInfo[task.status].label}</Badge>
                                     <Badge className={cn('border-0', priorityInfo[task.priority].className)}>{priorityInfo[task.priority].label}</Badge>
+                                    {task.project_name && <Badge variant="outline" style={{ borderColor: task.project_color || undefined }}>{task.project_name}</Badge>}
+                                    {task.labels?.map((label) => <Badge key={label.id} variant="outline" style={{ borderColor: label.color, color: label.color }}>{label.name}</Badge>)}
                                 </div>
                                 <CardTitle className="text-xl leading-tight sm:text-2xl">{task.title}</CardTitle>
                                 <CardDescription>{teamName} takımındaki görev</CardDescription>
@@ -270,7 +279,7 @@ export default function TaskDetailPage({ params }: PageProps) {
                 </div>
             </div>
 
-            <EditTaskDialog open={isEditOpen} onOpenChange={setIsEditOpen} onSubmit={updateTask} task={task} members={members} isSubmitting={isSubmitting} />
+            <EditTaskDialog open={isEditOpen} onOpenChange={setIsEditOpen} onSubmit={updateTask} task={task} members={members} projects={projects} labels={labels} isSubmitting={isSubmitting} />
             <ConfirmDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen} onConfirm={deleteTask} title="Görevi sil" description={`"${task.title}" görevini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`} confirmText="Evet, sil" isDestructive isLoading={isSubmitting} />
         </main>
     );

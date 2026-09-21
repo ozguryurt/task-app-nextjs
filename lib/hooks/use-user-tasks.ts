@@ -1,10 +1,14 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
+import type { TaskLabel } from '@/lib/store/team-store';
 
 export interface UserTask {
     id: number;
     team_id: number;
     team_name: string;
+    project_id: number | null;
+    project_name: string | null;
+    project_color: string | null;
     assigned_to: number;
     assigned_by: number;
     assigned_by_name: string;
@@ -18,6 +22,7 @@ export interface UserTask {
     completed_at: string | null;
     created_at: string;
     updated_at: string;
+    labels: TaskLabel[];
 }
 
 export function useUserTasks() {
@@ -57,4 +62,3 @@ export function useUserTasks() {
         error,
     };
 }
-

@@ -7,6 +7,7 @@ import { useAuthStore } from '@/lib/store/auth-store';
 import { useTeamStore, Task } from '@/lib/store/team-store';
 import { useTeamMembers } from '@/lib/hooks/use-team-members';
 import { useTasks } from '@/lib/hooks/use-tasks';
+import { useTaskMetadata } from '@/lib/hooks/use-task-metadata';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddMemberDialog } from '@/components/teams/add-member-dialog';
@@ -18,9 +19,10 @@ import { TaskFilterBar } from '@/components/tasks/task-filter-bar';
 import { TaskKanbanBoard } from '@/components/tasks/task-kanban-board';
 import { TaskCalendarView } from '@/components/tasks/task-calendar-view';
 import { TaskViewSwitcher, type TaskView } from '@/components/tasks/task-view-switcher';
+import { TaskMetadataManager } from '@/components/tasks/task-metadata-manager';
 import { defaultTaskFilters, filterTasks, type TaskFilterState } from '@/lib/task-filters';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { ArrowLeft, Users, UserPlus, Trash2, Calendar, ClipboardList, Plus, Loader2, Layers3 } from 'lucide-react';
+import { ArrowLeft, Users, UserPlus, Trash2, Calendar, ClipboardList, Plus, Loader2, Layers3, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PageProps {
@@ -38,6 +40,7 @@ export default function TeamDetailPage({ params }: PageProps) {
     const [isDeleteMemberDialogOpen, setIsDeleteMemberDialogOpen] = useState(false);
     const [memberToDelete, setMemberToDelete] = useState<{ id: number; name: string } | null>(null);
     const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
+    const [isMetadataDialogOpen, setIsMetadataDialogOpen] = useState(false);
     const [taskFilters, setTaskFilters] = useState<TaskFilterState>({ ...defaultTaskFilters });
     const [taskView, setTaskView] = useState<TaskView>('list');
     const [isEditTaskDialogOpen, setIsEditTaskDialogOpen] = useState(false);
@@ -68,8 +71,13 @@ export default function TeamDetailPage({ params }: PageProps) {
         isSubmitting: isSubmittingTask,
     } = useTasks(teamId);
 
+    const {
+        projects, labels, templates, fetchMetadata, createMetadata, deleteMetadata,
+        isSubmitting: isSubmittingMetadata,
+    } = useTaskMetadata(teamId);
+
     const visibleTasks = useMemo(
-        () => filterTasks(tasks, taskFilters, (task) => `${task.assigned_to_name} ${task.assigned_by_name}`),
+        () => filterTasks(tasks, taskFilters, (task) => `${task.assigned_to_name} ${task.assigned_by_name} ${task.project_name ?? ''} ${task.labels?.map((label) => label.name).join(' ') ?? ''}`),
         [tasks, taskFilters]
     );
     const taskAssignees = useMemo(
@@ -107,6 +115,7 @@ export default function TeamDetailPage({ params }: PageProps) {
             await Promise.all([
                 fetchMembers().catch(() => {}),
                 fetchTasks(),
+                fetchMetadata().catch(() => {}),
             ]);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
@@ -245,14 +254,14 @@ export default function TeamDetailPage({ params }: PageProps) {
     const isAdmin = userRole === 'admin';
 
     return (
-        <main className="min-h-screen pb-10">
-            <header className="border-b border-border bg-card/90 backdrop-blur-md">
-                <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
-                    <div className="flex items-center gap-2.5"><span className="flex size-8 items-center justify-center rounded-md bg-primary text-white"><Layers3 className="size-4" /></span><span className="text-sm font-semibold tracking-tight">Taskflow</span></div>
+        <main className="app-shell">
+            <header className="app-header">
+                <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+                    <div className="flex items-center gap-2.5"><span className="flex size-9 items-center justify-center rounded-xl bg-primary text-white shadow-[0_6px_16px_rgba(55,70,180,0.24)]"><Layers3 className="size-4" /></span><div><span className="block text-sm font-semibold tracking-tight">Taskflow</span><span className="block text-[10px] text-muted-foreground">Takım alanı</span></div></div>
                     <Button variant="ghost" size="sm" onClick={() => router.push('/panel')}><ArrowLeft /> Dashboard</Button>
                 </div>
             </header>
-            <div className="container mx-auto max-w-6xl px-5 py-7">
+            <div className="container mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
                 {/* Header */}
                 <div className="mb-5">
                     <Button
@@ -266,7 +275,8 @@ export default function TeamDetailPage({ params }: PageProps) {
 
                     <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
                         <div className="flex-1">
-                            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{currentTeam.name}</h1>
+                            <p className="section-kicker mb-2">Takım çalışma alanı</p>
+                            <h1 className="page-heading">{currentTeam.name}</h1>
                             {currentTeam.description && (
                                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{currentTeam.description}</p>
                             )}
@@ -357,10 +367,13 @@ export default function TeamDetailPage({ params }: PageProps) {
                             <div className="flex flex-wrap items-center gap-2">
                                 <TaskViewSwitcher value={taskView} onChange={setTaskView} />
                                 {isAdmin && (
-                                    <Button onClick={() => setIsCreateTaskDialogOpen(true)}>
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        Görev Oluştur
-                                    </Button>
+                                    <>
+                                        <Button variant="outline" size="icon" onClick={() => setIsMetadataDialogOpen(true)} aria-label="Projeleri, etiketleri ve şablonları yönet"><Settings2 /></Button>
+                                        <Button onClick={() => setIsCreateTaskDialogOpen(true)}>
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Görev Oluştur
+                                        </Button>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -382,6 +395,8 @@ export default function TeamDetailPage({ params }: PageProps) {
                                     totalCount={tasks.length}
                                     searchPlaceholder="Görev veya kişi ara..."
                                     assignees={taskAssignees}
+                                    projects={projects}
+                                    labels={labels}
                                 />
                                 {visibleTasks.length === 0 ? (
                                     <div className="py-10 text-center">
@@ -436,6 +451,9 @@ export default function TeamDetailPage({ params }: PageProps) {
                     onOpenChange={setIsCreateTaskDialogOpen}
                     onSubmit={handleCreateTask}
                     members={currentTeamMembers}
+                    projects={projects}
+                    labels={labels}
+                    templates={templates}
                     isSubmitting={isSubmittingTask}
                 />
 
@@ -446,7 +464,20 @@ export default function TeamDetailPage({ params }: PageProps) {
                     onSubmit={handleUpdateTask}
                     task={taskToEdit}
                     members={currentTeamMembers}
+                    projects={projects}
+                    labels={labels}
                     isSubmitting={isSubmittingTask}
+                />
+
+                <TaskMetadataManager
+                    open={isMetadataDialogOpen}
+                    onOpenChange={setIsMetadataDialogOpen}
+                    projects={projects}
+                    labels={labels}
+                    templates={templates}
+                    isSubmitting={isSubmittingMetadata}
+                    onCreate={createMetadata}
+                    onDelete={deleteMetadata}
                 />
 
                 {/* Delete Team Confirmation Dialog */}

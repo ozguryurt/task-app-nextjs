@@ -13,7 +13,7 @@ interface TeamCardProps {
 export function TeamCard({ team }: TeamCardProps) {
     return (
         <Link href={`/panel/takimlar/${team.id}`} className="block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40">
-            <Card className="group h-full cursor-pointer hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_14px_34px_rgba(23,31,59,0.08)] active:translate-y-0">
+            <Card className="group h-full cursor-pointer overflow-hidden hover:-translate-y-1 hover:border-primary/25 hover:shadow-[0_18px_44px_rgba(23,31,59,0.09)] active:translate-y-0">
                 <CardHeader className="pb-1">
                     <div className="flex items-start justify-between">
                         <div className="min-w-0 flex-1">
