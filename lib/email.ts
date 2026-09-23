@@ -13,6 +13,12 @@ interface SendPasswordResetEmailParams {
     code: string;
 }
 
+interface SendProfileEmailChangeCodeParams {
+    to: string;
+    name: string;
+    code: string;
+}
+
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
 const smtpUser = process.env.SMTP_USER;
@@ -88,6 +94,30 @@ export async function sendPasswordResetEmail({
                 <p>Taskflow şifrenizi yenilemek için aşağıdaki kodu sıfırlama ekranına girin.</p>
                 <p style="margin: 24px 0; padding: 14px; border-radius: 8px; background: #f3f4f6; font-size: 28px; font-weight: 700; letter-spacing: 8px; text-align: center;">${safeCode}</p>
                 <p style="font-size: 12px; color: #6b7280;">Bu kod 5 dakika geçerlidir. Kodu kimseyle paylaşmayın.</p>
+            </div>
+        `,
+    });
+}
+
+export async function sendProfileEmailChangeCode({ to, name, code }: SendProfileEmailChangeCodeParams) {
+    if (!transporter) {
+        throw new Error('E-posta göndermek için SMTP yapılandırması gereklidir');
+    }
+
+    const safeName = escapeHtml(name);
+    const safeCode = escapeHtml(code);
+
+    await transporter.sendMail({
+        from: emailFrom,
+        to,
+        subject: 'Taskflow - Yeni e-posta adresi doğrulama kodu',
+        text: `Merhaba ${name}, Taskflow e-posta adresi değiştirme kodunuz: ${code}. Kod 5 dakika geçerlidir. Bu isteği siz yapmadıysanız bu e-postayı yok sayın.`,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
+                <h2 style="color: #111827;">Merhaba ${safeName},</h2>
+                <p>Hesabınızdaki yeni e-posta adresini doğrulamak için bu kodu Taskflow profil ekranına girin.</p>
+                <p style="margin: 24px 0; padding: 14px; border-radius: 8px; background: #f3f4f6; font-size: 28px; font-weight: 700; letter-spacing: 8px; text-align: center;">${safeCode}</p>
+                <p style="font-size: 12px; color: #6b7280;">Kod 5 dakika geçerlidir. Bu isteği siz yapmadıysanız bu e-postayı yok sayın.</p>
             </div>
         `,
     });

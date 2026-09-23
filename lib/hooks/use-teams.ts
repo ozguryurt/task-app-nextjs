@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { useTeamStore } from '@/lib/store/team-store';
 
 export function useTeams() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { setTeams } = useTeamStore();
+    const setTeams = useTeamStore((state) => state.setTeams);
 
-    const fetchTeams = async () => {
+    const fetchTeams = useCallback(async () => {
         setIsLoading(true);
         setError(null);
 
@@ -33,7 +33,7 @@ export function useTeams() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [setTeams]);
 
     return {
         fetchTeams,
@@ -41,4 +41,3 @@ export function useTeams() {
         error,
     };
 }
-

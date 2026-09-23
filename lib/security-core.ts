@@ -16,7 +16,9 @@ function getCodeSecret(): string {
     return secret;
 }
 
-export function hashOneTimeCode(email: string, purpose: 'email-verification' | 'password-reset', code: string): string {
+export type OneTimeCodePurpose = 'email-verification' | 'password-reset' | 'profile-email-change';
+
+export function hashOneTimeCode(email: string, purpose: OneTimeCodePurpose, code: string): string {
     return crypto
         .createHmac('sha256', getCodeSecret())
         .update(`${purpose}:${normalizeEmail(email)}:${code}`, 'utf8')
@@ -26,7 +28,7 @@ export function hashOneTimeCode(email: string, purpose: 'email-verification' | '
 export function verifyOneTimeCode(
     storedHash: string,
     email: string,
-    purpose: 'email-verification' | 'password-reset',
+    purpose: OneTimeCodePurpose,
     code: string
 ): boolean {
     if (!/^[a-f0-9]{64}$/i.test(storedHash)) return false;

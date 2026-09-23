@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { KeyRound, Layers3 } from 'lucide-react';
+import { KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { forgotPassword, resetPassword } from '@/lib/api/auth-api';
 import { resetPasswordSchema, type ResetPasswordFormData } from '@/lib/validations/auth-schema';
+import { AuthPageShell } from '@/components/layout/auth-page-shell';
 
 export default function ForgotPasswordPage() {
     const router = useRouter();
@@ -81,18 +82,18 @@ export default function ForgotPasswordPage() {
     };
 
     return (
-        <div className="auth-shell">
-            <Card className="auth-card w-full max-w-sm">
-                <CardHeader className="text-center">
-                    <Link href="/" className="mx-auto mb-3 flex size-9 items-center justify-center rounded-md bg-primary text-white"><Layers3 className="size-4" /></Link>
-                    <CardTitle className="text-lg">Şifrenizi yenileyin</CardTitle>
-                    <CardDescription>
+        <AuthPageShell>
+            <Card className="auth-card w-full max-w-sm overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_20px_60px_rgba(24,32,66,0.09)]">
+                <CardHeader className="border-b border-slate-100 px-5 py-5 text-left sm:px-6">
+                    <span className="mb-3 flex size-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600"><KeyRound className="size-5" /></span>
+                    <CardTitle className="text-xl tracking-[-0.035em] text-slate-900">Şifrenizi yenileyin</CardTitle>
+                    <CardDescription className="text-xs leading-5">
                         {step === 'email'
                             ? 'E-posta adresinize 5 dakika geçerli bir kod gönderelim.'
                             : `${email} adresine gönderilen 6 haneli kodu ve yeni şifrenizi girin.`}
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-5 py-5 sm:px-6 sm:py-6">
                     {step === 'email' ? (
                         <form onSubmit={handleEmailSubmit} className="space-y-4">
                             <div className="grid gap-2">
@@ -151,10 +152,10 @@ export default function ForgotPasswordPage() {
                         </form>
                     )}
                 </CardContent>
-                <CardFooter className="border-t pt-4">
-                    <Button variant="link" className="w-full" asChild><Link href="/giris">Giriş sayfasına dön</Link></Button>
+                <CardFooter className="justify-center border-t border-slate-100 bg-slate-50/70 py-3.5">
+                    <Link href="/giris" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">Giriş sayfasına dön</Link>
                 </CardFooter>
             </Card>
-        </div>
+        </AuthPageShell>
     );
 }

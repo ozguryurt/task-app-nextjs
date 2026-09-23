@@ -12,6 +12,7 @@ Taskflow, ekiplerin görevleri oluşturup atayabildiği, durum ve teslim tarihle
 - Her görev için açıklama, sorumlular, durum/öncelik, tarih planı ve zaman çizelgesini gösteren detay ekranı; yetkiye bağlı durum değiştirme, düzenleme ve silme işlemleri.
 - Panelde tamamlanma oranı, geciken/yaklaşan görevler, durum dağılımı ve takım bazlı iş yükünü özetleyen dashboard analitiği.
 - Takım bazlı projeler, renkli görev etiketleri ve tekrar eden iş akışlarını hızlandıran görev şablonları. Proje ve etiketler görev oluşturma/düzenleme akışlarında seçilebilir ve görev listesinde filtrelenebilir.
+- Kullanıcı profilinde mevcut şifre doğrulamasıyla şifre değiştirme ve yeni adrese gönderilen, 5 dakika geçerli tek kullanımlık kodla e-posta değiştirme.
 - İşlem geri bildirimleri için Sonner bildirimleri ve mobil uyumlu arayüz.
 
 ## Teknoloji ve gereksinimler
@@ -54,9 +55,10 @@ MySQL sunucusu, npm ve Node.js gerekir. Next.js 16 için en az Node.js **20.9.0*
    SOURCE database/migrations/002_add_session_version.sql;
    SOURCE database/migrations/003_add_verification_attempts.sql;
    SOURCE database/migrations/004_add_projects_labels_templates.sql;
+   SOURCE database/migrations/005_add_profile_email_change_codes.sql;
    ```
 
-   İlk migrasyon mevcut hash'leri topluca dönüştürmez. Eski SHA-256 kayıtları, kullanıcı doğru şifreyle ilk kez giriş yaptığında otomatik olarak bcrypt'e yükseltilir. İkinci migrasyon, şifre değiştiğinde eski JWT oturumlarını iptal edebilmek için `session_version` alanını ekler. Üçüncü migrasyon, 6 haneli kodlarda kod başına deneme sınırını kalıcı olarak tutar. Dördüncü migrasyon proje, etiket, görev-etiket ilişkisi ve görev şablonu tablolarını oluşturur; görevlere isteğe bağlı proje ilişkisi ekler.
+   İlk migrasyon mevcut hash'leri topluca dönüştürmez. Eski SHA-256 kayıtları, kullanıcı doğru şifreyle ilk kez giriş yaptığında otomatik olarak bcrypt'e yükseltilir. İkinci migrasyon, şifre değiştiğinde eski JWT oturumlarını iptal edebilmek için `session_version` alanını ekler. Üçüncü migrasyon, 6 haneli kodlarda kod başına deneme sınırını kalıcı olarak tutar. Dördüncü migrasyon proje, etiket, görev-etiket ilişkisi ve görev şablonu tablolarını oluşturur; görevlere isteğe bağlı proje ilişkisi ekler. Beşinci migrasyon, profil ekranındaki e-posta değişikliği kodları için tabloyu oluşturur.
 
 3. [`env.example`](env.example) dosyasını `.env.local` olarak kopyalayıp kendi değerlerinizi girin. PowerShell'de:
 
@@ -106,6 +108,7 @@ Bu değer değiştirildikten sonra Node.js uygulamasını cPanel üzerinden yeni
 | `/eposta-dogrulama` | E-posta adresi ve 6 haneli kodla hesap doğrulama. |
 | `/sifremi-unuttum` | Kod isteme ve kodla yeni şifre belirleme. |
 | `/panel` | Takımlar ve kullanıcıya atanan görevler. |
+| `/panel/profil` | Hesap bilgileri; mevcut şifre doğrulamasıyla şifre ve e-posta değiştirme. |
 | `/panel/takimlar/[takimId]` | Takım üyeleri ve görevleri. |
 | `/panel/takimlar/[takimId]/gorevler/[gorevId]` | Görev ayrıntıları ve yetkili görev işlemleri. |
 
@@ -133,6 +136,7 @@ Tüm yollar `/api` önekini kullanır. Korumalı uçlar oturum çerezini gerekti
 | GET, PUT, DELETE | `/takimlar/[takimId]/gorevler/[gorevId]` | Görev detayı / güncelleme / silme. |
 | GET, POST, DELETE | `/takimlar/[takimId]/gorev-yapilandirma` | Proje, etiket ve görev şablonlarını listeleme / oluşturma / silme. |
 | GET | `/kullanici/gorevler` | Kullanıcıya atanan görevler. |
+| GET, POST | `/kullanici/profil` | Profil bilgisini getirme; şifre değiştirme, e-posta değişikliği kodu isteme ve kodu doğrulama işlemleri. |
 
 Örneğin giriş isteği:
 

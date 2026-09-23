@@ -16,7 +16,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { loginSchema, LoginFormData } from "@/lib/validations/auth-schema"
 import { useLogin } from "@/lib/hooks/use-login"
-import { Layers3 } from "lucide-react"
+import { LockKeyhole } from "lucide-react"
+import { AuthPageShell } from "@/components/layout/auth-page-shell"
 
 function LoginPage() {
     const { handleLogin, isSubmitting } = useLogin();
@@ -34,16 +35,14 @@ function LoginPage() {
     };
 
     return (
-        <div className="auth-shell">
-            <Card className="auth-card w-full max-w-sm">
-                <CardHeader className="text-center">
-                    <Link href="/" className="mx-auto mb-3 flex size-9 items-center justify-center rounded-md bg-primary text-white"><Layers3 className="size-4" /></Link>
-                    <CardTitle className="text-lg">Tekrar hoş geldiniz</CardTitle>
-                    <CardDescription>
-                        Çalışma alanınıza devam etmek için giriş yapın.
-                    </CardDescription>
+        <AuthPageShell>
+            <Card className="auth-card w-full max-w-sm overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_20px_60px_rgba(24,32,66,0.09)]">
+                <CardHeader className="border-b border-slate-100 px-5 py-5 text-left sm:px-6">
+                    <span className="mb-3 flex size-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600"><LockKeyhole className="size-5" /></span>
+                    <CardTitle className="text-xl tracking-[-0.035em] text-slate-900">Tekrar hoş geldiniz</CardTitle>
+                    <CardDescription className="text-xs leading-5">Çalışma alanınıza devam etmek için hesabınıza giriş yapın.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-5 py-5 sm:px-6 sm:py-6">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="flex flex-col gap-4">
                             {/* E-posta */}
@@ -89,15 +88,11 @@ function LoginPage() {
                         </Button>
                     </form>
                 </CardContent>
-                <CardFooter className="flex-col gap-2 border-t pt-4">
-                    <Button variant="link" className="w-full" asChild>
-                        <Link href="/kayit">
-                            Hesabınız yok mu? Ücretsiz kayıt olun.
-                        </Link>
-                    </Button>
+                <CardFooter className="flex-col gap-2 border-t border-slate-100 bg-slate-50/70 py-3.5">
+                    <p className="text-xs text-slate-500">Hesabınız yok mu? <Link href="/kayit" className="font-semibold text-indigo-600 hover:text-indigo-700">Ücretsiz kayıt olun</Link></p>
                 </CardFooter>
             </Card>
-        </div>
+        </AuthPageShell>
     )
 }
 

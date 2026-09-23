@@ -72,7 +72,7 @@ export function getCodeExpiry(minutes: number = 5): Date {
 }
 
 // Tek kullanımlık kodun geçerlilik süresini kontrol et.
-export function isExpiryValid(expiryDate: Date | null): boolean {
+export function isExpiryValid(expiryDate: Date | string | null): boolean {
     if (!expiryDate) return false;
     return new Date() < new Date(expiryDate);
 }

@@ -22,7 +22,7 @@ import { TaskViewSwitcher, type TaskView } from '@/components/tasks/task-view-sw
 import { TaskMetadataManager } from '@/components/tasks/task-metadata-manager';
 import { defaultTaskFilters, filterTasks, type TaskFilterState } from '@/lib/task-filters';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { ArrowLeft, Users, UserPlus, Trash2, Calendar, ClipboardList, Plus, Loader2, Layers3, Settings2 } from 'lucide-react';
+import { ArrowLeft, Users, UserPlus, Trash2, Calendar, ClipboardList, Plus, Loader2, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PageProps {
@@ -222,8 +222,8 @@ export default function TeamDetailPage({ params }: PageProps) {
 
     if (isLoadingTeam) {
         return (
-            <div className="flex min-h-screen items-center justify-center">
-                <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
+            <div className="flex min-h-dvh items-center justify-center bg-[#f6f8fc] text-slate-500">
+                <div className="flex flex-col items-center gap-3 text-sm">
                     <Loader2 className="size-6 animate-spin text-primary" />
                     <p>Takım hazırlanıyor...</p>
                 </div>
@@ -233,7 +233,7 @@ export default function TeamDetailPage({ params }: PageProps) {
 
     if (teamError) {
         return (
-            <div className="min-h-screen py-8">
+            <div className="min-h-[calc(100dvh-4.25rem)] bg-[#f6f8fc] py-8">
                 <div className="container mx-auto max-w-6xl px-5">
                     <p className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
                         {teamError}
@@ -254,33 +254,18 @@ export default function TeamDetailPage({ params }: PageProps) {
     const isAdmin = userRole === 'admin';
 
     return (
-        <main className="app-shell">
-            <header className="app-header">
-                <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-                    <div className="flex items-center gap-2.5"><span className="flex size-9 items-center justify-center rounded-xl bg-primary text-white shadow-[0_6px_16px_rgba(55,70,180,0.24)]"><Layers3 className="size-4" /></span><div><span className="block text-sm font-semibold tracking-tight">Taskflow</span><span className="block text-[10px] text-muted-foreground">Takım alanı</span></div></div>
-                    <Button variant="ghost" size="sm" onClick={() => router.push('/panel')}><ArrowLeft /> Dashboard</Button>
-                </div>
-            </header>
-            <div className="container mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="min-h-[calc(100dvh-4.25rem)] bg-[#f6f8fc] text-slate-900">
+            <div className="mx-auto max-w-[1250px] px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
                 {/* Header */}
-                <div className="mb-5">
-                    <Button
-                        variant="ghost"
-                        onClick={() => router.push('/panel')}
-                        className="mb-3 px-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
-                    >
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        Geri
-                    </Button>
-
+                <div className="mb-6">
                     <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
                         <div className="flex-1">
-                            <p className="section-kicker mb-2">Takım çalışma alanı</p>
-                            <h1 className="page-heading">{currentTeam.name}</h1>
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-indigo-500">Takım çalışma alanı</p>
+                            <h1 className="mt-1.5 text-2xl font-semibold tracking-[-0.045em] text-slate-900 sm:text-[1.75rem]">{currentTeam.name}</h1>
                             {currentTeam.description && (
-                                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{currentTeam.description}</p>
+                                <p className="mt-2 max-w-2xl text-xs leading-6 text-slate-500 sm:text-sm">{currentTeam.description}</p>
                             )}
-                            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-slate-500">
                                 <div className="flex items-center gap-1">
                                     <Calendar className="w-4 h-4" />
                                     <span>
@@ -295,20 +280,16 @@ export default function TeamDetailPage({ params }: PageProps) {
                         </div>
 
                         {isAdmin && (
-                            <Button
-                                variant="destructive"
-                                onClick={handleDeleteTeamClick}
-                            >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Takımı Sil
+                            <Button variant="destructive" size="sm" onClick={handleDeleteTeamClick}>
+                                <Trash2 className="size-3.5" /> Takımı sil
                             </Button>
                         )}
                     </div>
                 </div>
 
                 {/* Members Section */}
-                <Card className="mt-5">
-                    <CardHeader className="border-b">
+                <Card className="mt-5 overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]">
+                    <CardHeader className="border-b border-slate-100 px-4 py-4 sm:px-5">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <CardTitle>Takım Üyeleri</CardTitle>
@@ -326,7 +307,7 @@ export default function TeamDetailPage({ params }: PageProps) {
                             )}
                         </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="py-4">
                         {isLoading ? (
                             <p className="py-8 text-center text-sm text-muted-foreground">Üyeler yükleniyor...</p>
                         ) : currentTeamMembers.length === 0 ? (
@@ -353,8 +334,8 @@ export default function TeamDetailPage({ params }: PageProps) {
                 </Card>
 
                 {/* Tasks Section */}
-                <Card className="mt-4">
-                    <CardHeader className="border-b">
+                <Card className="mt-4 overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]">
+                    <CardHeader className="border-b border-slate-100 px-4 py-4 sm:px-5">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <CardTitle>Görevler</CardTitle>
@@ -378,7 +359,7 @@ export default function TeamDetailPage({ params }: PageProps) {
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-3 py-4">
                         {isLoadingTasks ? (
                             <p className="py-8 text-center text-sm text-muted-foreground">Görevler yükleniyor...</p>
                         ) : tasks.length === 0 ? (
@@ -519,6 +500,6 @@ export default function TeamDetailPage({ params }: PageProps) {
                     isLoading={isSubmittingTask}
                 />
             </div>
-        </main>
+        </div>
     );
 }

@@ -237,6 +237,29 @@
     @apply border-white/80 bg-card/95 shadow-[0_24px_80px_rgba(23,31,59,0.13)] backdrop-blur-xl;
   }
 
+  .landing-hero-bg {
+    background-image: linear-gradient(115deg, #10152f 0%, #151b3b 48%, #111a35 100%);
+  }
+
+  .landing-grid {
+    background-image: linear-gradient(to right, rgb(255 255 255 / 0.07) 1px, transparent 1px), linear-gradient(to bottom, rgb(255 255 255 / 0.07) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: linear-gradient(to bottom, black, transparent 88%);
+  }
+
+  @keyframes landing-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
+  }
+
+  .landing-float {
+    animation: landing-float 5s ease-in-out infinite;
+  }
+
+  .landing-float-delayed {
+    animation: landing-float 5.6s ease-in-out 800ms infinite;
+  }
+
   .app-shell {
     @apply min-h-screen pb-12;
   }

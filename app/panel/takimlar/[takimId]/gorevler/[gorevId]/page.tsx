@@ -7,7 +7,6 @@ import {
     CalendarDays,
     CheckCircle2,
     Clock3,
-    Layers3,
     Loader2,
     Pencil,
     Trash2,
@@ -162,17 +161,17 @@ export default function TaskDetailPage({ params }: PageProps) {
     };
 
     if (isLoading) {
-        return <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground"><Loader2 className="mr-2 size-5 animate-spin text-primary" /> Görev hazırlanıyor...</div>;
+        return <div className="flex min-h-[calc(100dvh-4.25rem)] items-center justify-center bg-[#f6f8fc] text-sm text-slate-500"><Loader2 className="mr-2 size-5 animate-spin text-indigo-600" /> Görev hazırlanıyor...</div>;
     }
 
     if (error || !task) {
         return (
-            <main className="flex min-h-screen items-center justify-center px-5">
-                <Card className="w-full max-w-md text-center">
+            <div className="flex min-h-[calc(100dvh-4.25rem)] items-center justify-center bg-[#f6f8fc] px-5">
+                <Card className="w-full max-w-md rounded-2xl border-slate-200/80 bg-white text-center shadow-[0_18px_50px_rgba(24,32,66,0.08)]">
                     <CardHeader><CardTitle>Görev açılamadı</CardTitle><CardDescription>{error || 'Görev bulunamadı'}</CardDescription></CardHeader>
                     <CardContent><Button variant="outline" onClick={() => router.replace(`/panel/takimlar/${teamId}`)}><ArrowLeft /> Takıma dön</Button></CardContent>
                 </Card>
-            </main>
+            </div>
         );
     }
 
@@ -184,20 +183,10 @@ export default function TaskDetailPage({ params }: PageProps) {
     const canDelete = isAdmin || isCreator;
 
     return (
-        <main className="app-shell">
-            <header className="app-header">
-                <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-                    <button type="button" onClick={() => router.push('/panel')} className="group flex items-center gap-2.5">
-                        <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-white shadow-[0_6px_16px_rgba(55,70,180,0.24)] transition-transform group-hover:rotate-3"><Layers3 className="size-4" /></span>
-                        <div className="text-left"><span className="block text-sm font-semibold">Taskflow</span><span className="block text-[10px] text-muted-foreground">Görev detayı</span></div>
-                    </button>
-                    <Button variant="ghost" size="sm" onClick={() => router.push(`/panel/takimlar/${teamId}`)}><ArrowLeft /> {teamName}</Button>
-                </div>
-            </header>
-
-            <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="min-h-[calc(100dvh-4.25rem)] bg-[#f6f8fc] text-slate-900">
+            <div className="mx-auto max-w-[1250px] px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <Button variant="ghost" className="px-0 text-muted-foreground hover:translate-y-0 hover:bg-transparent hover:text-foreground" onClick={() => router.push(`/panel/takimlar/${teamId}`)}><ArrowLeft /> Görevlere dön</Button>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-indigo-500">Görev kaydı <span className="mx-1 text-slate-300">/</span> #{task.id}</p>
                     <div className="flex items-center gap-2">
                         {canEditAll && <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}><Pencil /> Düzenle</Button>}
                         {canDelete && <Button variant="destructive" size="sm" onClick={() => setIsDeleteOpen(true)}><Trash2 /> Sil</Button>}
@@ -206,28 +195,28 @@ export default function TaskDetailPage({ params }: PageProps) {
 
                 <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
                     <div className="space-y-4">
-                        <Card>
-                            <CardHeader className="border-b">
+                        <Card className="overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]">
+                            <CardHeader className="border-b border-slate-100 px-4 py-5 sm:px-6">
                                 <div className="mb-2 flex flex-wrap items-center gap-2">
                                     <Badge className={cn('border-0', statusInfo[task.status].className)}>{statusInfo[task.status].label}</Badge>
                                     <Badge className={cn('border-0', priorityInfo[task.priority].className)}>{priorityInfo[task.priority].label}</Badge>
                                     {task.project_name && <Badge variant="outline" style={{ borderColor: task.project_color || undefined }}>{task.project_name}</Badge>}
                                     {task.labels?.map((label) => <Badge key={label.id} variant="outline" style={{ borderColor: label.color, color: label.color }}>{label.name}</Badge>)}
                                 </div>
-                                <CardTitle className="text-xl leading-tight sm:text-2xl">{task.title}</CardTitle>
-                                <CardDescription>{teamName} takımındaki görev</CardDescription>
+                                <CardTitle className="text-xl leading-tight tracking-[-0.035em] text-slate-900 sm:text-2xl">{task.title}</CardTitle>
+                                <CardDescription className="text-xs">{teamName} takımındaki görev</CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <h2 className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Açıklama</h2>
+                            <CardContent className="py-5 sm:py-6">
+                                <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Açıklama</h2>
                                 {task.description
-                                    ? <p className="whitespace-pre-wrap text-sm leading-7">{task.description}</p>
-                                    : <p className="rounded-lg border border-dashed bg-muted/25 px-4 py-8 text-center text-sm text-muted-foreground">Bu görev için açıklama eklenmemiş.</p>}
+                                    ? <p className="whitespace-pre-wrap text-sm leading-7 text-slate-600">{task.description}</p>
+                                    : <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-xs text-slate-400">Bu görev için açıklama eklenmemiş.</p>}
                             </CardContent>
                         </Card>
 
-                        <Card>
-                            <CardHeader className="border-b"><CardTitle className="text-base">Tarih planı</CardTitle><CardDescription>Görevin planlanan ve gerçekleşen tarihleri</CardDescription></CardHeader>
-                            <CardContent className="grid gap-3 sm:grid-cols-2">
+                        <Card className="overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]">
+                            <CardHeader className="border-b border-slate-100 px-4 py-4 sm:px-5"><CardTitle className="text-sm text-slate-800">Tarih planı</CardTitle><CardDescription className="text-[10px]">Görevin planlanan ve gerçekleşen tarihleri</CardDescription></CardHeader>
+                            <CardContent className="grid gap-3 py-4 sm:grid-cols-2 sm:py-5">
                                 <DateItem label="Başlangıç" value={formatDate(task.start_date)} />
                                 <DateItem label="Bitiş" value={formatDate(task.end_date)} />
                                 <DateItem label="Teslim tarihi" value={formatDate(task.due_date)} emphasized />
@@ -235,9 +224,9 @@ export default function TaskDetailPage({ params }: PageProps) {
                             </CardContent>
                         </Card>
 
-                        <Card>
-                            <CardHeader className="border-b"><CardTitle className="text-base">Zaman çizelgesi</CardTitle></CardHeader>
-                            <CardContent className="space-y-4">
+                        <Card className="overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]">
+                            <CardHeader className="border-b border-slate-100 px-4 py-4 sm:px-5"><CardTitle className="text-sm text-slate-800">Zaman çizelgesi</CardTitle></CardHeader>
+                            <CardContent className="space-y-4 py-4">
                                 <TimelineItem title="Görev oluşturuldu" value={formatDate(task.created_at, true)} />
                                 {task.updated_at !== task.created_at && <TimelineItem title="Son güncelleme" value={formatDate(task.updated_at, true)} />}
                                 {task.completed_at && <TimelineItem title="Görev tamamlandı" value={formatDate(task.completed_at, true)} completed />}
@@ -247,9 +236,9 @@ export default function TaskDetailPage({ params }: PageProps) {
 
                     <aside className="space-y-4 lg:sticky lg:top-20">
                         {canChangeStatus && (
-                            <Card>
-                                <CardHeader><CardTitle className="text-sm">Görev durumu</CardTitle><CardDescription>İlerlemeyi güncelleyin</CardDescription></CardHeader>
-                                <CardContent>
+                            <Card className="rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]">
+                                <CardHeader className="px-4 pt-4 sm:px-5"><CardTitle className="text-sm text-slate-800">Görev durumu</CardTitle><CardDescription className="text-[10px]">İlerlemeyi güncelleyin</CardDescription></CardHeader>
+                                <CardContent className="py-4">
                                     <Select value={task.status} onValueChange={(status) => void updateTask({ status: status as Task['status'] })} disabled={isSubmitting}>
                                         <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                                         <SelectContent>
@@ -260,16 +249,16 @@ export default function TaskDetailPage({ params }: PageProps) {
                             </Card>
                         )}
 
-                        <Card>
-                            <CardHeader><CardTitle className="text-sm">Kişiler</CardTitle></CardHeader>
-                            <CardContent className="space-y-4">
+                        <Card className="rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]">
+                            <CardHeader className="px-4 pt-4 sm:px-5"><CardTitle className="text-sm text-slate-800">Kişiler</CardTitle></CardHeader>
+                            <CardContent className="space-y-4 py-4">
                                 <PersonItem label="Atanan" name={task.assigned_to_name} email={task.assigned_to_email} />
                                 <PersonItem label="Atayan" name={task.assigned_by_name} email={task.assigned_by_email} />
                             </CardContent>
                         </Card>
 
-                        <Card>
-                            <CardContent className="space-y-2 text-xs text-muted-foreground">
+                        <Card className="rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]">
+                            <CardContent className="space-y-2 py-4 text-[10px] text-slate-500">
                                 <div className="flex items-center justify-between gap-3"><span>Görev no</span><span className="font-mono text-foreground">#{task.id}</span></div>
                                 <div className="flex items-center justify-between gap-3"><span>Oluşturulma</span><span className="text-right text-foreground">{formatDate(task.created_at, true)}</span></div>
                                 <div className="flex items-center justify-between gap-3"><span>Güncellenme</span><span className="text-right text-foreground">{formatDate(task.updated_at, true)}</span></div>
@@ -281,7 +270,7 @@ export default function TaskDetailPage({ params }: PageProps) {
 
             <EditTaskDialog open={isEditOpen} onOpenChange={setIsEditOpen} onSubmit={updateTask} task={task} members={members} projects={projects} labels={labels} isSubmitting={isSubmitting} />
             <ConfirmDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen} onConfirm={deleteTask} title="Görevi sil" description={`"${task.title}" görevini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`} confirmText="Evet, sil" isDestructive isLoading={isSubmitting} />
-        </main>
+        </div>
     );
 }
 

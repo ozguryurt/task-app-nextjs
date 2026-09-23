@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { resendVerificationEmail, verifyEmail } from '@/lib/api/auth-api';
+import { AuthPageShell } from '@/components/layout/auth-page-shell';
 
 function VerifyEmailContent() {
     const router = useRouter();
@@ -66,20 +67,20 @@ function VerifyEmailContent() {
     };
 
     return (
-        <div className="auth-shell">
-            <Card className="auth-card w-full max-w-sm">
-                <CardHeader className="text-center">
-                    <span className="mx-auto mb-3 flex size-10 items-center justify-center rounded-md bg-secondary text-primary">
+        <AuthPageShell>
+            <Card className="auth-card w-full max-w-sm overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_20px_60px_rgba(24,32,66,0.09)]">
+                <CardHeader className="border-b border-slate-100 px-5 py-5 text-left sm:px-6">
+                    <span className={`mb-3 flex size-10 items-center justify-center rounded-xl ${isVerified ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
                         {isVerified ? <CheckCircle2 className="size-5" /> : <MailCheck className="size-5" />}
                     </span>
-                    <CardTitle className="text-lg">E-posta doğrulama</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-xl tracking-[-0.035em] text-slate-900">E-posta doğrulama</CardTitle>
+                    <CardDescription className="text-xs leading-5">
                         {isVerified
                             ? 'Hesabınız doğrulandı. Artık giriş yapabilirsiniz.'
                             : 'E-posta adresinize gönderilen 6 haneli kodu 5 dakika içinde girin.'}
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-5 py-5 sm:px-6 sm:py-6">
                     {isVerified ? (
                         <Button className="w-full" onClick={() => router.replace('/giris')}>Giriş yap</Button>
                     ) : (
@@ -122,17 +123,17 @@ function VerifyEmailContent() {
                         </form>
                     )}
                 </CardContent>
-                <CardFooter className="justify-center border-t pt-4 text-xs text-muted-foreground">
-                    <Link href="/" className="flex items-center gap-1.5 hover:text-primary"><Layers3 className="size-3.5" /> Taskflow ana sayfa</Link>
+                <CardFooter className="justify-center border-t border-slate-100 bg-slate-50/70 py-3.5 text-xs text-muted-foreground">
+                    <Link href="/" className="flex items-center gap-1.5 font-medium text-indigo-600 hover:text-indigo-700"><Layers3 className="size-3.5" /> Taskflow ana sayfa</Link>
                 </CardFooter>
             </Card>
-        </div>
+        </AuthPageShell>
     );
 }
 
 export default function VerifyEmailPage() {
     return (
-        <Suspense fallback={<div className="auth-shell"><p className="text-sm text-muted-foreground">Yükleniyor...</p></div>}>
+        <Suspense fallback={<AuthPageShell><p className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">Doğrulama ekranı hazırlanıyor...</p></AuthPageShell>}>
             <VerifyEmailContent />
         </Suspense>
     );
