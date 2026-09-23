@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
+  images: {
+    remotePatterns: [{ protocol: 'https', hostname: 'i.ibb.co' }],
+  },
   async headers() {
     const securityHeaders = [
       { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -17,7 +20,7 @@ const nextConfig: NextConfig = {
             ? "script-src 'self' 'unsafe-inline'"
             : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
           "style-src 'self' 'unsafe-inline'",
-          "img-src 'self' data: blob:",
+          "img-src 'self' data: blob: https://i.ibb.co",
           "font-src 'self'",
           "connect-src 'self'",
           "object-src 'none'",

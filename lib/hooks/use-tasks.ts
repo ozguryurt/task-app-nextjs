@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useTeamStore } from '../store/team-store';
 import type { TaskLabel } from '../store/team-store';
+import { notifyTasksChanged } from '@/lib/task-events';
 
 export interface Task {
     id: number;
@@ -110,6 +111,7 @@ export function useTasks(teamId: number) {
 
                 // Yeni görevi listeye ekle
                 setCurrentTeamTasks([data.task, ...currentTeamTasks]);
+                notifyTasksChanged();
 
                 toast.success('Görev oluşturuldu', { description: taskData.title });
                 return true;
@@ -153,6 +155,7 @@ export function useTasks(teamId: number) {
                         task.id === taskId ? data.task : task
                     )
                 );
+                notifyTasksChanged();
 
                 toast.success('Görev güncellendi', {
                     description: taskData.title ?? currentTeamTasks.find((task) => task.id === taskId)?.title,
@@ -192,6 +195,7 @@ export function useTasks(teamId: number) {
                 setCurrentTeamTasks(
                     currentTeamTasks.filter((task) => task.id !== taskId)
                 );
+                notifyTasksChanged();
 
                 toast.success('Görev silindi', {
                     description: currentTeamTasks.find((task) => task.id === taskId)?.title,

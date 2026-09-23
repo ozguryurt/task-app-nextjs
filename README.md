@@ -1,18 +1,19 @@
 # Taskflow
 
-Taskflow, ekiplerin görevleri oluşturup atayabildiği, durum ve teslim tarihlerini takip edebildiği bir Next.js uygulamasıdır. Arayüz Türkçedir; sade ve kompakt bir tasarım için Tailwind CSS, shadcn/ui tabanlı Radix bileşenleri ve Lucide ikonları kullanılır.
+Taskflow, ekiplerin görevleri oluşturup atayabildiği, projelerle düzenleyebildiği ve ilerlemeyi takip edebildiği Türkçe bir Next.js uygulamasıdır. Panelde analitik, takımlar ve kullanıcıya atanan görevler ayrı sayfalarda yer alır.
 
 ## Özellikler
 
 - Kayıt, giriş ve çıkış; JWT'nin `httpOnly` çerezde tutulması ve e-posta doğrulama.
 - Takım oluşturma, üye ekleme/çıkarma ve `admin` / `member` rolleri.
 - Takım görevlerini oluşturma, atama, düzenleme ve silme; durum, öncelik ve tarih alanları.
-- Paneldeki **Bana atanan görevler** ve takım detayındaki **Görevler** bölümlerinde arama, durum/öncelik filtreleri, sıralama ve filtreleri temizleme. Takım detayında ayrıca atanan kişiye göre filtreleme bulunur. Filtreler, yüklenen görevler üzerinde tarayıcıda çalışır.
+- `/panel/gorevler` sayfasında kullanıcıya atanan görevleri, takım detayında ise takım görevlerini arama, filtreleme ve sıralama. Takım detayında atanan kişi, proje ve etikete göre filtreleme de bulunur.
 - Takım görevlerinde liste, sürükle-bırak destekli Kanban ve aylık takvim görünümleri. Mobil Kanban kartlarında durum seçimi bulunur; takvim görevleri teslim tarihine göre yerleştirir.
 - Her görev için açıklama, sorumlular, durum/öncelik, tarih planı ve zaman çizelgesini gösteren detay ekranı; yetkiye bağlı durum değiştirme, düzenleme ve silme işlemleri.
-- Panelde tamamlanma oranı, geciken/yaklaşan görevler, durum dağılımı ve takım bazlı iş yükünü özetleyen dashboard analitiği.
+- `/panel` genel bakışı ve `/panel/analitik` sayfasında tamamlanma oranı, geciken/yaklaşan görevler, durum dağılımı ve takım bazlı iş yükü.
 - Takım bazlı projeler, renkli görev etiketleri ve tekrar eden iş akışlarını hızlandıran görev şablonları. Proje ve etiketler görev oluşturma/düzenleme akışlarında seçilebilir ve görev listesinde filtrelenebilir.
 - Kullanıcı profilinde mevcut şifre doğrulamasıyla şifre değiştirme ve yeni adrese gönderilen, 5 dakika geçerli tek kullanımlık kodla e-posta değiştirme.
+- Profil fotoğrafı yükleme (ImgBB): PNG, JPG, JPEG veya WEBP; en fazla 3 MB. Dairesel avatar için 512 × 512 px kare görsel önerilir. Fotoğraf profil ve panel üst çubuğunda gösterilir.
 - İşlem geri bildirimleri için Sonner bildirimleri ve mobil uyumlu arayüz.
 
 ## Teknoloji ve gereksinimler
@@ -25,7 +26,7 @@ Taskflow, ekiplerin görevleri oluşturup atayabildiği, durum ve teslim tarihle
 | Sunucu ve veri | Next.js Route Handlers, MySQL, `mysql2` |
 | Kimlik doğrulama | `bcryptjs`, `jsonwebtoken`, `nodemailer` |
 
-MySQL sunucusu, npm ve Node.js gerekir. Next.js 16 için en az Node.js **20.9.0** kullanın; projedeki filtre testi komutu için Node.js **22 veya üzeri** önerilir. SMTP, doğrulama e-postalarının gönderilmesi için gereklidir.
+MySQL, npm ve en az Node.js **20.9.0** gerekir. Test komutundaki `--experimental-strip-types` seçeneği için Node.js 22 veya üzeri kullanın. E-posta kodlarının gönderimi için SMTP, profil fotoğrafı yükleme için ImgBB API anahtarı gerekir.
 
 ## Kurulum
 
@@ -47,7 +48,7 @@ MySQL sunucusu, npm ve Node.js gerekir. Next.js 16 için en az Node.js **20.9.0*
    SOURCE database/schema.sql;
    ```
 
-   Var olan bir kurulumda, eski 64 karakterlik SHA-256 şifre alanını bcrypt hash'lerine uygun hâle getirmek için **mevcut veritabanınızı yedekledikten sonra** şu migrasyonu çalıştırın:
+   Var olan bir kurulumda **önce veritabanını yedekleyin**, ardından henüz uygulanmamış migrasyonları numara sırasıyla çalıştırın. Aşağıdaki liste, henüz hiçbir migrasyonun uygulanmadığı eski kurulum içindir; uygulanmış `ALTER TABLE` migrasyonlarını tekrar çalıştırmayın:
 
    ```sql
    USE `task-app-nextjs`;
@@ -56,9 +57,10 @@ MySQL sunucusu, npm ve Node.js gerekir. Next.js 16 için en az Node.js **20.9.0*
    SOURCE database/migrations/003_add_verification_attempts.sql;
    SOURCE database/migrations/004_add_projects_labels_templates.sql;
    SOURCE database/migrations/005_add_profile_email_change_codes.sql;
+   SOURCE database/migrations/006_add_user_avatar_url.sql;
    ```
 
-   İlk migrasyon mevcut hash'leri topluca dönüştürmez. Eski SHA-256 kayıtları, kullanıcı doğru şifreyle ilk kez giriş yaptığında otomatik olarak bcrypt'e yükseltilir. İkinci migrasyon, şifre değiştiğinde eski JWT oturumlarını iptal edebilmek için `session_version` alanını ekler. Üçüncü migrasyon, 6 haneli kodlarda kod başına deneme sınırını kalıcı olarak tutar. Dördüncü migrasyon proje, etiket, görev-etiket ilişkisi ve görev şablonu tablolarını oluşturur; görevlere isteğe bağlı proje ilişkisi ekler. Beşinci migrasyon, profil ekranındaki e-posta değişikliği kodları için tabloyu oluşturur.
+   `001` şifre alanını genişletir; eski SHA-256 hash'leri başarılı girişte bcrypt'e çevrilir. `002` oturum sürümünü, `003` kod deneme sayaçlarını ekler. `004` proje/etiket/şablon tablolarını, `005` profil e-posta değişikliği kodu tablosunu, `006` ise `users.avatar_url` alanını oluşturur. Yeni kurulumda `schema.sql` yeterlidir; migrasyonları ayrıca çalıştırmayın.
 
 3. [`env.example`](env.example) dosyasını `.env.local` olarak kopyalayıp kendi değerlerinizi girin. PowerShell'de:
 
@@ -66,7 +68,7 @@ MySQL sunucusu, npm ve Node.js gerekir. Next.js 16 için en az Node.js **20.9.0*
    Copy-Item env.example .env.local
    ```
 
-   macOS/Linux'ta `cp env.example .env.local` kullanabilirsiniz. Özellikle `DB_*` değişkenlerini ve tahmin edilmesi güç, benzersiz `JWT_SECRET` / `OTP_SECRET` değerlerini ayarlayın.
+   macOS/Linux'ta `cp env.example .env.local` kullanabilirsiniz. `DB_*`, `APP_ORIGIN`, güçlü `JWT_SECRET` / `OTP_SECRET` ve SMTP ayarlarını doldurun. Profil fotoğrafı kullanılacaksa [ImgBB API](https://api.imgbb.com/) anahtarını `IMGBB_API_KEY` olarak ekleyin.
 
 4. Geliştirme sunucusunu başlatın:
 
@@ -84,20 +86,32 @@ MySQL sunucusu, npm ve Node.js gerekir. Next.js 16 için en az Node.js **20.9.0*
 | `JWT_SECRET` | JWT imzalama/doğrulama anahtarı; uygulama en az 32 karakterlik bir değer olmadan oturum üretmez. |
 | `OTP_SECRET` | 6 haneli kodları HMAC ile korur; boşsa `JWT_SECRET` kullanılır. Canlı ortamda ayrı ve en az 32 karakterlik değer önerilir. |
 | `APP_ORIGIN` | Uygulamanın dışarıdan erişilen tam adresi (ör. `https://task.example.com`). cPanel/reverse proxy kurulumlarında CSRF origin kontrolü için ayarlanmalıdır. Birden fazla adres virgülle ayrılabilir. |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` | Doğrulama e-postasının SMTP üzerinden gönderimi. |
+| `IMGBB_API_KEY` | ImgBB API anahtarı; profil fotoğrafını sunucu üzerinden yüklemek için gereklidir. Tarayıcıya gönderilmez. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` | Kayıt doğrulama, şifre sıfırlama ve e-posta değiştirme kodlarının gönderimi. |
 | `NODE_ENV` | Ortam türü; normalde Next.js tarafından belirlenir. |
 
-`NEXT_PUBLIC_*` değişkenleri istemciye açıktır; bu alanlara gizli anahtar koymayın. Gerçek `.env.local` dosyasını sürüm kontrolüne eklemeyin.
+`NEXT_PUBLIC_*` değişkenleri istemciye açıktır; `IMGBB_API_KEY`, SMTP şifresi ve JWT/OTP anahtarlarını bu önekle tanımlamayın. Gerçek `.env.local` dosyasını sürüm kontrolüne eklemeyin. ImgBB anahtarı tanımlı değilse fotoğraf yükleme ucu `503` döner.
 
-### cPanel / reverse proxy notu
+Profil fotoğrafı için [ImgBB API](https://api.imgbb.com/) anahtarını yerel ortamda proje kökündeki `.env.local` dosyasına `IMGBB_API_KEY=anahtariniz` olarak yazın. cPanel'de aynı adı Node.js uygulamasının ortam değişkenlerine ekleyin ve uygulamayı yeniden başlatın. Anahtar yalnızca sunucudaki yükleme isteğinde kullanılır.
 
-Canlı ortamda `APP_ORIGIN` değerini kullanıcıların tarayıcıda açtığı HTTPS adresiyle aynı olacak şekilde tanımlayın:
+### Üretim ve cPanel
+
+Önce yeni veritabanı şemasını veya eksik migrasyonları uygulayın; giriş ve profil API'leri `users.avatar_url` alanını okur. Ardından üretim derlemesini alın:
+
+```bash
+npm ci
+npm run build
+```
+
+`next.config.ts` bağımsız (`standalone`) çıktı üretir. `public` klasörünü `.next/standalone/public` konumuna, `.next/static` klasörünü de `.next/standalone/.next/static` konumuna kopyalayın. cPanel'de Node.js giriş noktası olarak `.next/standalone/server.js` dosyasını ayarlayın veya sunucuda `node .next/standalone/server.js` komutunu çalıştırın.
+
+cPanel ortam değişkenlerinde `DB_*`, `JWT_SECRET`, `OTP_SECRET`, SMTP ayarları, `IMGBB_API_KEY` ve kullanıcıların tarayıcıda açtığı HTTPS adresiyle eşleşen `APP_ORIGIN` değerini tanımlayın:
 
 ```env
 APP_ORIGIN=https://task.example.com
 ```
 
-Bu değer değiştirildikten sonra Node.js uygulamasını cPanel üzerinden yeniden başlatın. Proxy, `Host` ve `X-Forwarded-*` başlıklarını uygulamaya aktarmaya devam etmelidir; `APP_ORIGIN` tanımlandığında güvenlik kontrolünün esas allowlist değeri bu değişken olur.
+Ortam değişkenleri değiştirildikten sonra Node.js uygulamasını cPanel üzerinden yeniden başlatın. Reverse proxy, `Host` ve `X-Forwarded-*` başlıklarını uygulamaya aktarmalıdır. `APP_ORIGIN` birden fazla adres için virgülle ayrılmış liste kabul eder.
 
 ## Sayfalar ve kullanım
 
@@ -106,15 +120,19 @@ Bu değer değiştirildikten sonra Node.js uygulamasını cPanel üzerinden yeni
 | `/` | Açılış sayfası. |
 | `/kayit`, `/giris` | Hesap oluşturma ve giriş. |
 | `/eposta-dogrulama` | E-posta adresi ve 6 haneli kodla hesap doğrulama. |
-| `/sifremi-unuttum` | Kod isteme ve kodla yeni şifre belirleme. |
-| `/panel` | Takımlar ve kullanıcıya atanan görevler. |
-| `/panel/profil` | Hesap bilgileri; mevcut şifre doğrulamasıyla şifre ve e-posta değiştirme. |
+| `/sifremi-unuttum` | 6 haneli kod isteme ve kodla yeni şifre belirleme. |
+| `/sifre-sifirla` | Eski bağlantılar için `/sifremi-unuttum` yoluna yönlendirir. |
+| `/panel` | Çalışma alanı özeti ve diğer panel sayfalarına kısayollar. |
+| `/panel/analitik` | Kullanıcıya atanan görevlerin ilerleme ve iş yükü analitiği. |
+| `/panel/takimlar` | Üyesi olunan takımlar ve yeni takım oluşturma. |
+| `/panel/gorevler` | Kullanıcıya atanan görevler; arama, filtreleme ve sıralama. |
+| `/panel/profil` | Hesap bilgileri ve profil fotoğrafı; mevcut şifre doğrulamasıyla şifre ve e-posta değiştirme. |
 | `/panel/takimlar/[takimId]` | Takım üyeleri ve görevleri. |
 | `/panel/takimlar/[takimId]/gorevler/[gorevId]` | Görev ayrıntıları ve yetkili görev işlemleri. |
 
-`proxy.ts`, oturum açmamış kullanıcıları korumalı panel sayfalarından `/giris` yoluna yönlendirir. API uçları `proxy.ts` içinde atlanır; yetki kontrolleri ilgili Route Handler'larda yapılır.
+Tanımsız adreslerde özel 404 ekranı gösterilir. `proxy.ts`, oturum açmamış kullanıcıları `/panel` altındaki sayfalardan girişe yönlendirir ve API'deki durum değiştiren çapraz site isteklerini reddeder. API uçları oturum ve yetki kontrollerini ayrıca kendi Route Handler'larında yapar.
 
-Görev durumları `pending`, `in_progress`, `completed`, `cancelled`; öncelikler `low`, `medium`, `high` değerlerini kullanır. Görev filtresindeki arama başlık ve açıklamada çalışır; panelde takım/atayan, takım detayında ise atanan/atayan adları da aranabilir. Takım detayında proje ve etiket filtreleri bulunur. Sıralama seçenekleri en yeni, en eski, yakın teslim tarihi ve önceliktir. Proje, etiket ve şablon yönetimi takım yöneticilerine açıktır; üyeler yapılandırılmış öğeleri görevlerde kullanabilir.
+Görev durumları `pending`, `in_progress`, `completed`, `cancelled`; öncelikler `low`, `medium`, `high` değerlerini kullanır. Arama başlık ve açıklamayı kapsar; kullanıcı görevlerinde takım/atayan, takım detayında atanan/atayan ve proje/etiket bilgileri de aranır. Sıralama seçenekleri en yeni, en eski, yakın teslim tarihi ve önceliktir. Proje, etiket ve şablon yönetimi takım yöneticilerine açıktır. Sol menüdeki proje kısayolları kullanıcıya atanan görevlerden türetilir ve ilgili görev işlemlerinden sonra güncellenir.
 
 ## API
 
@@ -137,6 +155,7 @@ Tüm yollar `/api` önekini kullanır. Korumalı uçlar oturum çerezini gerekti
 | GET, POST, DELETE | `/takimlar/[takimId]/gorev-yapilandirma` | Proje, etiket ve görev şablonlarını listeleme / oluşturma / silme. |
 | GET | `/kullanici/gorevler` | Kullanıcıya atanan görevler. |
 | GET, POST | `/kullanici/profil` | Profil bilgisini getirme; şifre değiştirme, e-posta değişikliği kodu isteme ve kodu doğrulama işlemleri. |
+| POST | `/kullanici/profil/fotograf` | Profil fotoğrafını doğrulayıp ImgBB'ye yükleme; dönen adresi kullanıcıya kaydetme. |
 
 Örneğin giriş isteği:
 
@@ -149,25 +168,28 @@ Content-Type: application/json
 
 ## Şifreler ve güvenlik durumu
 
-Yeni parolalar `bcryptjs` ile **12 maliyet faktörü** kullanılarak hash'lenir; düz metin veya yeni SHA-256 hash'i saklanmaz. Parola en az 8 karakter olmalı; büyük harf, küçük harf ve rakam içermeli ve bcrypt sınırı nedeniyle UTF-8 olarak 72 baytı aşmamalıdır. Eski SHA-256 hash'leri yalnızca geçiş dönemi için doğrulanır ve başarılı girişte bcrypt'e çevrilir. E-posta doğrulama ve şifre sıfırlama kodları 6 hanelidir, 5 dakika geçerlidir, kod başına en fazla 5 deneme kabul edilir ve veritabanında sunucu anahtarlı HMAC özeti olarak saklanır.
+Yeni parolalar `bcryptjs` ile **12 maliyet faktörü** kullanılarak hash'lenir; düz metin veya yeni SHA-256 hash'i saklanmaz. Parola en az 8 karakter olmalı; büyük harf, küçük harf ve rakam içermeli ve bcrypt sınırı nedeniyle UTF-8 olarak 72 baytı aşmamalıdır. Eski SHA-256 hash'leri yalnızca geçiş dönemi için doğrulanır ve başarılı girişte bcrypt'e çevrilir. Hesap doğrulama, şifre sıfırlama ve profil e-posta değişikliği kodları 6 hanelidir, 5 dakika geçerlidir ve kod başına en fazla 5 deneme kabul edilir; veritabanında sunucu anahtarlı HMAC özeti saklanır. Profilde şifre veya e-posta değişikliğinde mevcut şifre de doğrulanır.
 
-Oturum JWT'si `auth-token` adlı `httpOnly`, `SameSite=Lax` çerezde saklanır; `Secure` niteliği canlı ortamda etkinleşir ve çerez 7 gün geçerlidir. Token algoritması, yayıncı ve hedef kitle değerleri doğrulanır; kullanıcı devre dışı bırakıldığında veya şifresi değiştiğinde mevcut oturum reddedilir. Canlı ortam için HTTPS ve güçlü bir `JWT_SECRET` gereklidir.
+Oturum JWT'si `auth-token` adlı `httpOnly`, `SameSite=Lax` çerezde saklanır; `Secure` niteliği canlı ortamda etkinleşir ve çerez 7 gün geçerlidir. Token algoritması, yayıncı ve hedef kitle değerleri doğrulanır. Kullanıcı devre dışı bırakıldığında oturum reddedilir; şifre veya e-posta değişikliğinde diğer oturumlar geçersizleşir, işlemi yapan tarayıcıya yeni çerez verilir. Canlı ortam için HTTPS ve güçlü bir `JWT_SECRET` gereklidir.
 
-Kimlik uçlarında istek hız sınırlaması, durum değiştiren API isteklerinde aynı kaynak kontrolü, 32 KB gövde sınırı ve uygulama genelinde CSP, HSTS, clickjacking/MIME/referrer güvenlik başlıkları bulunur. Şifre sıfırlama ve doğrulama e-postalarının gönderimi SMTP yapılandırmasına bağlıdır. Uygulama birden fazla sunucu örneğinde çalıştırılacaksa bellek içi hız sınırlayıcı yerine Redis gibi ortak bir depo kullanılmalıdır.
+Kimlik ve profil işlemlerinde istek hız sınırlaması; durum değiştiren API isteklerinde kaynak denetimi; JSON API'lerinde 32 KB `Content-Length` kontrolü; uygulama genelinde CSP, HSTS, clickjacking/MIME/referrer güvenlik başlıkları bulunur. Fotoğraf yüklemede uzantı, MIME türü, dosya imzası ve 3 MB dosya sınırı sunucuda da denetlenir. Fotoğraflar ImgBB'de barındırılır; yeni fotoğraf eski adresin yerini alır, ancak önceki yükleme ImgBB'den otomatik silinmez. Uygulama birden fazla sunucu örneğinde çalıştırılacaksa bellek içi hız sınırlayıcı yerine Redis gibi ortak bir depo kullanılmalıdır.
 
 ## Proje yapısı
 
 ```text
-app/                  Sayfalar ve API Route Handler'ları
-components/ui/        Ortak Radix/shadcn tabanlı arayüz bileşenleri
-components/tasks/     Görev listesi, diyalogları ve filtre çubuğu
-components/teams/     Takım kartları ve üye yönetimi bileşenleri
-components/dashboard/ Panel görev bileşenleri
-lib/                  DB, kimlik doğrulama, veri kancaları ve filtre mantığı
-database/schema.sql   İlk kurulum şeması
-database/migrations/  Var olan veritabanı için SQL migrasyonları
-tests/                Görev filtreleme testleri
-proxy.ts              Sayfa yönlendirme ve oturum kontrolü
+app/                      Sayfalar ve API Route Handler'ları
+app/panel/                Genel bakış, analitik, takımlar, görevler ve profil
+components/dashboard/     Ortak panel kabuğu ve analitik/görev bileşenleri
+components/tasks/         Liste, Kanban, takvim, filtre ve görev diyalogları
+components/teams/         Takım kartları ve üye yönetimi
+components/users/         Profil/avatar bileşenleri
+components/ui/            Ortak Radix/shadcn tabanlı bileşenler
+lib/                      DB, kimlik doğrulama, veri kancaları ve yardımcılar
+database/schema.sql       Yeni kurulum şeması
+database/migrations/      Var olan veritabanı için numaralı SQL migrasyonları
+tests/                    Görev filtresi ve güvenlik testleri
+proxy.ts                  Sayfa koruması ve API kaynak denetimi
+env.example               Ortam değişkenleri örneği
 ```
 
 ## Komutlar ve kontroller
@@ -175,10 +197,9 @@ proxy.ts              Sayfa yönlendirme ve oturum kontrolü
 ```bash
 npm run dev
 npm run build
-npm run start
 npm run lint
 npx tsc --noEmit
 node --experimental-strip-types --test tests/task-filters.test.mjs tests/security.test.mjs
 ```
 
-`npm run start`, önceden alınmış üretim derlemesini başlatır. Node test komutu, görev filtreleri ile güvenlik yardımcılarının doğrulamalarını çalıştırır.
+Üretimde standalone sunucuyu `node .next/standalone/server.js` ile başlatın. Node test komutu, görev filtreleri ile güvenlik yardımcılarının doğrulamalarını çalıştırır.

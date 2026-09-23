@@ -24,6 +24,8 @@ import { defaultTaskFilters, filterTasks, type TaskFilterState } from '@/lib/tas
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ArrowLeft, Users, UserPlus, Trash2, Calendar, ClipboardList, Plus, Loader2, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useDashboardData } from '@/components/dashboard/dashboard-shell';
+import { notifyTasksChanged } from '@/lib/task-events';
 
 interface PageProps {
     params: Promise<{ takimId: string }>;
@@ -33,6 +35,7 @@ export default function TeamDetailPage({ params }: PageProps) {
     const resolvedParams = use(params);
     const teamId = parseInt(resolvedParams.takimId);
     const router = useRouter();
+    const { refreshTeams } = useDashboardData();
     const { user } = useAuthStore();
     const { currentTeam, currentTeamMembers, setCurrentTeam } = useTeamStore();
     const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
@@ -169,6 +172,8 @@ export default function TeamDetailPage({ params }: PageProps) {
             }
 
             toast.success('Takım silindi', { description: `"${currentTeam?.name}" takımı kaldırıldı.` });
+            notifyTasksChanged();
+            void refreshTeams().catch(() => {});
             router.push('/panel');
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';

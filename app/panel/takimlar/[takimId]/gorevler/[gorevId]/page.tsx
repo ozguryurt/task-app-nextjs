@@ -22,6 +22,7 @@ import { useAuthStore } from '@/lib/store/auth-store';
 import type { Task, TeamMember, TaskLabel, TaskProject } from '@/lib/store/team-store';
 import type { UpdateTaskData } from '@/lib/hooks/use-tasks';
 import { cn } from '@/lib/utils';
+import { notifyTasksChanged } from '@/lib/task-events';
 
 interface PageProps {
     params: Promise<{ takimId: string; gorevId: string }>;
@@ -130,6 +131,7 @@ export default function TaskDetailPage({ params }: PageProps) {
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Görev güncellenemedi');
             setTask(result.task);
+            notifyTasksChanged();
             toast.success('Görev güncellendi', { description: result.task.title });
             return true;
         } catch (updateError) {
@@ -150,6 +152,7 @@ export default function TaskDetailPage({ params }: PageProps) {
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Görev silinemedi');
+            notifyTasksChanged();
             toast.success('Görev silindi', { description: task.title });
             router.replace(`/panel/takimlar/${teamId}`);
         } catch (deleteError) {

@@ -19,6 +19,8 @@ import { useTeamStore, type Team } from '@/lib/store/team-store';
 import { useTeams } from '@/lib/hooks/use-teams';
 import { useUserTasks, type UserTask } from '@/lib/hooks/use-user-tasks';
 import { useLogout } from '@/lib/hooks/use-logout';
+import { TASKS_CHANGED_EVENT } from '@/lib/task-events';
+import { UserAvatar } from '@/components/users/user-avatar';
 
 interface DashboardData {
     tasks: UserTask[];
@@ -48,6 +50,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         void fetchTeams().catch(() => {});
         void fetchUserTasks();
     }, [fetchTeams, fetchUserTasks]);
+
+    useEffect(() => {
+        const refreshTasks = () => void fetchUserTasks();
+        window.addEventListener(TASKS_CHANGED_EVENT, refreshTasks);
+        return () => window.removeEventListener(TASKS_CHANGED_EVENT, refreshTasks);
+    }, [fetchUserTasks]);
 
     const refreshTeams = useCallback(() => fetchTeams(), [fetchTeams]);
     const navItems = [
@@ -79,7 +87,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                                 {collaborators.map(([id, name], index) => <span key={id} title={name} className={`flex size-6 items-center justify-center rounded-full border-2 border-white text-[8px] font-bold ${['bg-rose-200 text-rose-800', 'bg-amber-200 text-amber-900', 'bg-indigo-200 text-indigo-800'][index]}`}>{name.slice(0, 2).toLocaleUpperCase('tr-TR')}</span>)}
                             </div>
                             <Link href="/panel/profil" aria-label="Profil ve hesap ayarları" className="flex items-center gap-2 rounded-full bg-slate-50 py-1 pl-1 pr-2 transition-colors hover:bg-indigo-50 sm:pr-3">
-                                <span className="flex size-7 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-700">{user?.name?.slice(0, 2).toLocaleUpperCase('tr-TR') || 'U'}</span>
+                                <UserAvatar name={user?.name} src={user?.avatarUrl} className="size-7" />
                                 <span className="hidden max-w-32 truncate text-[11px] font-medium text-slate-700 sm:block">{user?.name}</span>
                             </Link>
                             <Button onClick={handleLogout} variant="ghost" size="icon-sm" disabled={isLoggingOut} aria-label="Çıkış yap" className="text-slate-500 hover:text-rose-600"><LogOut /></Button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, AtSign, BadgeCheck, KeyRound, LoaderCircle, MailCheck, ShieldCheck, UserRound } from 'lucide-react';
 import { useAuthStore, type User } from '@/lib/store/auth-store';
@@ -10,6 +10,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { UserAvatar } from '@/components/users/user-avatar';
+
+const MAX_AVATAR_BYTES = 3 * 1024 * 1024;
+const AVATAR_TYPES: Record<string, string> = {
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+};
 
 interface ProfileResponse {
     success: boolean;
@@ -43,6 +52,15 @@ export default function ProfilePage() {
     const [emailCurrentPassword, setEmailCurrentPassword] = useState('');
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [isAvatarSubmitting, setIsAvatarSubmitting] = useState(false);
+    const avatarPreviewRef = useRef<string | null>(null);
+    const avatarInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => () => {
+        if (avatarPreviewRef.current) URL.revokeObjectURL(avatarPreviewRef.current);
+    }, []);
 
     useEffect(() => {
         let active = true;
@@ -124,6 +142,69 @@ export default function ProfilePage() {
         setNotice('');
     };
 
+    const handleAvatarSelect = (event: ChangeEvent<HTMLInputElement>) => {
+        setError('');
+        setNotice('');
+        if (avatarPreviewRef.current) URL.revokeObjectURL(avatarPreviewRef.current);
+        avatarPreviewRef.current = null;
+        setAvatarPreview(null);
+        setAvatarFile(null);
+
+        const file = event.target.files?.[0];
+        if (!file) return;
+        const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+        if (!AVATAR_TYPES[extension] || file.type.toLowerCase() !== AVATAR_TYPES[extension]) {
+            setError('Yalnızca PNG, JPG, JPEG veya WEBP görselleri seçilebilir.');
+            event.target.value = '';
+            return;
+        }
+        if (file.size === 0 || file.size > MAX_AVATAR_BYTES) {
+            setError('Fotoğraf boş olamaz ve en fazla 3 MB olabilir.');
+            event.target.value = '';
+            return;
+        }
+
+        const previewUrl = URL.createObjectURL(file);
+        avatarPreviewRef.current = previewUrl;
+        setAvatarPreview(previewUrl);
+        setAvatarFile(file);
+    };
+
+    const handleAvatarUpload = async () => {
+        if (!avatarFile || !user) return;
+        setError('');
+        setNotice('');
+        setIsAvatarSubmitting(true);
+        try {
+            const formData = new FormData();
+            formData.append('image', avatarFile);
+            const response = await fetch('/api/kullanici/profil/fotograf', {
+                method: 'POST',
+                credentials: 'include',
+                body: formData,
+            });
+            const result = await response.json() as {
+                success: boolean;
+                message: string;
+                data?: { avatarUrl?: string };
+            };
+            if (!response.ok || !result.success || !result.data?.avatarUrl) {
+                throw new Error(result.message || 'Fotoğraf yüklenemedi');
+            }
+            setUser({ ...user, avatarUrl: result.data.avatarUrl });
+            setNotice(result.message);
+            setAvatarFile(null);
+            setAvatarPreview(null);
+            if (avatarPreviewRef.current) URL.revokeObjectURL(avatarPreviewRef.current);
+            avatarPreviewRef.current = null;
+            if (avatarInputRef.current) avatarInputRef.current.value = '';
+        } catch (uploadError) {
+            setError(uploadError instanceof Error ? uploadError.message : 'Fotoğraf yüklenemedi');
+        } finally {
+            setIsAvatarSubmitting(false);
+        }
+    };
+
     return (
         <div className="mx-auto max-w-[1100px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
             <div className="mb-6 flex items-center gap-3">
@@ -141,6 +222,15 @@ export default function ProfilePage() {
                         <CardDescription className="text-xs">Profilin ve doğrulama durumun.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4 py-5 sm:px-6">
+                        <div className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3.5 sm:flex-row sm:items-center">
+                            <UserAvatar name={user?.name} src={avatarPreview || user?.avatarUrl} className="size-16 text-lg ring-2 ring-white" />
+                            <div className="min-w-0 flex-1 space-y-2">
+                                <Label htmlFor="profile-photo" className="text-[11px] text-slate-700">Profil fotoğrafı</Label>
+                                <Input ref={avatarInputRef} id="profile-photo" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" onChange={handleAvatarSelect} disabled={isAvatarSubmitting} className="h-auto min-h-10 cursor-pointer py-2 text-xs file:mr-2 file:text-xs" />
+                                <p className="text-[10px] leading-4 text-slate-500">512 × 512 px kare önerilir. PNG, JPG, JPEG veya WEBP · en fazla 3 MB. Fotoğraf ImgBB üzerinde barındırılır.</p>
+                                {avatarFile && <Button type="button" size="sm" className="rounded-lg" onClick={handleAvatarUpload} disabled={isAvatarSubmitting || isLoadingProfile}>{isAvatarSubmitting && <LoaderCircle className="size-3.5 animate-spin" />} Fotoğrafı yükle</Button>}
+                            </div>
+                        </div>
                         {isLoadingProfile ? <div className="flex items-center gap-2 py-2 text-xs text-slate-500"><LoaderCircle className="size-4 animate-spin" /> Profil yükleniyor...</div> : <>
                             <ProfileValue icon={UserRound} label="Ad soyad" value={user?.name || '—'} />
                             <ProfileValue icon={AtSign} label="E-posta adresi" value={user?.email || '—'} />

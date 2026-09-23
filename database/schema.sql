@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL COMMENT 'bcrypt hash',
     name VARCHAR(255) NOT NULL,
+    avatar_url VARCHAR(2048) DEFAULT NULL,
     
     -- E-posta doğrulama alanları
     email_verified BOOLEAN DEFAULT FALSE,

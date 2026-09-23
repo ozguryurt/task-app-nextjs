@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import type { TaskLabel } from '@/lib/store/team-store';
 
@@ -29,14 +29,17 @@ export function useUserTasks() {
     const [tasks, setTasks] = useState<UserTask[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const latestRequest = useRef(0);
 
     const fetchUserTasks = useCallback(async () => {
+        const requestId = ++latestRequest.current;
         setIsLoading(true);
         setError(null);
 
         try {
             const response = await fetch('/api/kullanici/gorevler', {
                 credentials: 'include',
+                cache: 'no-store',
             });
 
             const data = await response.json();
@@ -45,13 +48,14 @@ export function useUserTasks() {
                 throw new Error(data.error || 'Görevler yüklenemedi');
             }
 
-            setTasks(data.tasks);
+            if (requestId === latestRequest.current) setTasks(data.tasks);
         } catch (err) {
+            if (requestId !== latestRequest.current) return;
             const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
             setError(errorMessage);
             toast.error(errorMessage);
         } finally {
-            setIsLoading(false);
+            if (requestId === latestRequest.current) setIsLoading(false);
         }
     }, []);
 

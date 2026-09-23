@@ -30,6 +30,7 @@ interface ProfileRow extends RowDataPacket {
     email: string;
     password: string;
     name: string;
+    avatar_url: string | null;
     email_verified: boolean | number;
     created_at: Date | string;
     is_active: boolean | number;
@@ -55,6 +56,7 @@ function profileResponse(user: ProfileRow) {
         id: user.id,
         email: user.email,
         name: user.name,
+        avatarUrl: user.avatar_url,
         emailVerified: Boolean(user.email_verified),
         createdAt: user.created_at,
     };
@@ -79,7 +81,7 @@ function setSessionCookie(response: NextResponse, user: ProfileRow, sessionVersi
 
 async function getProfileUser(userId: number) {
     const [users] = await pool.query<ProfileRow[]>(
-        `SELECT id, email, password, name, email_verified, created_at, is_active, session_version
+        `SELECT id, email, password, name, avatar_url, email_verified, created_at, is_active, session_version
          FROM users WHERE id = ? LIMIT 1`,
         [userId]
     );

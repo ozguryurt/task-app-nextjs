@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import type { TaskLabel, TaskProject, TaskTemplate } from '@/lib/store/team-store';
+import { notifyTasksChanged } from '@/lib/task-events';
 
 export type MetadataType = 'project' | 'label' | 'template';
 
@@ -62,6 +63,7 @@ export function useTaskMetadata(teamId: number) {
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Kayıt silinemedi');
+            if (type === 'project') notifyTasksChanged();
             await fetchMetadata();
             toast.success('Kayıt kaldırıldı');
             return true;

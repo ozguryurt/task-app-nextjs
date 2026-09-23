@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
         // Kullanıcıyı e-posta ile bul; parola uygulama katmanında güvenli biçimde doğrulanır.
         const [users] = await pool.query<RowDataPacket[]>(
-            `SELECT id, email, password, name, email_verified, is_active, session_version, created_at
+            `SELECT id, email, password, name, avatar_url, email_verified, is_active, session_version, created_at
        FROM users 
        WHERE email = ?`,
             [email]
@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
                         id: user.id,
                         email: user.email,
                         name: user.name,
+                        avatarUrl: user.avatar_url,
                         emailVerified: user.email_verified,
                         createdAt: user.created_at
                     }
