@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { useDashboardData } from '@/components/dashboard/dashboard-shell';
+import { WorkspacePageHeader } from '@/components/dashboard/workspace-page-header';
 
 export default function DashboardOverviewPage() {
     const { user } = useAuthStore();
@@ -16,10 +17,7 @@ export default function DashboardOverviewPage() {
 
     return (
         <div className="mx-auto max-w-[1250px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-            <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-                <div><p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-indigo-500">Genel bakış</p><h1 className="mt-1.5 text-2xl font-semibold tracking-[-0.045em] text-slate-900 sm:text-[1.75rem]">Merhaba, {user?.name?.split(' ')[0]}.</h1><p className="mt-1 text-xs text-slate-500 sm:text-sm">Çalışma alanındaki ilerleme ve önceliklere göz at.</p></div>
-                <Button asChild size="sm" className="h-9 rounded-lg"><Link href="/panel/gorevler">Görevlerime git <ArrowRight className="size-3.5" /></Link></Button>
-            </div>
+            <WorkspacePageHeader eyebrow="Genel bakış" title={`Merhaba, ${user?.name?.split(' ')[0] ?? ''}.`} description="Çalışma alanındaki ilerleme ve önceliklere göz at." action={<Button asChild size="sm"><Link href="/panel/gorevler">Görevlerime git <ArrowRight className="size-3.5" /></Link></Button>} />
 
             <section className="motion-stagger grid gap-3 sm:grid-cols-3" aria-label="Çalışma alanı özeti">
                 <OverviewMetric label="Takımlar" value={String(teams.length)} note="Çalışma alanların" icon={Users} tone="bg-indigo-50 text-indigo-600" />
@@ -39,7 +37,7 @@ export default function DashboardOverviewPage() {
             <Card className="mt-5 overflow-hidden rounded-2xl border-indigo-100 bg-gradient-to-r from-indigo-50/90 via-white to-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.025)]">
                 <CardContent className="flex flex-col justify-between gap-4 px-5 py-5 sm:flex-row sm:items-center sm:px-6">
                     <div className="flex items-center gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm"><Activity className="size-4" /></span><div><p className="text-xs font-semibold text-slate-800">{teams.length ? 'Akışın hazır' : 'İlk takımını oluştur'}</p><p className="mt-1 max-w-lg text-[10px] leading-5 text-slate-500">{teams.length ? 'Takım alanların, görevlerin ve analitiklerin çalışma alanı menüsünde seni bekliyor.' : 'Ekip arkadaşlarını davet et, görevleri paylaş ve ilerlemeyi tek yerden takip et.'}</p></div></div>
-                    <Button asChild variant="outline" size="sm" className="shrink-0 rounded-lg"><Link href="/panel/takimlar">{teams.length ? 'Takımları görüntüle' : 'Takım oluştur'} <ArrowRight className="size-3.5" /></Link></Button>
+                    <Button asChild variant="outline" size="sm" className="shrink-0"><Link href="/panel/takimlar">{teams.length ? 'Takımları görüntüle' : 'Takım oluştur'} <ArrowRight className="size-3.5" /></Link></Button>
                 </CardContent>
             </Card>
         </div>

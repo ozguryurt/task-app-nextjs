@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { useTeamStore, Task } from '@/lib/store/team-store';
+import { useTeamStore, Task, type TaskProject } from '@/lib/store/team-store';
 import { useTeamMembers } from '@/lib/hooks/use-team-members';
 import { useTasks } from '@/lib/hooks/use-tasks';
 import { useTaskMetadata } from '@/lib/hooks/use-task-metadata';
@@ -22,7 +22,13 @@ import { TaskViewSwitcher, type TaskView } from '@/components/tasks/task-view-sw
 import { TaskMetadataManager } from '@/components/tasks/task-metadata-manager';
 import { defaultTaskFilters, filterTasks, type TaskFilterState } from '@/lib/task-filters';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { ArrowLeft, Users, UserPlus, Trash2, Calendar, ClipboardList, Plus, Loader2, Settings2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { ColorSwatches } from '@/components/ui/color-swatches';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeft, Users, UserPlus, Trash2, Calendar, ClipboardList, Plus, Settings2, FolderKanban, Pencil, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDashboardData } from '@/components/dashboard/dashboard-shell';
 import { notifyTasksChanged } from '@/lib/task-events';
@@ -48,12 +54,22 @@ export default function TeamDetailPage({ params }: PageProps) {
     const [taskView, setTaskView] = useState<TaskView>('list');
     const [isEditTaskDialogOpen, setIsEditTaskDialogOpen] = useState(false);
     const [isDeleteTaskDialogOpen, setIsDeleteTaskDialogOpen] = useState(false);
+    const [isDeleteProjectDialogOpen, setIsDeleteProjectDialogOpen] = useState(false);
+    const [isEditTeamDialogOpen, setIsEditTeamDialogOpen] = useState(false);
+    const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
     const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
     const [taskToDelete, setTaskToDelete] = useState<{ id: number; title: string } | null>(null);
+    const [projectToDelete, setProjectToDelete] = useState<{ id: number; name: string } | null>(null);
+    const [projectToEdit, setProjectToEdit] = useState<TaskProject | null>(null);
+    const [teamNameDraft, setTeamNameDraft] = useState('');
+    const [teamDescriptionDraft, setTeamDescriptionDraft] = useState('');
+    const [projectColorDraft, setProjectColorDraft] = useState('#6366f1');
     const [isLoadingTeam, setIsLoadingTeam] = useState(true);
     const [isDeletingTeam, setIsDeletingTeam] = useState(false);
     const [teamError, setTeamError] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<'admin' | 'member' | null>(null);
+    const [projectName, setProjectName] = useState('');
+    const [projectDescription, setProjectDescription] = useState('');
 
     const {
         fetchMembers,
@@ -75,7 +91,7 @@ export default function TeamDetailPage({ params }: PageProps) {
     } = useTasks(teamId);
 
     const {
-        projects, labels, templates, fetchMetadata, createMetadata, deleteMetadata,
+        projects, labels, templates, fetchMetadata, createMetadata, updateMetadata, deleteMetadata,
         isSubmitting: isSubmittingMetadata,
     } = useTaskMetadata(teamId);
 
@@ -225,15 +241,17 @@ export default function TeamDetailPage({ params }: PageProps) {
         }
     };
 
+    const handleConfirmDeleteProject = async () => {
+        if (!projectToDelete) return;
+        const deleted = await deleteMetadata('project', projectToDelete.id);
+        if (deleted) {
+            setIsDeleteProjectDialogOpen(false);
+            setProjectToDelete(null);
+        }
+    };
+
     if (isLoadingTeam) {
-        return (
-            <div className="flex min-h-dvh items-center justify-center bg-[#f6f8fc] text-slate-500">
-                <div className="flex flex-col items-center gap-3 text-sm">
-                    <Loader2 className="size-6 animate-spin text-primary" />
-                    <p>Takım hazırlanıyor...</p>
-                </div>
-            </div>
-        );
+        return <TeamDetailSkeleton />;
     }
 
     if (teamError) {
@@ -257,6 +275,68 @@ export default function TeamDetailPage({ params }: PageProps) {
     }
 
     const isAdmin = userRole === 'admin';
+
+    const handleCreateProject = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (!projectName.trim()) return;
+        const payload = { type: 'project' as const, name: projectName.trim(), description: projectDescription.trim(), color: projectColorDraft };
+        const saved = projectToEdit
+            ? await updateMetadata({ ...payload, id: projectToEdit.id })
+            : await createMetadata(payload);
+        if (saved) {
+            cancelProjectEdit();
+        }
+    };
+
+    const openCreateProjectDialog = () => {
+        setProjectToEdit(null);
+        setProjectName('');
+        setProjectDescription('');
+        setProjectColorDraft('#6366f1');
+        setIsProjectDialogOpen(true);
+    };
+
+    const startEditingProject = (project: TaskProject) => {
+        setProjectToEdit(project);
+        setProjectName(project.name);
+        setProjectDescription(project.description ?? '');
+        setProjectColorDraft(project.color);
+        setIsProjectDialogOpen(true);
+    };
+
+    const cancelProjectEdit = () => {
+        setIsProjectDialogOpen(false);
+        setProjectToEdit(null);
+        setProjectName('');
+        setProjectDescription('');
+        setProjectColorDraft('#6366f1');
+    };
+
+    const openTeamEditor = () => {
+        setTeamNameDraft(currentTeam?.name ?? '');
+        setTeamDescriptionDraft(currentTeam?.description ?? '');
+        setIsEditTeamDialogOpen(true);
+    };
+
+    const handleUpdateTeam = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        try {
+            const response = await fetch(`/api/takimlar/${teamId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ name: teamNameDraft, description: teamDescriptionDraft }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Takım güncellenemedi');
+            if (currentTeam) setCurrentTeam({ ...currentTeam, name: teamNameDraft.trim(), description: teamDescriptionDraft.trim() || null });
+            void refreshTeams().catch(() => {});
+            setIsEditTeamDialogOpen(false);
+            toast.success('Takım bilgileri güncellendi');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Takım güncellenemedi');
+        }
+    };
 
     return (
         <div className="min-h-[calc(100dvh-4.25rem)] bg-[#f6f8fc] text-slate-900">
@@ -285,9 +365,10 @@ export default function TeamDetailPage({ params }: PageProps) {
                         </div>
 
                         {isAdmin && (
-                            <Button variant="destructive" size="sm" onClick={handleDeleteTeamClick}>
-                                <Trash2 className="size-3.5" /> Takımı sil
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button variant="outline" size="sm" onClick={openTeamEditor}><Pencil className="size-3.5" /> Takımı düzenle</Button>
+                                <Button variant="destructive" size="sm" onClick={handleDeleteTeamClick}><Trash2 className="size-3.5" /> Takımı sil</Button>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -314,7 +395,7 @@ export default function TeamDetailPage({ params }: PageProps) {
                     </CardHeader>
                     <CardContent className="py-4">
                         {isLoading ? (
-                            <p className="py-8 text-center text-sm text-muted-foreground">Üyeler yükleniyor...</p>
+                            <div aria-busy="true" className="space-y-3 py-2">{[1, 2, 3].map((item) => <div key={item} className="flex items-center gap-3 rounded-xl px-2 py-2"><Skeleton className="size-10 rounded-xl" /><div className="flex-1 space-y-2"><Skeleton className="h-3 w-32" /><Skeleton className="h-2.5 w-48 max-w-[70%]" /></div><Skeleton className="h-6 w-16 rounded-full" /></div>)}</div>
                         ) : currentTeamMembers.length === 0 ? (
                             <div className="text-center py-8">
                                 <Users className="mx-auto mb-3 size-10 text-muted-foreground/45" />
@@ -338,6 +419,38 @@ export default function TeamDetailPage({ params }: PageProps) {
                     </CardContent>
                 </Card>
 
+                {/* Projects Section */}
+                <Card className="mt-4 overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]">
+                    <CardHeader className="border-b border-slate-100 px-4 py-4 sm:px-5">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <CardTitle>Projeler</CardTitle>
+                                <CardDescription>Takım görevlerini projeler altında düzenleyin</CardDescription>
+                            </div>
+                            <div className="flex items-center gap-2"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{projects.length} proje</span>{isAdmin && <Button size="sm" onClick={openCreateProjectDialog}><Plus className="size-3.5" /> Proje ekle</Button>}</div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3 py-4">
+                        {projects.length === 0 ? (
+                            <div className="rounded-xl border border-dashed border-slate-200 py-8 text-center">
+                                <FolderKanban className="mx-auto mb-2 size-8 text-slate-300" />
+                                <p className="text-sm font-medium text-slate-700">Henüz proje yok</p>
+                                <p className="mt-1 text-xs text-slate-500">Projeler görevleri ortak hedefler altında toplar.</p>
+                            </div>
+                        ) : (
+                            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                {projects.map((project) => (
+                                    <div key={project.id} className="flex min-w-0 items-start gap-3 rounded-xl border border-slate-200/80 p-3 transition hover:border-slate-300 hover:bg-slate-50/60">
+                                        <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: `${project.color}18`, color: project.color }}><FolderKanban className="size-4" /></span>
+                                        <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-slate-800">{project.name}</p><p className="mt-1 line-clamp-2 min-h-8 text-xs leading-4 text-slate-500">{project.description || 'Bu proje için açıklama eklenmemiş.'}</p></div>
+                                        {isAdmin && <div className="flex shrink-0 items-center gap-0.5"><Button type="button" variant="ghost" size="icon-sm" aria-label={`${project.name} projesini düzenle`} disabled={isSubmittingMetadata} onClick={() => startEditingProject(project)} className="text-slate-400"><Pencil /></Button><Button type="button" variant="ghost" size="icon-sm" aria-label={`${project.name} projesini sil`} disabled={isSubmittingMetadata} onClick={() => { setProjectToDelete({ id: project.id, name: project.name }); setIsDeleteProjectDialogOpen(true); }} className="text-slate-400 hover:text-red-600"><Trash2 /></Button></div>}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
                 {/* Tasks Section */}
                 <Card className="mt-4 overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]">
                     <CardHeader className="border-b border-slate-100 px-4 py-4 sm:px-5">
@@ -354,7 +467,7 @@ export default function TeamDetailPage({ params }: PageProps) {
                                 <TaskViewSwitcher value={taskView} onChange={setTaskView} />
                                 {isAdmin && (
                                     <>
-                                        <Button variant="outline" size="icon" onClick={() => setIsMetadataDialogOpen(true)} aria-label="Projeleri, etiketleri ve şablonları yönet"><Settings2 /></Button>
+                                        <Button variant="outline" size="icon" onClick={() => setIsMetadataDialogOpen(true)} aria-label="Etiketleri ve şablonları yönet"><Settings2 /></Button>
                                         <Button onClick={() => setIsCreateTaskDialogOpen(true)}>
                                             <Plus className="w-4 h-4 mr-2" />
                                             Görev Oluştur
@@ -366,7 +479,7 @@ export default function TeamDetailPage({ params }: PageProps) {
                     </CardHeader>
                     <CardContent className="space-y-3 py-4">
                         {isLoadingTasks ? (
-                            <p className="py-8 text-center text-sm text-muted-foreground">Görevler yükleniyor...</p>
+                            <div aria-busy="true" className="space-y-2 py-1">{[1, 2, 3].map((item) => <div key={item} className="space-y-3 rounded-xl border border-slate-200/70 p-3.5"><div className="flex gap-2"><Skeleton className="h-4 w-36" /><Skeleton className="h-5 w-16 rounded-full" /></div><Skeleton className="h-3 w-2/3" /><div className="flex gap-4"><Skeleton className="h-3 w-24" /><Skeleton className="h-3 w-24" /><Skeleton className="h-3 w-20" /></div></div>)}</div>
                         ) : tasks.length === 0 ? (
                             <div className="text-center py-8">
                                 <ClipboardList className="mx-auto mb-3 size-10 text-muted-foreground/45" />
@@ -463,8 +576,36 @@ export default function TeamDetailPage({ params }: PageProps) {
                     templates={templates}
                     isSubmitting={isSubmittingMetadata}
                     onCreate={createMetadata}
+                    onUpdate={updateMetadata}
                     onDelete={deleteMetadata}
                 />
+
+                <Dialog open={isEditTeamDialogOpen} onOpenChange={setIsEditTeamDialogOpen}>
+                    <DialogContent>
+                        <form onSubmit={handleUpdateTeam} className="space-y-5">
+                            <DialogHeader><DialogTitle>Takımı düzenle</DialogTitle><DialogDescription>Takım adını ve açıklamasını güncelleyin.</DialogDescription></DialogHeader>
+                            <div className="space-y-4">
+                                <div className="space-y-2"><Label htmlFor="team-name">Takım adı</Label><Input id="team-name" value={teamNameDraft} onChange={(event) => setTeamNameDraft(event.target.value)} maxLength={255} required /></div>
+                                <div className="space-y-2"><Label htmlFor="team-description">Açıklama</Label><Textarea id="team-description" value={teamDescriptionDraft} onChange={(event) => setTeamDescriptionDraft(event.target.value)} maxLength={10000} rows={4} /></div>
+                            </div>
+                            <DialogFooter><Button type="button" variant="outline" onClick={() => setIsEditTeamDialogOpen(false)}>İptal</Button><Button type="submit" disabled={!teamNameDraft.trim()}><Save /> Değişiklikleri kaydet</Button></DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={isProjectDialogOpen} onOpenChange={(open) => { setIsProjectDialogOpen(open); if (!open) { setProjectToEdit(null); setProjectName(''); setProjectDescription(''); setProjectColorDraft('#6366f1'); } }}>
+                    <DialogContent>
+                        <form onSubmit={handleCreateProject} className="space-y-5">
+                            <DialogHeader><DialogTitle>{projectToEdit ? 'Projeyi düzenle' : 'Yeni proje'}</DialogTitle><DialogDescription>{projectToEdit ? 'Proje bilgilerini güncelleyin.' : 'Takım görevlerini düzenlemek için yeni bir proje oluşturun.'}</DialogDescription></DialogHeader>
+                            <div className="space-y-4">
+                                <div className="space-y-2"><Label htmlFor="project-name">Proje adı</Label><Input id="project-name" value={projectName} onChange={(event) => setProjectName(event.target.value)} maxLength={120} placeholder="Örn. Web sitesi yenileme" required /></div>
+                                <div className="space-y-2"><Label htmlFor="project-description">Açıklama <span className="font-normal text-muted-foreground">(isteğe bağlı)</span></Label><Textarea id="project-description" value={projectDescription} onChange={(event) => setProjectDescription(event.target.value)} maxLength={500} rows={3} placeholder="Projenin kapsamını kısaca açıklayın" /></div>
+                                <div className="space-y-2"><Label>Proje rengi</Label><ColorSwatches value={projectColorDraft} onChange={setProjectColorDraft} label="Proje rengi" /></div>
+                            </div>
+                            <DialogFooter><Button type="button" variant="outline" onClick={cancelProjectEdit}>İptal</Button><Button type="submit" disabled={isSubmittingMetadata || !projectName.trim()}>{projectToEdit ? <><Save /> Değişiklikleri kaydet</> : <><Plus /> Proje ekle</>}</Button></DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
 
                 {/* Delete Team Confirmation Dialog */}
                 <ConfirmDialog
@@ -504,6 +645,40 @@ export default function TeamDetailPage({ params }: PageProps) {
                     isDestructive={true}
                     isLoading={isSubmittingTask}
                 />
+
+                {/* Delete Project Confirmation Dialog */}
+                <ConfirmDialog
+                    open={isDeleteProjectDialogOpen}
+                    onOpenChange={(open) => {
+                        setIsDeleteProjectDialogOpen(open);
+                        if (!open) setProjectToDelete(null);
+                    }}
+                    onConfirm={handleConfirmDeleteProject}
+                    title="Projeyi Sil"
+                    description={projectToDelete ? `“${projectToDelete.name}” projesini silmek istediğinize emin misiniz? Bu projeye bağlı görevler proje bağlantısı olmadan kalabilir.` : ''}
+                    confirmText="Evet, Projeyi Sil"
+                    cancelText="Vazgeç"
+                    isDestructive
+                    isLoading={isSubmittingMetadata}
+                />
+            </div>
+        </div>
+    );
+}
+
+function TeamDetailSkeleton() {
+    return (
+        <div className="min-h-[calc(100dvh-4.25rem)] bg-[#f6f8fc]">
+            <div aria-busy="true" className="mx-auto max-w-[1250px] space-y-4 px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
+                <div className="mb-6 space-y-3"><Skeleton className="h-2.5 w-32" /><Skeleton className="h-8 w-56" /><Skeleton className="h-4 w-80 max-w-full" /><Skeleton className="h-3 w-44" /></div>
+                <Card className="overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]">
+                    <div className="border-b border-slate-100 px-4 py-4 sm:px-5"><Skeleton className="h-4 w-32" /><Skeleton className="mt-2 h-3 w-44" /></div>
+                    <div className="space-y-3 p-4">{[1, 2].map((item) => <div key={item} className="flex items-center gap-3"><Skeleton className="size-10 rounded-xl" /><div className="space-y-2"><Skeleton className="h-3 w-28" /><Skeleton className="h-2.5 w-40" /></div></div>)}</div>
+                </Card>
+                <Card className="overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]">
+                    <div className="border-b border-slate-100 px-4 py-4 sm:px-5"><Skeleton className="h-4 w-24" /><Skeleton className="mt-2 h-3 w-56" /></div>
+                    <div className="space-y-3 p-4">{[1, 2, 3].map((item) => <div key={item} className="space-y-3 rounded-xl border border-slate-200/70 p-3.5"><Skeleton className="h-4 w-40" /><Skeleton className="h-3 w-2/3" /><Skeleton className="h-3 w-1/2" /></div>)}</div>
+                </Card>
             </div>
         </div>
     );

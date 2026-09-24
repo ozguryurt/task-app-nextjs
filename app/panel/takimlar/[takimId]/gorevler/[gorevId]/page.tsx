@@ -7,7 +7,6 @@ import {
     CalendarDays,
     CheckCircle2,
     Clock3,
-    Loader2,
     Pencil,
     Trash2,
 } from 'lucide-react';
@@ -16,6 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { TaskProjectBadge } from '@/components/tasks/task-project-badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EditTaskDialog } from '@/components/tasks/edit-task-dialog';
 import { useAuthStore } from '@/lib/store/auth-store';
@@ -164,7 +165,7 @@ export default function TaskDetailPage({ params }: PageProps) {
     };
 
     if (isLoading) {
-        return <div className="flex min-h-[calc(100dvh-4.25rem)] items-center justify-center bg-[#f6f8fc] text-sm text-slate-500"><Loader2 className="mr-2 size-5 animate-spin text-indigo-600" /> Görev hazırlanıyor...</div>;
+        return <TaskDetailSkeleton />;
     }
 
     if (error || !task) {
@@ -203,7 +204,7 @@ export default function TaskDetailPage({ params }: PageProps) {
                                 <div className="mb-2 flex flex-wrap items-center gap-2">
                                     <Badge className={cn('border-0', statusInfo[task.status].className)}>{statusInfo[task.status].label}</Badge>
                                     <Badge className={cn('border-0', priorityInfo[task.priority].className)}>{priorityInfo[task.priority].label}</Badge>
-                                    {task.project_name && <Badge variant="outline" style={{ borderColor: task.project_color || undefined }}>{task.project_name}</Badge>}
+                                    <TaskProjectBadge projectName={task.project_name} color={task.project_color} />
                                     {task.labels?.map((label) => <Badge key={label.id} variant="outline" style={{ borderColor: label.color, color: label.color }}>{label.name}</Badge>)}
                                 </div>
                                 <CardTitle className="text-xl leading-tight tracking-[-0.035em] text-slate-900 sm:text-2xl">{task.title}</CardTitle>
@@ -273,6 +274,24 @@ export default function TaskDetailPage({ params }: PageProps) {
 
             <EditTaskDialog open={isEditOpen} onOpenChange={setIsEditOpen} onSubmit={updateTask} task={task} members={members} projects={projects} labels={labels} isSubmitting={isSubmitting} />
             <ConfirmDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen} onConfirm={deleteTask} title="Görevi sil" description={`"${task.title}" görevini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`} confirmText="Evet, sil" isDestructive isLoading={isSubmitting} />
+        </div>
+    );
+}
+
+function TaskDetailSkeleton() {
+    return (
+        <div className="min-h-[calc(100dvh-4.25rem)] bg-[#f6f8fc]">
+            <div aria-busy="true" className="mx-auto max-w-[1250px] px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
+                <div className="mb-4 flex items-center justify-between gap-3"><Skeleton className="h-3 w-32" /><div className="flex gap-2"><Skeleton className="h-9 w-20 rounded-lg" /><Skeleton className="h-9 w-16 rounded-lg" /></div></div>
+                <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+                    <div className="space-y-4">
+                        <Card className="overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]"><div className="space-y-3 border-b border-slate-100 p-5 sm:p-6"><div className="flex gap-2"><Skeleton className="h-5 w-20 rounded-full" /><Skeleton className="h-5 w-24 rounded-full" /><Skeleton className="h-5 w-28 rounded-full" /></div><Skeleton className="h-7 w-64 max-w-full" /><Skeleton className="h-3 w-44" /></div><div className="space-y-3 p-5 sm:p-6"><Skeleton className="h-3 w-20" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /></div></Card>
+                        <Card className="overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]"><div className="border-b border-slate-100 p-4 sm:px-5"><Skeleton className="h-4 w-24" /><Skeleton className="mt-2 h-3 w-52" /></div><div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">{[1, 2, 3, 4].map((item) => <Skeleton key={item} className="h-16 rounded-lg" />)}</div></Card>
+                        <Card className="overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]"><div className="border-b border-slate-100 p-4 sm:px-5"><Skeleton className="h-4 w-28" /></div><div className="space-y-4 p-4">{[1, 2].map((item) => <div key={item} className="flex gap-3"><Skeleton className="size-7 rounded-full" /><div className="space-y-2"><Skeleton className="h-3 w-36" /><Skeleton className="h-3 w-28" /></div></div>)}</div></Card>
+                    </div>
+                    <div className="space-y-4"><Card className="space-y-3 rounded-2xl border-slate-200/80 bg-white p-4 shadow-[0_3px_14px_rgba(24,32,66,0.03)]"><Skeleton className="h-4 w-28" /><Skeleton className="h-3 w-36" /><Skeleton className="h-10 w-full rounded-lg" /></Card><Card className="space-y-4 rounded-2xl border-slate-200/80 bg-white p-4 shadow-[0_3px_14px_rgba(24,32,66,0.03)]"><Skeleton className="h-4 w-20" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></Card></div>
+                </div>
+            </div>
         </div>
     );
 }

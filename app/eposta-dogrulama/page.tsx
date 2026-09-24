@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { resendVerificationEmail, verifyEmail } from '@/lib/api/auth-api';
 import { AuthPageShell } from '@/components/layout/auth-page-shell';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function VerifyEmailContent() {
     const router = useRouter();
@@ -133,7 +134,7 @@ function VerifyEmailContent() {
 
 export default function VerifyEmailPage() {
     return (
-        <Suspense fallback={<AuthPageShell><p className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">Doğrulama ekranı hazırlanıyor...</p></AuthPageShell>}>
+        <Suspense fallback={<AuthPageShell><div aria-busy="true" className="w-full max-w-sm space-y-5 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_rgba(24,32,66,0.09)]"><Skeleton className="size-10 rounded-xl" /><Skeleton className="h-6 w-44" /><Skeleton className="h-4 w-full" /><Skeleton className="h-10 w-full rounded-lg" /><Skeleton className="h-10 w-full rounded-lg" /></div></AuthPageShell>}>
             <VerifyEmailContent />
         </Suspense>
     );

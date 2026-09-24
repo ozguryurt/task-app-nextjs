@@ -22,7 +22,7 @@ export function WorkspaceTopbar({ context, backHref, backLabel, userName }: Work
                 <div className="flex items-center gap-2 sm:gap-3">
                     {userName && <span className="hidden max-w-36 truncate text-[11px] font-medium text-slate-500 sm:block">{userName}</span>}
                     {userName && <span className="flex size-7 items-center justify-center rounded-full bg-indigo-100 text-[9px] font-bold text-indigo-700">{userName.slice(0, 2).toLocaleUpperCase('tr-TR')}</span>}
-                    <Button variant="ghost" size="sm" asChild className="h-8 rounded-lg text-slate-500 hover:text-indigo-700"><Link href={backHref}><ArrowLeft className="size-3.5" /><span className="hidden sm:inline">{backLabel}</span><span className="sm:hidden">Geri</span></Link></Button>
+                    <Button variant="ghost" size="sm" asChild className="text-slate-500 hover:text-indigo-700"><Link href={backHref}><ArrowLeft className="size-3.5" /><span className="hidden sm:inline">{backLabel}</span><span className="sm:hidden">Geri</span></Link></Button>
                 </div>
             </div>
         </header>

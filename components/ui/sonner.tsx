@@ -17,7 +17,7 @@ import { Toaster as Sonner, type ToasterProps } from "sonner"
  * Tema sabit olarak "light" verilir: uygulama arayüzü yalnızca açık temada
  * çalışır (dark token'lar tanımlı olsa da tema geçişi yoktur).
  */
-const Toaster = ({ ...props }: ToasterProps) => {
+const Toaster = ({ style, ...props }: ToasterProps) => {
   return (
     <Sonner
       theme="light"
@@ -39,6 +39,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
           "--border-radius": "0.625rem",
+          ...style,
+          zIndex: 2147483647,
         } as React.CSSProperties
       }
       toastOptions={{

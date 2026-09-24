@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserAvatar } from '@/components/users/user-avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024;
 const AVATAR_TYPES: Record<string, string> = {
@@ -206,9 +207,9 @@ export default function ProfilePage() {
     };
 
     return (
-        <div className="mx-auto max-w-[1100px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <div className="mx-auto max-w-[1250px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
             <div className="mb-6 flex items-center gap-3">
-                <Button variant="outline" size="icon" className="size-9 rounded-xl border-slate-200 bg-white" onClick={() => router.push('/panel')} aria-label="Panele dön"><ArrowLeft className="size-4" /></Button>
+                <Button variant="outline" size="icon" className="border-slate-200 bg-white" onClick={() => router.push('/panel')} aria-label="Panele dön"><ArrowLeft className="size-4" /></Button>
                 <div><p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-indigo-500">Hesap ayarları</p><h1 className="mt-1 text-2xl font-semibold tracking-[-0.045em] text-slate-900">Profilim</h1></div>
             </div>
 
@@ -231,7 +232,7 @@ export default function ProfilePage() {
                                 {avatarFile && <Button type="button" size="sm" className="rounded-lg" onClick={handleAvatarUpload} disabled={isAvatarSubmitting || isLoadingProfile}>{isAvatarSubmitting && <LoaderCircle className="size-3.5 animate-spin" />} Fotoğrafı yükle</Button>}
                             </div>
                         </div>
-                        {isLoadingProfile ? <div className="flex items-center gap-2 py-2 text-xs text-slate-500"><LoaderCircle className="size-4 animate-spin" /> Profil yükleniyor...</div> : <>
+                        {isLoadingProfile ? <div aria-busy="true" className="space-y-3 py-1"><div className="flex items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50/70 px-3.5 py-3"><Skeleton className="size-4 rounded-full" /><div className="flex-1 space-y-2"><Skeleton className="h-2.5 w-20" /><Skeleton className="h-3.5 w-36" /></div></div><div className="flex items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50/70 px-3.5 py-3"><Skeleton className="size-4 rounded-full" /><div className="flex-1 space-y-2"><Skeleton className="h-2.5 w-24" /><Skeleton className="h-3.5 w-44" /></div></div><div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/70 px-3.5 py-3"><Skeleton className="h-3 w-32" /><Skeleton className="h-5 w-20 rounded-full" /></div></div> : <>
                             <ProfileValue icon={UserRound} label="Ad soyad" value={user?.name || '—'} />
                             <ProfileValue icon={AtSign} label="E-posta adresi" value={user?.email || '—'} />
                             <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3.5 py-3">

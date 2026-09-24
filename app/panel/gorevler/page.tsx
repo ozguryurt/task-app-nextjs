@@ -8,6 +8,7 @@ import { TaskFilterBar } from '@/components/tasks/task-filter-bar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { defaultTaskFilters, filterTasks, type TaskFilterState } from '@/lib/task-filters';
+import { WorkspacePageHeader } from '@/components/dashboard/workspace-page-header';
 
 export default function AssignedTasksPage() {
     const { tasks, isLoadingTasks } = useDashboardData();
@@ -18,7 +19,7 @@ export default function AssignedTasksPage() {
 
     return (
         <div className="mx-auto max-w-[1250px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-            <div className="mb-5"><p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-indigo-500">Çalışma alanı</p><h1 className="mt-1.5 text-2xl font-semibold tracking-[-0.045em] text-slate-900 sm:text-[1.75rem]">Görevler</h1><p className="mt-1 text-xs text-slate-500 sm:text-sm">Sana atanan görevleri ara, filtrele ve takip et.</p></div>
+            <WorkspacePageHeader eyebrow="Çalışma alanı" title="Görevler" description="Sana atanan görevleri ara, filtrele ve takip et." />
 
             <div className="mb-4 grid gap-3 sm:grid-cols-2">
                 <TaskSummary label="Açık görev" value={openTasks} icon={ListTodo} tone="bg-indigo-50 text-indigo-600" />

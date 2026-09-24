@@ -74,10 +74,10 @@ export default function Home() {
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button size="lg" asChild className="h-12 rounded-xl bg-white px-5 font-semibold text-[#171c3d] shadow-[0_10px_30px_rgba(6,10,34,0.25)] hover:bg-indigo-50 hover:text-[#171c3d]">
+              <Button size="lg" asChild className="bg-white font-semibold text-[#171c3d] shadow-[0_10px_30px_rgba(6,10,34,0.25)] hover:bg-indigo-50 hover:text-[#171c3d]">
                 <Link href="/kayit">Ücretsiz çalışma alanı oluştur <ArrowRight className="size-4" /></Link>
               </Button>
-              <Button size="lg" variant="ghost" asChild className="h-12 rounded-xl border border-white/15 bg-white/[0.04] px-5 text-white hover:bg-white/10 hover:text-white">
+              <Button size="lg" variant="ghost" asChild className="border border-white/15 bg-white/[0.04] text-white hover:bg-white/10 hover:text-white">
                 <Link href="/giris">Hesabıma giriş yap <ArrowUpRight className="size-4" /></Link>
               </Button>
             </div>
@@ -214,7 +214,7 @@ export default function Home() {
               <h2 className="text-balance text-2xl font-semibold leading-tight tracking-[-0.04em] sm:text-3xl">İyi fikirleri, bitmiş işlere dönüştürün.</h2>
               <p className="mt-2.5 max-w-lg text-sm leading-6 text-slate-300">Ekibinizi bir araya getirin, ilk görevlerinizi ekleyin ve ilerlemeyi görün.</p>
             </div>
-            <Button size="lg" asChild className="h-12 shrink-0 rounded-xl bg-white px-5 font-semibold text-[#171c3d] hover:bg-indigo-50 hover:text-[#171c3d]">
+            <Button size="lg" asChild className="shrink-0 bg-white font-semibold text-[#171c3d] hover:bg-indigo-50 hover:text-[#171c3d]">
               <Link href="/kayit">Taskflow’u kullanmaya başla <ArrowRight className="size-4" /></Link>
             </Button>
           </div>

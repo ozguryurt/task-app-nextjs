@@ -57,7 +57,7 @@ export function TaskCalendarView({
                     <p className="mt-0.5 text-[11px] text-muted-foreground">Görevler teslim tarihlerine göre gösterilir.</p>
                 </div>
                 <div className="flex items-center gap-1">
-                    <Button type="button" size="sm" variant="outline" className="h-8 px-2.5 text-xs" onClick={goToToday}>Bugün</Button>
+                    <Button type="button" size="sm" variant="outline" onClick={goToToday}>Bugün</Button>
                     <Button type="button" size="icon-sm" variant="outline" onClick={() => changeMonth(-1)} aria-label="Önceki ay"><ChevronLeft /></Button>
                     <Button type="button" size="icon-sm" variant="outline" onClick={() => changeMonth(1)} aria-label="Sonraki ay"><ChevronRight /></Button>
                 </div>
@@ -94,14 +94,15 @@ export function TaskCalendarView({
                                             <Link
                                                 key={task.id}
                                                 href={`/panel/takimlar/${task.team_id}/gorevler/${task.id}`}
-                                                title={`${task.title} · ${task.assigned_to_name}`}
+                                                title={`${task.title} · Proje: ${task.project_name || '(Proje yok)'} · ${task.assigned_to_name}`}
                                                 className={cn(
                                                     'block w-full truncate rounded border px-1.5 py-1 text-left text-[9px] font-medium transition-[filter,transform] sm:text-[10px]',
                                                     statusClasses[task.status],
                                                     'hover:-translate-y-px hover:brightness-[0.98]'
                                                 )}
                                             >
-                                                {task.title}
+                                                <span className="block truncate">{task.title}</span>
+                                                <span className="mt-0.5 block truncate text-[8px] font-normal opacity-75">Proje: {task.project_name || '(Proje yok)'}</span>
                                             </Link>
                                     ))}
                                     {dayTasks.length > 3 && <p className="px-1 text-[9px] font-medium text-muted-foreground">+{dayTasks.length - 3} görev</p>}
@@ -124,9 +125,10 @@ export function TaskCalendarView({
                                 <Link
                                     key={task.id}
                                     href={`/panel/takimlar/${task.team_id}/gorevler/${task.id}`}
-                                    className="rounded-md border bg-card px-2.5 py-1.5 text-[11px] font-medium transition-[border-color,box-shadow,transform] hover:-translate-y-px hover:border-primary/30 hover:shadow-sm"
+                                    className="max-w-full rounded-md border bg-card px-2.5 py-1.5 text-[11px] font-medium transition-[border-color,box-shadow,transform] hover:-translate-y-px hover:border-primary/30 hover:shadow-sm"
                                 >
-                                    {task.title}
+                                    <span className="block truncate">{task.title}</span>
+                                    <span className="mt-0.5 block truncate text-[9px] font-normal text-muted-foreground">Proje: {task.project_name || '(Proje yok)'}</span>
                                 </Link>
                         ))}
                     </div>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Task } from '@/lib/store/team-store';
 import { cn } from '@/lib/utils';
+import { TaskProjectBadge } from '@/components/tasks/task-project-badge';
 
 const columns: Array<{
     status: Task['status'];
@@ -144,7 +145,7 @@ export function TaskKanbanBoard({
 
                                         <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                                             <Badge className={cn('border-0 text-[10px]', priorityClasses[task.priority])}>{priorityLabels[task.priority]}</Badge>
-                                            {task.project_name && <Badge variant="outline" className="text-[10px]" style={{ borderColor: task.project_color || undefined }}>{task.project_name}</Badge>}
+                                            <TaskProjectBadge projectName={task.project_name} color={task.project_color} />
                                             {task.labels?.slice(0, 2).map((label) => <span key={label.id} className="size-2 rounded-full" title={label.name} style={{ backgroundColor: label.color }} />)}
                                             {task.due_date && (
                                                 <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -157,8 +158,8 @@ export function TaskKanbanBoard({
                                                 <UserRound className="size-3 shrink-0" /><span className="truncate">{task.assigned_to_name}</span>
                                             </span>
                                             <div className="flex items-center gap-0.5">
-                                                {editable && <Button type="button" variant="ghost" size="icon-sm" className="size-7" onClick={() => onEdit(task)} aria-label={`${task.title} görevini düzenle`}><Pencil className="size-3.5" /></Button>}
-                                                {deletable && <Button type="button" variant="ghost" size="icon-sm" className="size-7 text-muted-foreground hover:text-destructive" onClick={() => onDelete(task.id, task.title)} aria-label={`${task.title} görevini sil`}><Trash2 className="size-3.5" /></Button>}
+                                                {editable && <Button type="button" variant="ghost" size="icon-sm" onClick={() => onEdit(task)} aria-label={`${task.title} görevini düzenle`}><Pencil className="size-3.5" /></Button>}
+                                                {deletable && <Button type="button" variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-destructive" onClick={() => onDelete(task.id, task.title)} aria-label={`${task.title} görevini sil`}><Trash2 className="size-3.5" /></Button>}
                                             </div>
                                         </div>
 

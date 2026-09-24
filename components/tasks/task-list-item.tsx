@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Task } from '@/lib/store/team-store';
 import { Edit, Trash2, Calendar, User, Clock } from 'lucide-react';
+import { TaskProjectBadge } from '@/components/tasks/task-project-badge';
 
 interface TaskListItemProps {
     task: Task;
@@ -76,7 +77,7 @@ export function TaskListItem({
                         <Badge className={priorityInfo.className}>
                             {priorityInfo.label}
                         </Badge>
-                        {task.project_name && <Badge variant="outline" style={{ borderColor: task.project_color || undefined }}>{task.project_name}</Badge>}
+                        <TaskProjectBadge projectName={task.project_name} color={task.project_color} />
                         {task.labels?.map((label) => <Badge key={label.id} variant="outline" style={{ borderColor: label.color, color: label.color }}>{label.name}</Badge>)}
                     </div>
 

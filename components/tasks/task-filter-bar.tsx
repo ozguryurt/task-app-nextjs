@@ -114,7 +114,7 @@ export function TaskFilterBar({
             <div className="flex min-h-6 items-center justify-between gap-2 text-xs text-muted-foreground">
                 <span aria-live="polite">{isFiltered ? `${resultCount} / ${totalCount} görev gösteriliyor` : `${totalCount} görev`}</span>
                 {isFiltered && (
-                    <Button type="button" variant="ghost" size="sm" onClick={() => onChange({ ...defaultTaskFilters })} className="h-6 px-2 text-xs">
+                    <Button type="button" variant="ghost" size="sm" onClick={() => onChange({ ...defaultTaskFilters })}>
                         <X className="size-3" /> Filtreleri temizle
                     </Button>
                 )}

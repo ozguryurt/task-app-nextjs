@@ -6,6 +6,12 @@ import { XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+function isToastInteraction(event: Event) {
+  const detail = (event as CustomEvent<{ originalEvent?: Event }>).detail
+  const target = detail?.originalEvent?.target ?? event.target
+  return target instanceof Element && Boolean(target.closest("[data-sonner-toast], [data-sonner-toaster]"))
+}
+
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
@@ -50,6 +56,9 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  onPointerDownOutside,
+  onFocusOutside,
+  onInteractOutside,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
@@ -63,6 +72,18 @@ function DialogContent({
           "bg-card data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto rounded-xl border p-5 shadow-[0_24px_70px_rgba(15,23,42,0.18)] duration-250 sm:max-w-lg",
           className
         )}
+        onPointerDownOutside={(event) => {
+          onPointerDownOutside?.(event)
+          if (isToastInteraction(event)) event.preventDefault()
+        }}
+        onFocusOutside={(event) => {
+          onFocusOutside?.(event)
+          if (isToastInteraction(event)) event.preventDefault()
+        }}
+        onInteractOutside={(event) => {
+          onInteractOutside?.(event)
+          if (isToastInteraction(event)) event.preventDefault()
+        }}
         {...props}
       >
         {children}

@@ -33,10 +33,10 @@ export default function NotFound() {
               Bağlantı değişmiş veya aradığınız sayfa taşınmış olabilir. Bir sonraki adımı seçip kaldığınız yerden devam edin.
             </p>
             <div className="mt-7 flex flex-col justify-center gap-2.5 sm:flex-row lg:justify-start">
-              <Button size="lg" asChild className="h-11 rounded-xl px-5">
+              <Button size="lg" asChild>
                 <Link href="/"><ArrowLeft className="size-4" /> Ana sayfaya dön</Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="h-11 rounded-xl px-5">
+              <Button size="lg" variant="outline" asChild>
                 <Link href="/giris">Çalışma alanına git <ArrowRight className="size-4" /></Link>
               </Button>
             </div>

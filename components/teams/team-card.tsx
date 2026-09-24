@@ -12,9 +12,9 @@ interface TeamCardProps {
 
 export function TeamCard({ team }: TeamCardProps) {
     return (
-        <Link href={`/panel/takimlar/${team.id}`} className="block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40">
-            <Card className="group h-full cursor-pointer overflow-hidden hover:-translate-y-1 hover:border-primary/25 hover:shadow-[0_18px_44px_rgba(23,31,59,0.09)] active:translate-y-0">
-                <CardHeader className="pb-1">
+        <Link href={`/panel/takimlar/${team.id}`} className="block h-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40">
+            <Card className="group h-full cursor-pointer overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)] hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-[0_12px_30px_rgba(24,32,66,0.07)] active:translate-y-0">
+                <CardHeader className="px-4 pt-4 pb-1 sm:px-5">
                     <div className="flex items-start justify-between">
                         <div className="min-w-0 flex-1">
                             <CardTitle className="text-base">{team.name}</CardTitle>
@@ -27,7 +27,7 @@ export function TeamCard({ team }: TeamCardProps) {
                         </Badge>
                     </div>
                 </CardHeader>
-                <CardContent className="mt-auto">
+                <CardContent className="mt-auto px-4 pb-4 sm:px-5">
                     <div className="flex items-center justify-between border-t pt-3 text-xs text-muted-foreground">
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                         <div className="flex items-center gap-1">

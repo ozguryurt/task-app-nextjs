@@ -75,5 +75,28 @@ export function useTaskMetadata(teamId: number) {
         }
     };
 
-    return { projects, labels, templates, isLoading, isSubmitting, fetchMetadata, createMetadata, deleteMetadata };
+    const updateMetadata = async (payload: Record<string, unknown> & { type: MetadataType; id: number }) => {
+        setIsSubmitting(true);
+        try {
+            const response = await fetch(`/api/takimlar/${teamId}/gorev-yapilandirma`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Kayıt güncellenemedi');
+            if (payload.type === 'project') notifyTasksChanged();
+            await fetchMetadata();
+            toast.success(payload.type === 'project' ? 'Proje güncellendi' : payload.type === 'label' ? 'Etiket güncellendi' : 'Şablon güncellendi');
+            return true;
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Kayıt güncellenemedi');
+            return false;
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return { projects, labels, templates, isLoading, isSubmitting, fetchMetadata, createMetadata, updateMetadata, deleteMetadata };
 }

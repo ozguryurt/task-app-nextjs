@@ -7,6 +7,7 @@ import { TeamCard } from '@/components/teams/team-card';
 import { CreateTeamDialog } from '@/components/teams/create-team-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { WorkspacePageHeader } from '@/components/dashboard/workspace-page-header';
 
 export default function TeamsPage() {
     const { teams, isLoadingTeams, refreshTeams } = useDashboardData();
@@ -14,10 +15,7 @@ export default function TeamsPage() {
 
     return (
         <div className="mx-auto max-w-[1250px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-            <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-                <div><p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-indigo-500">Çalışma alanı</p><h1 className="mt-1.5 text-2xl font-semibold tracking-[-0.045em] text-slate-900 sm:text-[1.75rem]">Takımlar</h1><p className="mt-1 text-xs text-slate-500 sm:text-sm">Ekiplerini ve çalışma alanlarını buradan yönet.</p></div>
-                <Button size="sm" className="h-9 rounded-lg" onClick={() => setIsCreateOpen(true)}><Plus className="size-3.5" /> Yeni takım</Button>
-            </div>
+            <WorkspacePageHeader eyebrow="Çalışma alanı" title="Takımlar" description="Ekiplerini ve çalışma alanlarını buradan yönet." action={<Button size="sm" onClick={() => setIsCreateOpen(true)}><Plus className="size-3.5" /> Yeni takım</Button>} />
 
             <div className="mb-4 flex items-center justify-between"><p className="text-xs font-semibold text-slate-700">Tüm takımlar</p><span className="text-[10px] text-slate-500">{teams.length} çalışma alanı</span></div>
             {isLoadingTeams ? (

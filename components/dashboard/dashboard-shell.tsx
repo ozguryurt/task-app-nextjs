@@ -63,12 +63,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         { href: '/panel/takimlar', label: 'Takımlar', icon: Users, active: pathname === '/panel/takimlar' || pathname.startsWith('/panel/takimlar/') },
         { href: '/panel/gorevler', label: 'Görevler', icon: ListTodo, active: pathname === '/panel/gorevler' },
     ];
-    const projects = Array.from(new Map(tasks.filter((task) => task.project_name).map((task) => [`${task.team_id}-${task.project_name}`, {
-        name: task.project_name as string,
-        teamId: task.team_id,
-        color: task.project_color,
-    }])).entries()).slice(0, 5);
-    const collaborators = Array.from(new Map(tasks.map((task) => [task.assigned_by, task.assigned_by_name])).entries()).slice(0, 3);
     const contextValue: DashboardData = { tasks, teams, isLoadingTasks, isLoadingTeams, refreshTeams };
 
     return (
@@ -83,9 +77,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                             <span className="hidden truncate text-xs text-slate-500 sm:block">Çalışma alanım</span>
                         </Link>
                         <div className="flex items-center gap-2.5 sm:gap-4">
-                            <div className="hidden items-center gap-1 sm:flex">
-                                {collaborators.map(([id, name], index) => <span key={id} title={name} className={`flex size-6 items-center justify-center rounded-full border-2 border-white text-[8px] font-bold ${['bg-rose-200 text-rose-800', 'bg-amber-200 text-amber-900', 'bg-indigo-200 text-indigo-800'][index]}`}>{name.slice(0, 2).toLocaleUpperCase('tr-TR')}</span>)}
-                            </div>
                             <Link href="/panel/profil" aria-label="Profil ve hesap ayarları" className="flex items-center gap-2 rounded-full bg-slate-50 py-1 pl-1 pr-2 transition-colors hover:bg-indigo-50 sm:pr-3">
                                 <UserAvatar name={user?.name} src={user?.avatarUrl} className="size-7" />
                                 <span className="hidden max-w-32 truncate text-[11px] font-medium text-slate-700 sm:block">{user?.name}</span>
@@ -101,12 +92,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                                 {navItems.map((item) => <SidebarLink key={item.href} {...item} count={item.href.endsWith('gorevler') ? tasks.filter((task) => task.status === 'pending' || task.status === 'in_progress').length : undefined} />)}
                             </nav>
 
-                            <div className="mb-2 mt-8 flex items-center justify-between px-3 text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400"><span>Projeler</span><span>{projects.length}</span></div>
-                            <div className="space-y-0.5">
-                                {projects.length ? projects.map(([key, project]) => <Link key={key} href={`/panel/takimlar/${project.teamId}`} title={project.name} className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[11px] text-slate-600 transition-colors hover:bg-white hover:text-slate-900"><span className="size-2 shrink-0 rounded-[3px]" style={{ backgroundColor: project.color || '#818cf8' }} /><span className="truncate">{project.name}</span></Link>) : <p className="px-3 py-2 text-[10px] leading-5 text-slate-400">Projeler görevlerine eklendikçe burada görünür.</p>}
-                            </div>
-
-                            <div className="mb-2 mt-7 flex items-center justify-between px-3 text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400"><span>Takımlarım</span><Link href="/panel/takimlar" className="rounded p-0.5 text-slate-400 hover:bg-white hover:text-indigo-600" aria-label="Takımları aç"><Plus className="size-3.5" /></Link></div>
+                            <div className="mb-2 mt-8 flex items-center justify-between px-3 text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400"><span>Takımlarım</span><Link href="/panel/takimlar" className="rounded p-0.5 text-slate-400 hover:bg-white hover:text-indigo-600" aria-label="Takımları aç"><Plus className="size-3.5" /></Link></div>
                             <div className="space-y-0.5">
                                 {teams.slice(0, 5).map((team, index) => <Link key={team.id} href={`/panel/takimlar/${team.id}`} className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[11px] text-slate-600 transition-colors hover:bg-white hover:text-slate-900"><span className={`size-2 rounded-full ${['bg-violet-400', 'bg-sky-400', 'bg-emerald-400', 'bg-amber-400', 'bg-rose-400'][index]}`} /><span className="truncate">{team.name}</span></Link>)}
                             </div>

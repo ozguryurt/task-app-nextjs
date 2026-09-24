@@ -44,10 +44,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (rejectedBody) return rejectedBody;
     const teamId = Number((await params).takimId);
     const membership = Number.isInteger(teamId) ? await getMembership(request, teamId) : null;
-    if (!membership || membership.role !== 'admin') return NextResponse.json({ error: 'Yönetici yetkisi gereklidir' }, { status: 403 });
-
     const body = await request.json();
     const type = body.type;
+    if (!membership || membership.role !== 'admin') return NextResponse.json({ error: 'Yönetici yetkisi gereklidir' }, { status: 403 });
     const name = typeof body.name === 'string' ? body.name.trim() : '';
     if (!name || name.length > 120) return NextResponse.json({ error: 'Geçerli bir ad gereklidir' }, { status: 400 });
 
@@ -93,13 +92,69 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ takimId: string }> }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ takimId: string }> }) {
     const rejectedBody = rejectOversizedRequest(request);
     if (rejectedBody) return rejectedBody;
     const teamId = Number((await params).takimId);
     const membership = Number.isInteger(teamId) ? await getMembership(request, teamId) : null;
     if (!membership || membership.role !== 'admin') return NextResponse.json({ error: 'Yönetici yetkisi gereklidir' }, { status: 403 });
+
     const body = await request.json();
+    const id = Number(body.id);
+    const name = typeof body.name === 'string' ? body.name.trim() : '';
+    if (!Number.isInteger(id) || id <= 0 || !name || name.length > 120) {
+        return NextResponse.json({ error: 'Geçerli bir kayıt ve ad gereklidir' }, { status: 400 });
+    }
+    const table = body.type === 'project' ? 'projects' : body.type === 'label' ? 'task_labels' : body.type === 'template' ? 'task_templates' : null;
+    if (!table) return NextResponse.json({ error: 'Geçersiz yapılandırma türü' }, { status: 400 });
+    const [existing] = await pool.query<RowDataPacket[]>(`SELECT id FROM ${table} WHERE id = ? AND team_id = ?`, [id, teamId]);
+    if (existing.length === 0) return NextResponse.json({ error: 'Kayıt bulunamadı' }, { status: 404 });
+
+    try {
+        if (body.type === 'project') {
+            const description = typeof body.description === 'string' ? body.description.trim() : '';
+            const color = COLOR_PATTERN.test(body.color) ? body.color : '#6366f1';
+            await pool.query<ResultSetHeader>(
+                'UPDATE projects SET name = ?, description = ?, color = ? WHERE id = ? AND team_id = ?',
+                [name, description || null, color, id, teamId]
+            );
+        } else if (body.type === 'label') {
+            const color = COLOR_PATTERN.test(body.color) ? body.color : '#64748b';
+            await pool.query<ResultSetHeader>(
+                'UPDATE task_labels SET name = ?, color = ? WHERE id = ? AND team_id = ?',
+                [name, color, id, teamId]
+            );
+        } else if (body.type === 'template') {
+            const title = typeof body.title === 'string' ? body.title.trim() : '';
+            const description = typeof body.description === 'string' ? body.description.trim() : '';
+            const priority = ['low', 'medium', 'high'].includes(body.priority) ? body.priority : 'medium';
+            const projectId = body.project_id === null || body.project_id === 'none' ? null : Number(body.project_id);
+            if (!title || title.length > 255 || (projectId !== null && (!Number.isInteger(projectId) || projectId <= 0))) {
+                return NextResponse.json({ error: 'Geçerli bir görev başlığı ve proje seçin' }, { status: 400 });
+            }
+            if (projectId !== null) {
+                const [project] = await pool.query<RowDataPacket[]>('SELECT id FROM projects WHERE id = ? AND team_id = ?', [projectId, teamId]);
+                if (project.length === 0) return NextResponse.json({ error: 'Geçersiz proje' }, { status: 400 });
+            }
+            await pool.query<ResultSetHeader>(
+                'UPDATE task_templates SET name = ?, title = ?, description = ?, priority = ?, project_id = ? WHERE id = ? AND team_id = ?',
+                [name, title, description || null, priority, projectId, id, teamId]
+            );
+        }
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        const duplicate = typeof error === 'object' && error !== null && 'code' in error && error.code === 'ER_DUP_ENTRY';
+        return NextResponse.json({ error: duplicate ? 'Bu ad zaten kullanılıyor' : 'Kayıt güncellenemedi' }, { status: duplicate ? 409 : 500 });
+    }
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ takimId: string }> }) {
+    const rejectedBody = rejectOversizedRequest(request);
+    if (rejectedBody) return rejectedBody;
+    const teamId = Number((await params).takimId);
+    const membership = Number.isInteger(teamId) ? await getMembership(request, teamId) : null;
+    const body = await request.json();
+    if (!membership || membership.role !== 'admin') return NextResponse.json({ error: 'Yönetici yetkisi gereklidir' }, { status: 403 });
     const table = body.type === 'project' ? 'projects' : body.type === 'label' ? 'task_labels' : body.type === 'template' ? 'task_templates' : null;
     const id = Number(body.id);
     if (!table || !Number.isInteger(id)) return NextResponse.json({ error: 'Geçersiz istek' }, { status: 400 });
