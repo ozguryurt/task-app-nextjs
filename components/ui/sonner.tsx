@@ -8,19 +8,20 @@ import {
   TriangleAlertIcon,
 } from "lucide-react"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { useTheme } from "@/components/theme-provider"
 
 /**
  * Uygulama genelinde form ve veri işlemleri sonrasında gösterilen bildirimler.
  * Kök layout içinde bir kez render edilir, bildirimler `sonner` üzerinden
  * `toast.success(...)` / `toast.error(...)` ile tetiklenir.
  *
- * Tema sabit olarak "light" verilir: uygulama arayüzü yalnızca açık temada
- * çalışır (dark token'lar tanımlı olsa da tema geçişi yoktur).
+ * Bildirim renkleri uygulamanın aktif temasıyla senkron tutulur.
  */
 const Toaster = ({ style, ...props }: ToasterProps) => {
+  const { theme } = useTheme()
   return (
     <Sonner
-      theme="light"
+      theme={theme}
       position="top-right"
       richColors
       closeButton
