@@ -134,7 +134,7 @@ Ortam değişkenleri değiştirildikten sonra Node.js uygulamasını cPanel üze
 | `/panel/takimlar/[takimId]` | Takım üyeleri ve görevleri. |
 | `/panel/takimlar/[takimId]/gorevler/[gorevId]` | Görev ayrıntıları ve yetkili görev işlemleri. |
 
-Tanımsız adreslerde özel 404 ekranı gösterilir. `proxy.ts`, oturum açmamış kullanıcıları `/panel` altındaki sayfalardan girişe yönlendirir ve API'deki durum değiştiren çapraz site isteklerini reddeder. API uçları oturum ve yetki kontrollerini ayrıca kendi Route Handler'larında yapar.
+Tanımsız adreslerde özel 404 ekranı gösterilir. `proxy.ts`, oturum açmamış kullanıcıları `/panel` altındaki sayfalardan girişe yönlendirir ve API'deki durum değiştiren çapraz site isteklerini reddeder. API uçları oturum ve yetki kontrollerini ayrıca kendi Route Handler'larında yapar. Takım detayı, üyeler, görevler, yorumlar ve görev kaynakları yalnızca takımın güncel üyelerine açılır; takımdan çıkarılan kişinin eski görevleri kişisel görev listesinde de gösterilmez.
 
 Görev durumları `pending`, `in_progress`, `completed`, `cancelled`; öncelikler `low`, `medium`, `high` değerlerini kullanır. Arama başlık ve açıklamayı kapsar; kullanıcı görevlerinde takım/atayan, takım detayında atanan/atayan ve proje/etiket bilgileri de aranır. Sıralama seçenekleri en yeni, en eski, yakın teslim tarihi ve önceliktir. Takım, üye, görev (durum değişikliği dahil), proje, etiket ve şablon yönetimi takımda `admin` rolüne sahip kullanıcılara açıktır; takım üyeleri görevleri okuyabilir ve yorum yazabilir. Sol menüdeki proje kısayolları kullanıcıya atanan görevlerden türetilir ve ilgili görev işlemlerinden sonra güncellenir.
 

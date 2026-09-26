@@ -107,7 +107,7 @@ export async function GET(
             success: true,
             tasks: await attachTaskLabels(tasks),
             userRole: memberRows[0].role,
-        });
+        }, { headers: { 'Cache-Control': 'private, no-store' } });
     } catch (error) {
         console.error('Görevler getirilirken hata:', error);
         return NextResponse.json(

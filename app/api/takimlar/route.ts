@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
             [userId]
         );
 
-        return NextResponse.json({ teams }, { status: 200 });
+        return NextResponse.json({ teams }, { status: 200, headers: { 'Cache-Control': 'private, no-store' } });
     } catch (error) {
         console.error('Teams GET Error:', error);
         return NextResponse.json(

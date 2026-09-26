@@ -72,6 +72,7 @@ export async function GET(request: NextRequest) {
                 t.updated_at
             FROM tasks t
             INNER JOIN teams tm ON t.team_id = tm.id
+            INNER JOIN team_members membership ON membership.team_id = t.team_id AND membership.user_id = t.assigned_to
             LEFT JOIN projects p ON t.project_id = p.id
             INNER JOIN users u ON t.assigned_by = u.id
             WHERE t.assigned_to = ?
@@ -94,7 +95,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             success: true,
             tasks: await attachTaskLabels(tasks),
-        });
+        }, { headers: { 'Cache-Control': 'private, no-store' } });
     } catch (error) {
         console.error('Kullanıcı görevleri getirilirken hata:', error);
         return NextResponse.json(

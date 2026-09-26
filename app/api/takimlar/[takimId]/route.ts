@@ -71,7 +71,7 @@ export async function GET(
                 team: teams[0],
                 userRole: memberCheck[0].role
             },
-            { status: 200 }
+            { status: 200, headers: { 'Cache-Control': 'private, no-store' } }
         );
     } catch (error) {
         console.error('Team GET Error:', error);

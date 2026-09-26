@@ -15,7 +15,7 @@ export function useTaskMetadata(teamId: number) {
     const fetchMetadata = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await fetch(`/api/takimlar/${teamId}/gorev-yapilandirma`, { credentials: 'include' });
+            const response = await fetch(`/api/takimlar/${teamId}/gorev-yapilandirma`, { credentials: 'include', cache: 'no-store' });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Görev yapılandırması yüklenemedi');
             setProjects(data.projects ?? []);

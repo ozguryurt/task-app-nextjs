@@ -21,6 +21,7 @@ export function useTeamMembers(teamId: number) {
             const response = await fetch(`/api/takimlar/${teamId}/uyeler`, {
                 method: 'GET',
                 credentials: 'include',
+                cache: 'no-store',
             });
 
             const data = await response.json();
@@ -148,4 +149,3 @@ export function useTeamMembers(teamId: number) {
         error,
     };
 }
-

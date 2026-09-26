@@ -69,6 +69,7 @@ export function useTasks(teamId: number) {
         try {
             const response = await fetch(`/api/takimlar/${teamId}/gorevler`, {
                 credentials: 'include',
+                cache: 'no-store',
             });
 
             const data = await response.json();

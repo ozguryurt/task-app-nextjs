@@ -43,7 +43,7 @@ export default function TeamDetailPage({ params }: PageProps) {
     const router = useRouter();
     const { refreshTeams } = useDashboardData();
     const { user } = useAuthStore();
-    const { currentTeam, currentTeamMembers, setCurrentTeam } = useTeamStore();
+    const { currentTeam, currentTeamMembers, setCurrentTeam, setCurrentTeamMembers, setCurrentTeamTasks } = useTeamStore();
     const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
     const [isDeleteTeamDialogOpen, setIsDeleteTeamDialogOpen] = useState(false);
     const [isDeleteMemberDialogOpen, setIsDeleteMemberDialogOpen] = useState(false);
@@ -119,6 +119,7 @@ export default function TeamDetailPage({ params }: PageProps) {
             // Takım detaylarını çek
             const teamResponse = await fetch(`/api/takimlar/${teamId}`, {
                 credentials: 'include',
+                cache: 'no-store',
             });
 
             const teamData = await teamResponse.json();
@@ -143,6 +144,32 @@ export default function TeamDetailPage({ params }: PageProps) {
             setIsLoadingTeam(false);
         }
     };
+
+    useEffect(() => {
+        let active = true;
+        const revalidateAccess = async () => {
+            if (document.visibilityState !== 'visible') return;
+            try {
+                const response = await fetch(`/api/takimlar/${teamId}`, { credentials: 'include', cache: 'no-store' });
+                if (!active) return;
+                if (response.status === 401 || response.status === 403 || response.status === 404) {
+                    setCurrentTeam(null);
+                    setCurrentTeamMembers([]);
+                    setCurrentTeamTasks([]);
+                    setUserRole(null);
+                    setTeamError('Bu takıma erişim yetkiniz yok');
+                } else if (response.ok) {
+                    const data = await response.json();
+                    if (active) setUserRole(data.userRole);
+                }
+            } catch {
+                // Geçici ağ hatasında mevcut görünümü değiştirme.
+            }
+        };
+        window.addEventListener('focus', revalidateAccess);
+        const interval = window.setInterval(() => void revalidateAccess(), 60_000);
+        return () => { active = false; window.removeEventListener('focus', revalidateAccess); window.clearInterval(interval); };
+    }, [teamId, setCurrentTeam, setCurrentTeamMembers, setCurrentTeamTasks]);
 
     const handleAddMember = async (email: string, role: 'admin' | 'member') => {
         await addTeamMember({ email, role });

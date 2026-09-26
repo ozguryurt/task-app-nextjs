@@ -58,6 +58,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         return () => window.removeEventListener(TASKS_CHANGED_EVENT, refreshTasks);
     }, [fetchUserTasks]);
 
+    useEffect(() => {
+        const refreshAccess = () => {
+            if (document.visibilityState !== 'visible') return;
+            void fetchTeams().catch(() => {});
+            void fetchUserTasks();
+        };
+        window.addEventListener('focus', refreshAccess);
+        const interval = window.setInterval(refreshAccess, 60_000);
+        return () => { window.removeEventListener('focus', refreshAccess); window.clearInterval(interval); };
+    }, [fetchTeams, fetchUserTasks]);
+
     const refreshTeams = useCallback(() => fetchTeams(), [fetchTeams]);
     const navItems = [
         { href: '/panel/analitik', label: 'Analitik', icon: BarChart3, active: pathname === '/panel/analitik' },

@@ -52,6 +52,7 @@ export function useUserTasks() {
         } catch (err) {
             if (requestId !== latestRequest.current) return;
             const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
+            setTasks([]);
             setError(errorMessage);
             toast.error(errorMessage);
         } finally {

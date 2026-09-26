@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             [teamId]
         ),
     ]);
-    return NextResponse.json({ projects, labels, templates });
+    return NextResponse.json({ projects, labels, templates }, { headers: { 'Cache-Control': 'private, no-store' } });
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ takimId: string }> }) {

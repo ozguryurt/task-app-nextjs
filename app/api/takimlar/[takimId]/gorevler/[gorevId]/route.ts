@@ -130,7 +130,7 @@ export async function GET(
             task,
             comments: comments.reverse(),
             activity,
-        });
+        }, { headers: { 'Cache-Control': 'private, no-store' } });
     } catch (error) {
         console.error('Görev getirilirken hata:', error);
         return NextResponse.json(

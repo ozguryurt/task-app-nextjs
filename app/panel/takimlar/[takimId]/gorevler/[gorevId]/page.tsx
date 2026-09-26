@@ -79,7 +79,7 @@ export default function TaskDetailPage({ params }: PageProps) {
             try {
                 setIsLoading(true);
                 setError(null);
-                const requestOptions = { credentials: 'include' as const, signal: controller.signal };
+                const requestOptions = { credentials: 'include' as const, cache: 'no-store' as const, signal: controller.signal };
                 const [taskResponse, teamResponse, membersResponse, metadataResponse] = await Promise.all([
                     fetch(`/api/takimlar/${teamId}/gorevler/${taskId}`, requestOptions),
                     fetch(`/api/takimlar/${teamId}`, requestOptions),
@@ -115,6 +115,30 @@ export default function TaskDetailPage({ params }: PageProps) {
         void loadTask();
         return () => controller.abort();
     }, [teamId, taskId]);
+    useEffect(() => {
+        let active = true;
+        const revalidateAccess = async () => {
+            if (document.visibilityState !== 'visible') return;
+            try {
+                const response = await fetch(`/api/takimlar/${teamId}`, { credentials: 'include', cache: 'no-store' });
+                if (!active) return;
+                if (response.status === 401 || response.status === 403 || response.status === 404) {
+                    setTask(null);
+                    setUserRole(null);
+                    setError('Bu takıma erişim yetkiniz yok');
+                } else if (response.ok) {
+                    const data = await response.json();
+                    if (active) setUserRole(data.userRole);
+                }
+            } catch {
+                // Geçici ağ hatasında mevcut görünümü değiştirme.
+            }
+        };
+        window.addEventListener('focus', revalidateAccess);
+        const interval = window.setInterval(() => void revalidateAccess(), 60_000);
+        return () => { active = false; window.removeEventListener('focus', revalidateAccess); window.clearInterval(interval); };
+    }, [teamId]);
+
 
     const updateTask = async (data: UpdateTaskData) => {
         if (!task) return false;
