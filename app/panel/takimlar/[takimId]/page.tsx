@@ -440,10 +440,10 @@ export default function TeamDetailPage({ params }: PageProps) {
                         ) : (
                             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                                 {projects.map((project) => (
-                                    <div key={project.id} className="flex min-w-0 items-start gap-3 rounded-xl border border-slate-200/80 p-3 transition hover:border-slate-300 hover:bg-slate-50/60">
+                                    <div key={project.id} className="flex min-w-0 items-start gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/30 hover:bg-muted/60">
                                         <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: `${project.color}18`, color: project.color }}><FolderKanban className="size-4" /></span>
-                                        <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-slate-800">{project.name}</p><p className="mt-1 line-clamp-2 min-h-8 text-xs leading-4 text-slate-500">{project.description || 'Bu proje için açıklama eklenmemiş.'}</p></div>
-                                        {isAdmin && <div className="flex shrink-0 items-center gap-0.5"><Button type="button" variant="ghost" size="icon-sm" aria-label={`${project.name} projesini düzenle`} disabled={isSubmittingMetadata} onClick={() => startEditingProject(project)} className="text-slate-400"><Pencil /></Button><Button type="button" variant="ghost" size="icon-sm" aria-label={`${project.name} projesini sil`} disabled={isSubmittingMetadata} onClick={() => { setProjectToDelete({ id: project.id, name: project.name }); setIsDeleteProjectDialogOpen(true); }} className="text-slate-400 hover:text-red-600"><Trash2 /></Button></div>}
+                                        <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-foreground">{project.name}</p><p className="mt-1 line-clamp-2 min-h-8 text-xs leading-4 text-muted-foreground">{project.description || 'Bu proje için açıklama eklenmemiş.'}</p></div>
+                                        {isAdmin && <div className="flex shrink-0 items-center gap-0.5"><Button type="button" variant="ghost" size="icon-sm" aria-label={`${project.name} projesini düzenle`} disabled={isSubmittingMetadata} onClick={() => startEditingProject(project)} className="text-muted-foreground"><Pencil /></Button><Button type="button" variant="ghost" size="icon-sm" aria-label={`${project.name} projesini sil`} disabled={isSubmittingMetadata} onClick={() => { setProjectToDelete({ id: project.id, name: project.name }); setIsDeleteProjectDialogOpen(true); }} className="text-muted-foreground hover:text-destructive"><Trash2 /></Button></div>}
                                     </div>
                                 ))}
                             </div>
@@ -506,7 +506,6 @@ export default function TeamDetailPage({ params }: PageProps) {
                                     <TaskKanbanBoard
                                         tasks={visibleTasks}
                                         isAdmin={isAdmin}
-                                        currentUserId={user?.id || 0}
                                         isUpdating={isSubmittingTask}
                                         onStatusChange={handleTaskStatusChange}
                                         onEdit={handleEditTaskClick}
@@ -523,7 +522,6 @@ export default function TeamDetailPage({ params }: PageProps) {
                                                 key={task.id}
                                                 task={task}
                                                 isAdmin={isAdmin}
-                                                currentUserId={user?.id || 0}
                                                 onEdit={handleEditTaskClick}
                                                 onDelete={handleDeleteTaskClick}
                                                 isUpdating={isSubmittingTask}

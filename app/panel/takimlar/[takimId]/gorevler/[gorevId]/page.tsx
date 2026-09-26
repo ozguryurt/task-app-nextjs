@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import {
     ArrowLeft,
     CalendarDays,
-    CheckCircle2,
-    Clock3,
     Pencil,
     Trash2,
 } from 'lucide-react';
@@ -16,10 +14,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { TaskProjectBadge } from '@/components/tasks/task-project-badge';
+import { TaskCollaboration } from '@/components/tasks/task-collaboration';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EditTaskDialog } from '@/components/tasks/edit-task-dialog';
-import { useAuthStore } from '@/lib/store/auth-store';
 import type { Task, TeamMember, TaskLabel, TaskProject } from '@/lib/store/team-store';
 import type { UpdateTaskData } from '@/lib/hooks/use-tasks';
 import { cn } from '@/lib/utils';
@@ -56,7 +54,6 @@ export default function TaskDetailPage({ params }: PageProps) {
     const teamId = Number(takimId);
     const taskId = Number(gorevId);
     const router = useRouter();
-    const { user } = useAuthStore();
     const [task, setTask] = useState<Task | null>(null);
     const [members, setMembers] = useState<TeamMember[]>([]);
     const [projects, setProjects] = useState<TaskProject[]>([]);
@@ -180,11 +177,9 @@ export default function TaskDetailPage({ params }: PageProps) {
     }
 
     const isAdmin = userRole === 'admin';
-    const isCreator = task.assigned_by === user?.id;
-    const isAssigned = task.assigned_to === user?.id;
-    const canEditAll = isAdmin || isCreator;
-    const canChangeStatus = canEditAll || isAssigned;
-    const canDelete = isAdmin || isCreator;
+    const canEditAll = isAdmin;
+    const canChangeStatus = isAdmin;
+    const canDelete = isAdmin;
 
     return (
         <div className="min-h-[calc(100dvh-4.25rem)] bg-[#f6f8fc] text-slate-900">
@@ -228,14 +223,7 @@ export default function TaskDetailPage({ params }: PageProps) {
                             </CardContent>
                         </Card>
 
-                        <Card className="overflow-hidden rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]">
-                            <CardHeader className="border-b border-slate-100 px-4 py-4 sm:px-5"><CardTitle className="text-sm text-slate-800">Zaman çizelgesi</CardTitle></CardHeader>
-                            <CardContent className="space-y-4 py-4">
-                                <TimelineItem title="Görev oluşturuldu" value={formatDate(task.created_at, true)} />
-                                {task.updated_at !== task.created_at && <TimelineItem title="Son güncelleme" value={formatDate(task.updated_at, true)} />}
-                                {task.completed_at && <TimelineItem title="Görev tamamlandı" value={formatDate(task.completed_at, true)} completed />}
-                            </CardContent>
-                        </Card>
+                        <TaskCollaboration teamId={teamId} taskId={taskId} members={members} projects={projects} labels={labels} isAdmin={isAdmin} />
                     </div>
 
                     <aside className="space-y-4 lg:sticky lg:top-20">
@@ -310,17 +298,6 @@ function PersonItem({ label, name, email }: { label: string; name: string; email
         <div className="flex items-center gap-3">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-primary">{name.charAt(0).toLocaleUpperCase('tr-TR')}</span>
             <div className="min-w-0"><p className="text-[10px] text-muted-foreground">{label}</p><p className="truncate text-sm font-medium">{name}</p><p className="truncate text-[11px] text-muted-foreground">{email}</p></div>
-        </div>
-    );
-}
-
-function TimelineItem({ title, value, completed = false }: { title: string; value: string; completed?: boolean }) {
-    return (
-        <div className="flex gap-3">
-            <span className={cn('mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-secondary text-primary', completed && 'bg-emerald-50 text-emerald-600')}>
-                {completed ? <CheckCircle2 className="size-3.5" /> : <Clock3 className="size-3.5" />}
-            </span>
-            <div><p className="text-sm font-medium">{title}</p><p className="mt-0.5 text-xs text-muted-foreground">{value}</p></div>
         </div>
     );
 }

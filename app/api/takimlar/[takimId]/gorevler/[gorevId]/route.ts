@@ -5,6 +5,7 @@ import { verifyJWT } from '@/lib/jwt-helpers';
 import { updateTaskSchema } from '@/lib/validations/task-schema';
 import { rejectOversizedRequest } from '@/lib/security';
 import { attachTaskLabels } from '@/lib/task-metadata-db';
+import { auditValue, notifyUser, recordTaskActivity } from '@/lib/task-collaboration';
 
 interface TaskRow extends RowDataPacket {
     id: number;
@@ -110,9 +111,25 @@ export async function GET(
         }
 
         const [task] = await attachTaskLabels(tasks);
+        const [comments] = await pool.query<RowDataPacket[]>(
+            `SELECT c.id, c.task_id, c.author_id, c.body, c.created_at,
+                    u.name AS author_name, u.avatar_url AS author_avatar_url
+             FROM task_comments c LEFT JOIN users u ON u.id = c.author_id
+             WHERE c.task_id = ? ORDER BY c.id DESC LIMIT 200`,
+            [taskIdNum]
+        );
+        const [activity] = await pool.query<RowDataPacket[]>(
+            `SELECT a.id, a.task_id, a.actor_id, a.event_type, a.field_name,
+                    a.old_value, a.new_value, a.created_at, u.name AS actor_name
+             FROM task_activity a LEFT JOIN users u ON u.id = a.actor_id
+             WHERE a.task_id = ? ORDER BY a.id DESC LIMIT 200`,
+            [taskIdNum]
+        );
         return NextResponse.json({
             success: true,
             task,
+            comments: comments.reverse(),
+            activity,
         });
     } catch (error) {
         console.error('Görev getirilirken hata:', error);
@@ -188,13 +205,10 @@ export async function PUT(
             );
         }
 
-        const existingTask = existingTasks[0];
         const isAdmin = memberRows[0].role === 'admin';
-        const isTaskCreator = existingTask.assigned_by === userId;
-        const isAssignedUser = existingTask.assigned_to === userId;
 
-        // Düzenleme yetkisi kontrolü: Admin, görevi atayan kişi veya göreve atanan kişi
-        if (!isAdmin && !isTaskCreator && !isAssignedUser) {
+        // Görevdeki tüm değişiklikler yönetici yetkisi gerektirir.
+        if (!isAdmin) {
             return NextResponse.json(
                 { error: 'Bu görevi düzenleme yetkiniz yok' },
                 { status: 403 }
@@ -211,17 +225,6 @@ export async function PUT(
         }
 
         const body = parsedBody.data;
-
-        // Atanan kişi yalnızca kendi görevinin durumunu değiştirebilir.
-        if (!isAdmin && !isTaskCreator) {
-            const attemptedFields = Object.keys(body);
-            if (attemptedFields.some((field) => field !== 'status')) {
-                return NextResponse.json(
-                    { error: 'Atanan kullanıcı yalnızca görev durumunu güncelleyebilir' },
-                    { status: 403 }
-                );
-            }
-        }
 
         const {
             project_id,
@@ -325,19 +328,69 @@ export async function PUT(
         const connection = await pool.getConnection();
         try {
             await connection.beginTransaction();
+            const [lockedTasks] = await connection.query<TaskRow[]>(
+                'SELECT * FROM tasks WHERE id = ? AND team_id = ? FOR UPDATE',
+                [taskIdNum, teamIdNum]
+            );
+            if (!lockedTasks.length) throw new Error('Görev güncelleme sırasında bulunamadı');
+            const beforeTask = lockedTasks[0];
+            // Tamamlanma zamanını kilitlenen güncel kayda göre belirle.
+            const completedAtField = updateFields.findIndex((field) => field.startsWith('completed_at ='));
+            if (completedAtField !== -1) updateFields.splice(completedAtField, 1);
+            if (status === 'completed' && beforeTask.status !== 'completed') {
+                updateFields.push('completed_at = NOW()');
+            } else if (status !== undefined && status !== 'completed' && beforeTask.status === 'completed') {
+                updateFields.push('completed_at = NULL');
+            }
+            const proposedValues: Array<[string, unknown]> = [
+                ['project_id', project_id],
+                ['assigned_to', assigned_to],
+                ['title', title?.trim()],
+                ['description', description === undefined ? undefined : description?.trim() || null],
+                ['status', status],
+                ['priority', priority],
+                ['start_date', start_date || (start_date === undefined ? undefined : null)],
+                ['end_date', end_date || (end_date === undefined ? undefined : null)],
+                ['due_date', due_date || (due_date === undefined ? undefined : null)],
+            ];
             if (updateFields.length > 0) {
                 await connection.query(
                     `UPDATE tasks SET ${updateFields.join(', ')} WHERE id = ? AND team_id = ?`,
                     [...updateValues, taskIdNum, teamIdNum]
                 );
             }
+            for (const [fieldName, nextValue] of proposedValues) {
+                if (nextValue === undefined) continue;
+                const previousValue = beforeTask[fieldName];
+                if (auditValue(previousValue) !== auditValue(nextValue)) {
+                    await recordTaskActivity(connection, taskIdNum, userId, 'updated', fieldName, previousValue, nextValue);
+                }
+            }
             if (uniqueLabelIds !== undefined) {
+                const [oldLabels] = await connection.query<RowDataPacket[]>(
+                    'SELECT label_id FROM task_label_assignments WHERE task_id = ? ORDER BY label_id',
+                    [taskIdNum]
+                );
                 await connection.query('DELETE FROM task_label_assignments WHERE task_id = ?', [taskIdNum]);
                 if (uniqueLabelIds.length > 0) {
                     await connection.query(
                         `INSERT INTO task_label_assignments (task_id, label_id) VALUES ${uniqueLabelIds.map(() => '(?, ?)').join(',')}`,
                         uniqueLabelIds.flatMap((labelId) => [taskIdNum, labelId])
                     );
+                }
+                const oldLabelIds = oldLabels.map((label) => Number(label.label_id)).sort((a, b) => a - b).join(',');
+                const newLabelIds = [...uniqueLabelIds].sort((a, b) => a - b).join(',');
+                if (oldLabelIds !== newLabelIds) {
+                    await recordTaskActivity(connection, taskIdNum, userId, 'updated', 'label_ids', oldLabelIds, newLabelIds);
+                }
+            }
+            const notificationTitle = title?.trim() || beforeTask.title;
+            if (assigned_to !== undefined && assigned_to !== beforeTask.assigned_to) {
+                await notifyUser(connection, assigned_to, userId, teamIdNum, taskIdNum, 'reassigned', `"${notificationTitle}" görevi size atandı`);
+            }
+            if (status !== undefined && status !== beforeTask.status) {
+                for (const recipientId of new Set([assigned_to ?? beforeTask.assigned_to, beforeTask.assigned_by])) {
+                    await notifyUser(connection, recipientId, userId, teamIdNum, taskIdNum, 'status_changed', `"${notificationTitle}" görevinin durumu değişti`);
                 }
             }
             await connection.commit();
@@ -443,12 +496,10 @@ export async function DELETE(
             );
         }
 
-        const task = tasks[0];
         const isAdmin = memberRows[0].role === 'admin';
-        const isTaskCreator = task.assigned_by === userId;
 
-        // Silme yetkisi kontrolü: Admin veya görevi atayan kişi
-        if (!isAdmin && !isTaskCreator) {
+        // Silme yetkisi kontrolü: Yalnızca yönetici.
+        if (!isAdmin) {
             return NextResponse.json(
                 { error: 'Bu görevi silme yetkiniz yok' },
                 { status: 403 }

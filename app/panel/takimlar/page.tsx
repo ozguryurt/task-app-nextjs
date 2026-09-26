@@ -8,6 +8,7 @@ import { CreateTeamDialog } from '@/components/teams/create-team-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { WorkspacePageHeader } from '@/components/dashboard/workspace-page-header';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function TeamsPage() {
     const { teams, isLoadingTeams, refreshTeams } = useDashboardData();
@@ -19,7 +20,7 @@ export default function TeamsPage() {
 
             <div className="mb-4 flex items-center justify-between"><p className="text-xs font-semibold text-slate-700">Tüm takımlar</p><span className="text-[10px] text-slate-500">{teams.length} çalışma alanı</span></div>
             {isLoadingTeams ? (
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="h-36 animate-pulse rounded-2xl bg-slate-200/70" />)}</div>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{[1, 2, 3].map((item) => <Skeleton key={item} className="h-36 rounded-2xl" />)}</div>
             ) : teams.length ? (
                 <div className="motion-stagger grid gap-3 md:grid-cols-2 xl:grid-cols-3">{teams.map((team) => <TeamCard key={team.id} team={team} />)}</div>
             ) : (

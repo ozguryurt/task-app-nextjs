@@ -34,18 +34,9 @@ const priorityClasses: Record<Task['priority'], string> = {
     high: 'bg-rose-50 text-rose-800',
 };
 
-function canEditTask(task: Task, isAdmin: boolean, currentUserId: number) {
-    return isAdmin || task.assigned_by === currentUserId || task.assigned_to === currentUserId;
-}
-
-function canDeleteTask(task: Task, isAdmin: boolean, currentUserId: number) {
-    return isAdmin || task.assigned_by === currentUserId;
-}
-
 export function TaskKanbanBoard({
     tasks,
     isAdmin,
-    currentUserId,
     isUpdating,
     onStatusChange,
     onEdit,
@@ -53,7 +44,6 @@ export function TaskKanbanBoard({
 }: {
     tasks: Task[];
     isAdmin: boolean;
-    currentUserId: number;
     isUpdating: boolean;
     onStatusChange: (task: Task, status: Task['status']) => Promise<boolean>;
     onEdit: (task: Task) => void;
@@ -66,7 +56,7 @@ export function TaskKanbanBoard({
         const task = tasks.find((item) => item.id === draggedTaskId);
         setDraggedTaskId(null);
         setOverStatus(null);
-        if (!task || task.status === status || !canEditTask(task, isAdmin, currentUserId)) return;
+        if (!task || task.status === status || !isAdmin) return;
         await onStatusChange(task, status);
     };
 
@@ -107,11 +97,11 @@ export function TaskKanbanBoard({
                         <div className="motion-stagger space-y-2">
                             {columnTasks.length === 0 ? (
                                 <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed bg-card/40 px-3 text-center text-[11px] text-muted-foreground">
-                                    Buraya görev sürükleyin
+                                    {isAdmin ? 'Buraya görev sürükleyin' : 'Bu durumda görev yok'}
                                 </div>
                             ) : columnTasks.map((task) => {
-                                const editable = canEditTask(task, isAdmin, currentUserId);
-                                const deletable = canDeleteTask(task, isAdmin, currentUserId);
+                                const editable = isAdmin;
+                                const deletable = isAdmin;
                                 return (
                                     <article
                                         key={task.id}

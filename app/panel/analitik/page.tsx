@@ -3,6 +3,7 @@
 import { useDashboardData } from '@/components/dashboard/dashboard-shell';
 import { TaskAnalytics } from '@/components/dashboard/task-analytics';
 import { WorkspacePageHeader } from '@/components/dashboard/workspace-page-header';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AnalyticsPage() {
     const { tasks, isLoadingTasks } = useDashboardData();
@@ -16,5 +17,5 @@ export default function AnalyticsPage() {
 }
 
 function AnalyticsSkeleton() {
-    return <div className="grid gap-3 lg:grid-cols-2"><div className="h-72 animate-pulse rounded-2xl bg-slate-200/70" /><div className="h-72 animate-pulse rounded-2xl bg-slate-200/70" /></div>;
+    return <div className="grid gap-3 lg:grid-cols-2"><Skeleton className="h-72 rounded-2xl" /><Skeleton className="h-72 rounded-2xl" /></div>;
 }

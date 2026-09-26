@@ -10,7 +10,6 @@ import { TaskProjectBadge } from '@/components/tasks/task-project-badge';
 interface TaskListItemProps {
     task: Task;
     isAdmin: boolean;
-    currentUserId: number;
     onEdit: (task: Task) => void;
     onDelete: (taskId: number, taskTitle: string) => void;
     isUpdating?: boolean;
@@ -19,7 +18,6 @@ interface TaskListItemProps {
 export function TaskListItem({
     task,
     isAdmin,
-    currentUserId,
     onEdit,
     onDelete,
     isUpdating = false,
@@ -50,15 +48,6 @@ export function TaskListItem({
         if (!dateString) return null;
         return new Date(dateString).toLocaleDateString('tr-TR');
     };
-
-    const isAssignedToCurrentUser = task.assigned_to === currentUserId;
-    const isTaskCreator = task.assigned_by === currentUserId;
-
-    // Düzenleme yetkisi: Admin, görevi atayan kişi veya göreve atanan kişi
-    const canEdit = isAdmin || isTaskCreator || isAssignedToCurrentUser;
-
-    // Silme yetkisi: Admin veya görevi atayan kişi
-    const canDelete = isAdmin || isTaskCreator;
 
     return (
         <div className="motion-row rounded-lg border border-border/55 bg-muted/35 p-3.5 hover:border-primary/15 hover:bg-card">
@@ -136,7 +125,7 @@ export function TaskListItem({
                 </div>
 
                 <div className="flex items-center gap-1">
-                    {canEdit && (
+                    {isAdmin && (
                         <Button
                             variant="ghost"
                             size="icon-sm"
@@ -149,7 +138,7 @@ export function TaskListItem({
                         </Button>
                     )}
 
-                    {canDelete && (
+                    {isAdmin && (
                         <Button
                             variant="ghost"
                             size="icon-sm"

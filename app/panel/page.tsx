@@ -34,7 +34,7 @@ export default function DashboardOverviewPage() {
                 </div>
             </section>
 
-            <Card className="mt-5 overflow-hidden rounded-2xl border-indigo-100 bg-gradient-to-r from-indigo-50/90 via-white to-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.025)]">
+            <Card className="mt-5 overflow-hidden rounded-2xl border-primary/15 bg-gradient-to-r from-primary/10 via-card to-card py-0 shadow-[0_3px_14px_rgba(24,32,66,0.025)]">
                 <CardContent className="flex flex-col justify-between gap-4 px-5 py-5 sm:flex-row sm:items-center sm:px-6">
                     <div className="flex items-center gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm"><Activity className="size-4" /></span><div><p className="text-xs font-semibold text-slate-800">{teams.length ? 'Akışın hazır' : 'İlk takımını oluştur'}</p><p className="mt-1 max-w-lg text-[10px] leading-5 text-slate-500">{teams.length ? 'Takım alanların, görevlerin ve analitiklerin çalışma alanı menüsünde seni bekliyor.' : 'Ekip arkadaşlarını davet et, görevleri paylaş ve ilerlemeyi tek yerden takip et.'}</p></div></div>
                     <Button asChild variant="outline" size="sm" className="shrink-0"><Link href="/panel/takimlar">{teams.length ? 'Takımları görüntüle' : 'Takım oluştur'} <ArrowRight className="size-3.5" /></Link></Button>

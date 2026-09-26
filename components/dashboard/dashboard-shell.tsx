@@ -21,6 +21,7 @@ import { useUserTasks, type UserTask } from '@/lib/hooks/use-user-tasks';
 import { useLogout } from '@/lib/hooks/use-logout';
 import { TASKS_CHANGED_EVENT } from '@/lib/task-events';
 import { UserAvatar } from '@/components/users/user-avatar';
+import { NotificationInbox } from '@/components/dashboard/notification-inbox';
 
 interface DashboardData {
     tasks: UserTask[];
@@ -77,6 +78,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                             <span className="hidden truncate text-xs text-slate-500 sm:block">Çalışma alanım</span>
                         </Link>
                         <div className="flex items-center gap-2.5 sm:gap-4">
+                            <NotificationInbox userId={user?.id} />
                             <Link href="/panel/profil" aria-label="Profil ve hesap ayarları" className="flex items-center gap-2 rounded-full bg-slate-50 py-1 pl-1 pr-2 transition-colors hover:bg-indigo-50 sm:pr-3">
                                 <UserAvatar name={user?.name} src={user?.avatarUrl} className="size-7" />
                                 <span className="hidden max-w-32 truncate text-[11px] font-medium text-slate-700 sm:block">{user?.name}</span>
@@ -97,7 +99,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                                 {teams.slice(0, 5).map((team, index) => <Link key={team.id} href={`/panel/takimlar/${team.id}`} className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[11px] text-slate-600 transition-colors hover:bg-white hover:text-slate-900"><span className={`size-2 rounded-full ${['bg-violet-400', 'bg-sky-400', 'bg-emerald-400', 'bg-amber-400', 'bg-rose-400'][index]}`} /><span className="truncate">{team.name}</span></Link>)}
                             </div>
 
-                            <Link href="/panel/profil" className="mt-auto block rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-3 transition-colors hover:border-indigo-200 hover:from-indigo-100/70" aria-label="Profil ve hesap ayarları">
+                            <Link href="/panel/profil" className="mt-auto block rounded-xl border border-primary/15 bg-gradient-to-br from-primary/10 to-card p-3 transition-colors hover:border-primary/30 hover:from-primary/15" aria-label="Profil ve hesap ayarları">
                                 <span className="flex size-7 items-center justify-center rounded-lg bg-white text-indigo-600 shadow-sm"><CheckCircle2 className="size-3.5" /></span>
                                 <p className="mt-2 text-[10px] font-semibold text-slate-700">Hesap durumu</p>
                                 <p className="mt-0.5 truncate text-[9px] text-slate-500">{user?.email}</p>

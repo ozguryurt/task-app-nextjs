@@ -20,7 +20,7 @@ export function ColorSwatches({
                     aria-label={`${color} rengini seç`}
                     aria-pressed={value === color}
                     onClick={() => onChange(color)}
-                    className={`size-6 rounded-full border-2 transition-transform hover:scale-110 ${value === color ? 'scale-110 border-slate-700' : 'border-white'}`}
+                    className={`size-6 rounded-full border-2 transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${value === color ? 'scale-110 border-foreground' : 'border-card'}`}
                     style={{ backgroundColor: color }}
                 />
             ))}

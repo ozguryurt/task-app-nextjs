@@ -5,6 +5,7 @@ import { verifyJWT } from '@/lib/jwt-helpers';
 import { createTaskSchema } from '@/lib/validations/task-schema';
 import { rejectOversizedRequest } from '@/lib/security';
 import { attachTaskLabels } from '@/lib/task-metadata-db';
+import { notifyUser, recordTaskActivity } from '@/lib/task-collaboration';
 
 interface TaskRow extends RowDataPacket {
     id: number;
@@ -244,6 +245,8 @@ export async function POST(
                     uniqueLabelIds.flatMap((labelId) => [taskId, labelId])
                 );
             }
+            await recordTaskActivity(connection, taskId, userId, 'created', null, null, title.trim());
+            await notifyUser(connection, assigned_to, userId, teamIdNum, taskId, 'assigned', `"${title.trim()}" görevi size atandı`);
             await connection.commit();
         } catch (transactionError) {
             await connection.rollback();

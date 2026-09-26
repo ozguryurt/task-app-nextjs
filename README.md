@@ -10,6 +10,9 @@ Taskflow, ekiplerin görevleri oluşturup atayabildiği, projelerle düzenleyebi
 - `/panel/gorevler` sayfasında kullanıcıya atanan görevleri, takım detayında ise takım görevlerini arama, filtreleme ve sıralama. Takım detayında atanan kişi, proje ve etikete göre filtreleme de bulunur.
 - Takım görevlerinde liste, sürükle-bırak destekli Kanban ve aylık takvim görünümleri. Mobil Kanban kartlarında durum seçimi bulunur; takvim görevleri teslim tarihine göre yerleştirir.
 - Her görev için açıklama, sorumlular, durum/öncelik, tarih planı ve zaman çizelgesini gösteren detay ekranı; yetkiye bağlı durum değiştirme, düzenleme ve silme işlemleri.
+- Görev detayında takım üyelerinin yorum yazması ve `@Ad Soyad` ile bahsetmesi. Bahsedilen üyeye ve görev katılımcılarına kalıcı bildirim gönderilir. Takım yöneticileri yorumları onayla siler; işlem değişiklik geçmişine kaydedilir.
+- Görev ataması, yorum ve durum değişiklikleri için okunmamış sayılı bildirim kutusu; yaklaşan ve geciken teslimler için uygulama içi hatırlatmalar. Bildirimler açık panelde dakikada bir yenilenir.
+- Görev oluşturma, yorum ve alan değişikliklerinin aktör, zaman, eski ve yeni değerleriyle kaydedildiği gerçek değişiklik geçmişi.
 - `/panel` genel bakışı ve `/panel/analitik` sayfasında tamamlanma oranı, geciken/yaklaşan görevler, durum dağılımı ve takım bazlı iş yükü.
 - Takım bazlı projeler, renkli görev etiketleri ve tekrar eden iş akışlarını hızlandıran görev şablonları. Proje ve etiketler görev oluşturma/düzenleme akışlarında seçilebilir ve görev listesinde filtrelenebilir.
 - Kullanıcı profilinde mevcut şifre doğrulamasıyla şifre değiştirme ve yeni adrese gönderilen, 5 dakika geçerli tek kullanımlık kodla e-posta değiştirme.
@@ -58,9 +61,10 @@ MySQL, npm ve en az Node.js **20.9.0** gerekir. Test komutundaki `--experimental
    SOURCE database/migrations/004_add_projects_labels_templates.sql;
    SOURCE database/migrations/005_add_profile_email_change_codes.sql;
    SOURCE database/migrations/006_add_user_avatar_url.sql;
+   SOURCE database/migrations/007_add_task_collaboration.sql;
    ```
 
-   `001` şifre alanını genişletir; eski SHA-256 hash'leri başarılı girişte bcrypt'e çevrilir. `002` oturum sürümünü, `003` kod deneme sayaçlarını ekler. `004` proje/etiket/şablon tablolarını, `005` profil e-posta değişikliği kodu tablosunu, `006` ise `users.avatar_url` alanını oluşturur. Yeni kurulumda `schema.sql` yeterlidir; migrasyonları ayrıca çalıştırmayın.
+   `001` şifre alanını genişletir; eski SHA-256 hash'leri başarılı girişte bcrypt'e çevrilir. `002` oturum sürümünü, `003` kod deneme sayaçlarını ekler. `004` proje/etiket/şablon tablolarını, `005` profil e-posta değişikliği kodu tablosunu, `006` ise `users.avatar_url` alanını oluşturur. `007` yorum, bahsetme, görev hareketi ve bildirim tablolarını ekler. Yeni kurulumda `schema.sql` yeterlidir; migrasyonları ayrıca çalıştırmayın.
 
 3. [`env.example`](env.example) dosyasını `.env.local` olarak kopyalayıp kendi değerlerinizi girin. PowerShell'de:
 
@@ -96,7 +100,7 @@ Profil fotoğrafı için [ImgBB API](https://api.imgbb.com/) anahtarını yerel 
 
 ### Üretim ve cPanel
 
-Önce yeni veritabanı şemasını veya eksik migrasyonları uygulayın; giriş ve profil API'leri `users.avatar_url` alanını okur. Ardından üretim derlemesini alın:
+Önce yeni veritabanı şemasını veya eksik migrasyonları uygulayın; görev API'leri `007` ile eklenen tabloları kullanır. Ardından üretim derlemesini alın:
 
 ```bash
 npm ci
@@ -132,7 +136,7 @@ Ortam değişkenleri değiştirildikten sonra Node.js uygulamasını cPanel üze
 
 Tanımsız adreslerde özel 404 ekranı gösterilir. `proxy.ts`, oturum açmamış kullanıcıları `/panel` altındaki sayfalardan girişe yönlendirir ve API'deki durum değiştiren çapraz site isteklerini reddeder. API uçları oturum ve yetki kontrollerini ayrıca kendi Route Handler'larında yapar.
 
-Görev durumları `pending`, `in_progress`, `completed`, `cancelled`; öncelikler `low`, `medium`, `high` değerlerini kullanır. Arama başlık ve açıklamayı kapsar; kullanıcı görevlerinde takım/atayan, takım detayında atanan/atayan ve proje/etiket bilgileri de aranır. Sıralama seçenekleri en yeni, en eski, yakın teslim tarihi ve önceliktir. Proje, etiket ve şablon yönetimi takım yöneticilerine açıktır. Sol menüdeki proje kısayolları kullanıcıya atanan görevlerden türetilir ve ilgili görev işlemlerinden sonra güncellenir.
+Görev durumları `pending`, `in_progress`, `completed`, `cancelled`; öncelikler `low`, `medium`, `high` değerlerini kullanır. Arama başlık ve açıklamayı kapsar; kullanıcı görevlerinde takım/atayan, takım detayında atanan/atayan ve proje/etiket bilgileri de aranır. Sıralama seçenekleri en yeni, en eski, yakın teslim tarihi ve önceliktir. Takım, üye, görev (durum değişikliği dahil), proje, etiket ve şablon yönetimi takımda `admin` rolüne sahip kullanıcılara açıktır; takım üyeleri görevleri okuyabilir ve yorum yazabilir. Sol menüdeki proje kısayolları kullanıcıya atanan görevlerden türetilir ve ilgili görev işlemlerinden sonra güncellenir.
 
 ## API
 
@@ -151,9 +155,12 @@ Tüm yollar `/api` önekini kullanır. Korumalı uçlar oturum çerezini gerekti
 | GET, POST | `/takimlar/[takimId]/uyeler` | Üyeleri listeleme / ekleme. |
 | PUT, DELETE | `/takimlar/[takimId]/uyeler/[uyeId]` | Üye rolünü güncelleme / üyeyi çıkarma. |
 | GET, POST | `/takimlar/[takimId]/gorevler` | Görevleri listeleme / oluşturma. |
-| GET, PUT, DELETE | `/takimlar/[takimId]/gorevler/[gorevId]` | Görev detayı / güncelleme / silme. |
+| GET, PUT, DELETE | `/takimlar/[takimId]/gorevler/[gorevId]` | Görev detayı (yorum ve hareketlerle) / güncelleme / silme. |
+| POST | `/takimlar/[takimId]/gorevler/[gorevId]/yorumlar` | Takım üyesi olarak yorum ve `mentionIds` ile bahsetme ekleme. |
+| DELETE | `/takimlar/[takimId]/gorevler/[gorevId]/yorumlar/[yorumId]` | Takım yöneticisi tarafından yorum silme; işlem geçmişe kaydedilir. |
 | GET, POST, DELETE | `/takimlar/[takimId]/gorev-yapilandirma` | Proje, etiket ve görev şablonlarını listeleme / oluşturma / silme. |
 | GET | `/kullanici/gorevler` | Kullanıcıya atanan görevler. |
+| GET, PATCH | `/kullanici/bildirimler` | Bildirim kutusu ve teslim hatırlatmaları / bildirimi veya tümünü okundu işaretleme. |
 | GET, POST | `/kullanici/profil` | Profil bilgisini getirme; şifre değiştirme, e-posta değişikliği kodu isteme ve kodu doğrulama işlemleri. |
 | POST | `/kullanici/profil/fotograf` | Profil fotoğrafını doğrulayıp ImgBB'ye yükleme; dönen adresi kullanıcıya kaydetme. |
 
@@ -199,7 +206,7 @@ npm run dev
 npm run build
 npm run lint
 npx tsc --noEmit
-node --experimental-strip-types --test tests/task-filters.test.mjs tests/security.test.mjs
+node --experimental-strip-types --test tests/task-filters.test.mjs tests/security.test.mjs tests/task-collaboration.test.mjs
 ```
 
 Üretimde standalone sunucuyu `node .next/standalone/server.js` ile başlatın. Node test komutu, görev filtreleri ile güvenlik yardımcılarının doğrulamalarını çalıştırır.
