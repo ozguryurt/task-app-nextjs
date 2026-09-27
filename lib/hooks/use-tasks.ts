@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { useTeamStore } from '../store/team-store';
 import type { TaskLabel } from '../store/team-store';
 import { notifyTasksChanged } from '@/lib/task-events';
+import { readApiJson } from '@/lib/api/read-api-json';
 
 export interface Task {
     id: number;
@@ -72,7 +73,7 @@ export function useTasks(teamId: number) {
                 cache: 'no-store',
             });
 
-            const data = await response.json();
+            const data = await readApiJson(response);
 
             if (!response.ok) {
                 throw new Error(data.error || 'Görevler yüklenemedi');
@@ -104,7 +105,7 @@ export function useTasks(teamId: number) {
                     body: JSON.stringify(taskData),
                 });
 
-                const data = await response.json();
+                const data = await readApiJson(response);
 
                 if (!response.ok) {
                     throw new Error(data.error || 'Görev oluşturulamadı');
@@ -144,7 +145,7 @@ export function useTasks(teamId: number) {
                     body: JSON.stringify(taskData),
                 });
 
-                const data = await response.json();
+                const data = await readApiJson(response);
 
                 if (!response.ok) {
                     throw new Error(data.error || 'Görev güncellenemedi');
@@ -186,7 +187,7 @@ export function useTasks(teamId: number) {
                     credentials: 'include',
                 });
 
-                const data = await response.json();
+                const data = await readApiJson(response);
 
                 if (!response.ok) {
                     throw new Error(data.error || 'Görev silinemedi');

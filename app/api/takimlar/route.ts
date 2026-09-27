@@ -4,6 +4,8 @@ import { verifyJWT } from '@/lib/jwt-helpers';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { rejectOversizedRequest } from '@/lib/security';
 
+export const dynamic = 'force-dynamic';
+
 // Kullanıcının tüm takımlarını çek
 export async function GET(request: NextRequest) {
     try {

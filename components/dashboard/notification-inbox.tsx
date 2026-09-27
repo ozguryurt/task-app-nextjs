@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Bell, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { readApiJson } from '@/lib/api/read-api-json';
 
 interface NotificationItem {
     id: number;
@@ -31,7 +32,7 @@ export function NotificationInbox({ userId }: { userId?: number }) {
         try {
             const response = await fetch('/api/kullanici/bildirimler', { credentials: 'include', cache: 'no-store' });
             if (!response.ok) throw new Error('Bildirimler yüklenemedi');
-            const data = await response.json();
+            const data = await readApiJson(response);
             setItems(data.notifications ?? []);
             setUnreadCount(data.unreadCount ?? 0);
             setError(null);

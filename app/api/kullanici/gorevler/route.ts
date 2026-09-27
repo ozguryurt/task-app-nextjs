@@ -4,6 +4,8 @@ import { RowDataPacket } from 'mysql2';
 import { verifyJWT } from '@/lib/jwt-helpers';
 import { attachTaskLabels } from '@/lib/task-metadata-db';
 
+export const dynamic = 'force-dynamic';
+
 interface UserTaskRow extends RowDataPacket {
     id: number;
     team_id: number;

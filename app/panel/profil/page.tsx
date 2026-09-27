@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { UserAvatar } from '@/components/users/user-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 
+import { readApiJson } from '@/lib/api/read-api-json';
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024;
 const AVATAR_TYPES: Record<string, string> = {
     png: 'image/png',
@@ -35,7 +36,7 @@ async function profileRequest(body?: Record<string, string>): Promise<ProfileRes
         headers: body ? { 'Content-Type': 'application/json' } : undefined,
         body: body ? JSON.stringify(body) : undefined,
     });
-    const result = await response.json() as ProfileResponse;
+    const result = await readApiJson(response) as ProfileResponse;
     if (!response.ok || !result.success) throw new Error(result.message || 'İşlem tamamlanamadı');
     return result;
 }
@@ -184,7 +185,7 @@ export default function ProfilePage() {
                 credentials: 'include',
                 body: formData,
             });
-            const result = await response.json() as {
+            const result = await readApiJson(response) as {
                 success: boolean;
                 message: string;
                 data?: { avatarUrl?: string };

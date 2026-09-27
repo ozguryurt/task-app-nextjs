@@ -23,6 +23,7 @@ import type { UpdateTaskData } from '@/lib/hooks/use-tasks';
 import { cn } from '@/lib/utils';
 import { notifyTasksChanged } from '@/lib/task-events';
 
+import { readApiJson } from '@/lib/api/read-api-json';
 interface PageProps {
     params: Promise<{ takimId: string; gorevId: string }>;
 }
@@ -127,7 +128,7 @@ export default function TaskDetailPage({ params }: PageProps) {
                     setUserRole(null);
                     setError('Bu takıma erişim yetkiniz yok');
                 } else if (response.ok) {
-                    const data = await response.json();
+                    const data = await readApiJson(response);
                     if (active) setUserRole(data.userRole);
                 }
             } catch {
@@ -150,7 +151,7 @@ export default function TaskDetailPage({ params }: PageProps) {
                 credentials: 'include',
                 body: JSON.stringify(data),
             });
-            const result = await response.json();
+            const result = await readApiJson(response);
             if (!response.ok) throw new Error(result.error || 'Görev güncellenemedi');
             setTask(result.task);
             notifyTasksChanged();
@@ -172,7 +173,7 @@ export default function TaskDetailPage({ params }: PageProps) {
                 method: 'DELETE',
                 credentials: 'include',
             });
-            const result = await response.json();
+            const result = await readApiJson(response);
             if (!response.ok) throw new Error(result.error || 'Görev silinemedi');
             notifyTasksChanged();
             toast.success('Görev silindi', { description: task.title });

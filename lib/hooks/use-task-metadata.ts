@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import type { TaskLabel, TaskProject, TaskTemplate } from '@/lib/store/team-store';
 import { notifyTasksChanged } from '@/lib/task-events';
+import { readApiJson } from '@/lib/api/read-api-json';
 
 export type MetadataType = 'project' | 'label' | 'template';
 
@@ -16,7 +17,7 @@ export function useTaskMetadata(teamId: number) {
         setIsLoading(true);
         try {
             const response = await fetch(`/api/takimlar/${teamId}/gorev-yapilandirma`, { credentials: 'include', cache: 'no-store' });
-            const data = await response.json();
+            const data = await readApiJson(response);
             if (!response.ok) throw new Error(data.error || 'Görev yapılandırması yüklenemedi');
             setProjects(data.projects ?? []);
             setLabels(data.labels ?? []);
@@ -39,7 +40,7 @@ export function useTaskMetadata(teamId: number) {
                 credentials: 'include',
                 body: JSON.stringify(payload),
             });
-            const data = await response.json();
+            const data = await readApiJson(response);
             if (!response.ok) throw new Error(data.error || 'Kayıt oluşturulamadı');
             await fetchMetadata();
             toast.success(payload.type === 'project' ? 'Proje oluşturuldu' : payload.type === 'label' ? 'Etiket oluşturuldu' : 'Şablon oluşturuldu');
@@ -61,7 +62,7 @@ export function useTaskMetadata(teamId: number) {
                 credentials: 'include',
                 body: JSON.stringify({ type, id }),
             });
-            const data = await response.json();
+            const data = await readApiJson(response);
             if (!response.ok) throw new Error(data.error || 'Kayıt silinemedi');
             if (type === 'project') notifyTasksChanged();
             await fetchMetadata();
@@ -84,7 +85,7 @@ export function useTaskMetadata(teamId: number) {
                 credentials: 'include',
                 body: JSON.stringify(payload),
             });
-            const data = await response.json();
+            const data = await readApiJson(response);
             if (!response.ok) throw new Error(data.error || 'Kayıt güncellenemedi');
             if (payload.type === 'project') notifyTasksChanged();
             await fetchMetadata();

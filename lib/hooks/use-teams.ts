@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useTeamStore } from '@/lib/store/team-store';
+import { readApiJson } from '@/lib/api/read-api-json';
 
 export function useTeams() {
     const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +21,7 @@ export function useTeams() {
                 cache: 'no-store',
             });
 
-            const data = await response.json();
+            const data = await readApiJson(response);
 
             if (!response.ok) {
                 throw new Error(data.error || 'Takımlar yüklenemedi');

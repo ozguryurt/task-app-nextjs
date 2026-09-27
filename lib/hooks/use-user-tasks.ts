@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import type { TaskLabel } from '@/lib/store/team-store';
+import { readApiJson } from '@/lib/api/read-api-json';
 
 export interface UserTask {
     id: number;
@@ -42,7 +43,7 @@ export function useUserTasks() {
                 cache: 'no-store',
             });
 
-            const data = await response.json();
+            const data = await readApiJson(response);
 
             if (!response.ok) {
                 throw new Error(data.error || 'Görevler yüklenemedi');

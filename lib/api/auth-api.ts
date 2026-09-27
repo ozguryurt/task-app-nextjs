@@ -1,4 +1,5 @@
 // Tüm authentication işlemleri için API isteklerini yöneten servis katmanı
+import { readApiJson } from '@/lib/api/read-api-json';
 
 export interface ApiResponse<T = any> {
     success: boolean;
@@ -54,7 +55,7 @@ async function apiRequest<T>(
             ...options,
         });
 
-        const data = await response.json();
+        const data = await readApiJson(response);
         return data;
     } catch (error) {
         console.error('API Request Error:', error);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useTeamStore } from '@/lib/store/team-store';
+import { readApiJson } from '@/lib/api/read-api-json';
 
 interface CreateTeamData {
     name: string;
@@ -26,7 +27,7 @@ export function useCreateTeam() {
                 body: JSON.stringify(data),
             });
 
-            const result = await response.json();
+            const result = await readApiJson(response);
 
             if (!response.ok) {
                 throw new Error(result.error || 'Takım oluşturulamadı');

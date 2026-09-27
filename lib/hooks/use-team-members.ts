@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useTeamStore } from '@/lib/store/team-store';
+import { readApiJson } from '@/lib/api/read-api-json';
 
 interface AddMemberData {
     email: string;
@@ -24,7 +25,7 @@ export function useTeamMembers(teamId: number) {
                 cache: 'no-store',
             });
 
-            const data = await response.json();
+            const data = await readApiJson(response);
 
             if (!response.ok) {
                 throw new Error(data.error || 'Üyeler yüklenemedi');
@@ -56,7 +57,7 @@ export function useTeamMembers(teamId: number) {
                 body: JSON.stringify(data),
             });
 
-            const result = await response.json();
+            const result = await readApiJson(response);
 
             if (!response.ok) {
                 throw new Error(result.error || 'Üye eklenemedi');
@@ -89,7 +90,7 @@ export function useTeamMembers(teamId: number) {
                 body: JSON.stringify({ role }),
             });
 
-            const result = await response.json();
+            const result = await readApiJson(response);
 
             if (!response.ok) {
                 throw new Error(result.error || 'Üye rolü güncellenemedi');
@@ -120,7 +121,7 @@ export function useTeamMembers(teamId: number) {
                 credentials: 'include',
             });
 
-            const result = await response.json();
+            const result = await readApiJson(response);
 
             if (!response.ok) {
                 throw new Error(result.error || 'Üye çıkarılamadı');

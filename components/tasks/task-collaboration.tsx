@@ -11,6 +11,7 @@ import { UserAvatar } from '@/components/users/user-avatar';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { TeamMember, TaskProject, TaskLabel } from '@/lib/store/team-store';
 import { TASKS_CHANGED_EVENT } from '@/lib/task-events';
+import { readApiJson } from '@/lib/api/read-api-json';
 
 interface TaskComment {
     id: number;
@@ -82,7 +83,7 @@ export function TaskCollaboration({ teamId, taskId, members, projects, labels, i
     const refresh = useCallback(async () => {
         try {
             const response = await fetch(`/api/takimlar/${teamId}/gorevler/${taskId}`, { credentials: 'include', cache: 'no-store' });
-            const result = await response.json();
+            const result = await readApiJson(response);
             if (!response.ok) throw new Error(result.error || 'Görev hareketleri yüklenemedi');
             setComments(result.comments ?? []);
             setActivity(result.activity ?? []);
@@ -135,7 +136,7 @@ export function TaskCollaboration({ teamId, taskId, members, projects, labels, i
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 credentials: 'include', body: JSON.stringify({ body: content, mentionIds: activeMentionIds }),
             });
-            const result = await response.json();
+            const result = await readApiJson(response);
             if (!response.ok) throw new Error(result.error || 'Yorum eklenemedi');
             setBody('');
             setMentionIds([]);
@@ -155,7 +156,7 @@ export function TaskCollaboration({ teamId, taskId, members, projects, labels, i
             const response = await fetch(`/api/takimlar/${teamId}/gorevler/${taskId}/yorumlar/${deletingCommentId}`, {
                 method: 'DELETE', credentials: 'include',
             });
-            const result = await response.json();
+            const result = await readApiJson(response);
             if (!response.ok) throw new Error(result.error || 'Yorum silinemedi');
             setDeletingCommentId(null);
             await refresh();

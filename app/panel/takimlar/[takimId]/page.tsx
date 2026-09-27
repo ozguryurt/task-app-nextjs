@@ -32,6 +32,7 @@ import { ArrowLeft, Users, UserPlus, Trash2, Calendar, ClipboardList, Plus, Sett
 import { toast } from 'sonner';
 import { useDashboardData } from '@/components/dashboard/dashboard-shell';
 import { notifyTasksChanged } from '@/lib/task-events';
+import { readApiJson } from '@/lib/api/read-api-json';
 
 interface PageProps {
     params: Promise<{ takimId: string }>;
@@ -159,7 +160,7 @@ export default function TeamDetailPage({ params }: PageProps) {
                     setUserRole(null);
                     setTeamError('Bu takıma erişim yetkiniz yok');
                 } else if (response.ok) {
-                    const data = await response.json();
+                    const data = await readApiJson(response);
                     if (active) setUserRole(data.userRole);
                 }
             } catch {
@@ -210,7 +211,7 @@ export default function TeamDetailPage({ params }: PageProps) {
             });
 
             if (!response.ok) {
-                const data = await response.json();
+                const data = await readApiJson(response);
                 throw new Error(data.error || 'Takım silinemedi');
             }
 
@@ -354,7 +355,7 @@ export default function TeamDetailPage({ params }: PageProps) {
                 credentials: 'include',
                 body: JSON.stringify({ name: teamNameDraft, description: teamDescriptionDraft }),
             });
-            const data = await response.json();
+            const data = await readApiJson(response);
             if (!response.ok) throw new Error(data.error || 'Takım güncellenemedi');
             if (currentTeam) setCurrentTeam({ ...currentTeam, name: teamNameDraft.trim(), description: teamDescriptionDraft.trim() || null });
             void refreshTeams().catch(() => {});
