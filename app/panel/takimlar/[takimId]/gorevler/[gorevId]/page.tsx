@@ -18,7 +18,7 @@ import { TaskCollaboration } from '@/components/tasks/task-collaboration';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EditTaskDialog } from '@/components/tasks/edit-task-dialog';
-import type { Task, TeamMember, TaskLabel, TaskProject } from '@/lib/store/team-store';
+import type { Task, TeamMember, TaskLabel, TaskProject, ProjectMilestone } from '@/lib/store/team-store';
 import type { UpdateTaskData } from '@/lib/hooks/use-tasks';
 import { cn } from '@/lib/utils';
 import { notifyTasksChanged } from '@/lib/task-events';
@@ -58,6 +58,7 @@ export default function TaskDetailPage({ params }: PageProps) {
     const [task, setTask] = useState<Task | null>(null);
     const [members, setMembers] = useState<TeamMember[]>([]);
     const [projects, setProjects] = useState<TaskProject[]>([]);
+    const [milestones, setMilestones] = useState<ProjectMilestone[]>([]);
     const [labels, setLabels] = useState<TaskLabel[]>([]);
     const [teamName, setTeamName] = useState('Takım');
     const [userRole, setUserRole] = useState<'admin' | 'member' | null>(null);
@@ -81,29 +82,33 @@ export default function TaskDetailPage({ params }: PageProps) {
                 setIsLoading(true);
                 setError(null);
                 const requestOptions = { credentials: 'include' as const, cache: 'no-store' as const, signal: controller.signal };
-                const [taskResponse, teamResponse, membersResponse, metadataResponse] = await Promise.all([
+                const [taskResponse, teamResponse, membersResponse, metadataResponse, milestonesResponse] = await Promise.all([
                     fetch(`/api/takimlar/${teamId}/gorevler/${taskId}`, requestOptions),
                     fetch(`/api/takimlar/${teamId}`, requestOptions),
                     fetch(`/api/takimlar/${teamId}/uyeler`, requestOptions),
                     fetch(`/api/takimlar/${teamId}/gorev-yapilandirma`, requestOptions),
+                    fetch(`/api/takimlar/${teamId}/kilometre-taslari`, requestOptions),
                 ]);
-                const [taskData, teamData, membersData, metadataData] = await Promise.all([
-                    taskResponse.json(),
-                    teamResponse.json(),
-                    membersResponse.json(),
-                    metadataResponse.json(),
+                const [taskData, teamData, membersData, metadataData, milestonesData] = await Promise.all([
+                    readApiJson(taskResponse),
+                    readApiJson(teamResponse),
+                    readApiJson(membersResponse),
+                    readApiJson(metadataResponse),
+                    readApiJson(milestonesResponse),
                 ]);
 
                 if (!taskResponse.ok) throw new Error(taskData.error || 'Görev yüklenemedi');
                 if (!teamResponse.ok) throw new Error(teamData.error || 'Takım yüklenemedi');
                 if (!membersResponse.ok) throw new Error(membersData.error || 'Takım üyeleri yüklenemedi');
                 if (!metadataResponse.ok) throw new Error(metadataData.error || 'Görev yapılandırması yüklenemedi');
+                if (!milestonesResponse.ok) throw new Error(milestonesData.error || 'Kilometre taşları yüklenemedi');
 
                 setTask(taskData.task);
                 setTeamName(teamData.team.name);
                 setUserRole(teamData.userRole);
                 setMembers(membersData.members ?? []);
                 setProjects(metadataData.projects ?? []);
+                setMilestones(milestonesData.milestones ?? []);
                 setLabels(metadataData.labels ?? []);
             } catch (loadError) {
                 if (loadError instanceof DOMException && loadError.name === 'AbortError') return;
@@ -225,6 +230,7 @@ export default function TaskDetailPage({ params }: PageProps) {
                                     <Badge className={cn('border-0', statusInfo[task.status].className)}>{statusInfo[task.status].label}</Badge>
                                     <Badge className={cn('border-0', priorityInfo[task.priority].className)}>{priorityInfo[task.priority].label}</Badge>
                                     <TaskProjectBadge projectName={task.project_name} color={task.project_color} />
+                                    {task.milestone_name && <Badge variant="outline">Hedef: {task.milestone_name}</Badge>}
                                     {task.labels?.map((label) => <Badge key={label.id} variant="outline" style={{ borderColor: label.color, color: label.color }}>{label.name}</Badge>)}
                                 </div>
                                 <CardTitle className="text-xl leading-tight tracking-[-0.035em] text-slate-900 sm:text-2xl">{task.title}</CardTitle>
@@ -248,7 +254,7 @@ export default function TaskDetailPage({ params }: PageProps) {
                             </CardContent>
                         </Card>
 
-                        <TaskCollaboration teamId={teamId} taskId={taskId} members={members} projects={projects} labels={labels} isAdmin={isAdmin} />
+                        <TaskCollaboration teamId={teamId} taskId={taskId} members={members} projects={projects} labels={labels} milestones={milestones} isAdmin={isAdmin} />
                     </div>
 
                     <aside className="space-y-4 lg:sticky lg:top-20">
@@ -269,7 +275,7 @@ export default function TaskDetailPage({ params }: PageProps) {
                         <Card className="rounded-2xl border-slate-200/80 bg-white py-0 shadow-[0_3px_14px_rgba(24,32,66,0.03)]">
                             <CardHeader className="px-4 pt-4 sm:px-5"><CardTitle className="text-sm text-slate-800">Kişiler</CardTitle></CardHeader>
                             <CardContent className="space-y-4 py-4">
-                                <PersonItem label="Atanan" name={task.assigned_to_name} email={task.assigned_to_email} />
+                                {task.assignees.map((person) => <PersonItem key={person.user_id} label="Atanan" name={person.name} email={person.email} />)}
                                 <PersonItem label="Atayan" name={task.assigned_by_name} email={task.assigned_by_email} />
                             </CardContent>
                         </Card>
@@ -285,7 +291,7 @@ export default function TaskDetailPage({ params }: PageProps) {
                 </div>
             </div>
 
-            <EditTaskDialog open={isEditOpen} onOpenChange={setIsEditOpen} onSubmit={updateTask} task={task} members={members} projects={projects} labels={labels} isSubmitting={isSubmitting} />
+            <EditTaskDialog open={isEditOpen} onOpenChange={setIsEditOpen} onSubmit={updateTask} task={task} members={members} projects={projects} milestones={milestones} labels={labels} isSubmitting={isSubmitting} />
             <ConfirmDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen} onConfirm={deleteTask} title="Görevi sil" description={`"${task.title}" görevini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`} confirmText="Evet, sil" isDestructive isLoading={isSubmitting} />
         </div>
     );

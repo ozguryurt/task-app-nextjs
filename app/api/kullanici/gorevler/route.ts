@@ -11,6 +11,7 @@ interface UserTaskRow extends RowDataPacket {
     team_id: number;
     team_name: string;
     project_id: number | null;
+    milestone_id: number | null;
     project_name: string | null;
     project_color: string | null;
     assigned_to: number;
@@ -57,6 +58,7 @@ export async function GET(request: NextRequest) {
                 t.team_id,
                 tm.name as team_name,
                 t.project_id,
+                t.milestone_id,
                 p.name as project_name,
                 p.color as project_color,
                 t.assigned_to,
@@ -74,10 +76,10 @@ export async function GET(request: NextRequest) {
                 t.updated_at
             FROM tasks t
             INNER JOIN teams tm ON t.team_id = tm.id
-            INNER JOIN team_members membership ON membership.team_id = t.team_id AND membership.user_id = t.assigned_to
+            INNER JOIN task_assignees ta ON ta.task_id = t.id AND ta.user_id = ?
+            INNER JOIN team_members membership ON membership.team_id = t.team_id AND membership.user_id = ta.user_id
             LEFT JOIN projects p ON t.project_id = p.id
             INNER JOIN users u ON t.assigned_by = u.id
-            WHERE t.assigned_to = ?
             ORDER BY 
                 CASE t.status
                     WHEN 'in_progress' THEN 1

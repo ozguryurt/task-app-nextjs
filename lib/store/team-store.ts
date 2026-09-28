@@ -31,6 +31,15 @@ export interface TaskProject {
     color: string;
 }
 
+export interface ProjectMilestone {
+    id: number;
+    team_id: number;
+    project_id: number;
+    name: string;
+    description: string | null;
+    target_date: string | null;
+}
+
 export interface TaskLabel {
     id: number;
     team_id: number;
@@ -55,7 +64,10 @@ export interface Task {
     project_id: number | null;
     project_name: string | null;
     project_color: string | null;
+    milestone_id: number | null;
+    milestone_name: string | null;
     assigned_to: number;
+    assignees: Array<{ user_id: number; name: string; email: string }>;
     assigned_by: number;
     title: string;
     description: string | null;

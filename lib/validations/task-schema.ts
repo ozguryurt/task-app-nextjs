@@ -8,8 +8,9 @@ const optionalDate = z.union([
 
 const taskFields = {
     project_id: z.number().int().positive().nullable().optional(),
+    milestone_id: z.number().int().positive().nullable().optional(),
     label_ids: z.array(z.number().int().positive()).max(20, 'En fazla 20 etiket seçilebilir').optional(),
-    assigned_to: z.coerce.number().int().positive(),
+    assignee_ids: z.array(z.number().int().positive()).min(1, 'En az bir kişi seçin').max(50, 'En fazla 50 kişi seçilebilir').refine((ids) => new Set(ids).size === ids.length, 'Aynı kişi birden fazla seçilemez'),
     title: z.string().trim().min(1, 'Görev başlığı zorunludur').max(255, 'Görev başlığı çok uzun'),
     description: z.string().max(10_000, 'Görev açıklaması çok uzun').nullable().optional(),
     status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']),

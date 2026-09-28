@@ -10,7 +10,10 @@ export interface UserTask {
     project_id: number | null;
     project_name: string | null;
     project_color: string | null;
+    milestone_id: number | null;
+    milestone_name: string | null;
     assigned_to: number;
+    assignees: Array<{ user_id: number; name: string; email: string }>;
     assigned_by: number;
     assigned_by_name: string;
     title: string;

@@ -145,7 +145,7 @@ export function TaskKanbanBoard({
                                         </div>
                                         <div className="mt-2.5 flex items-center justify-between border-t pt-2">
                                             <span className="flex min-w-0 items-center gap-1 text-[10px] text-muted-foreground">
-                                                <UserRound className="size-3 shrink-0" /><span className="truncate">{task.assigned_to_name}</span>
+                                                <UserRound className="size-3 shrink-0" /><span className="truncate">{task.assignees.map((person) => person.name).join(', ')}</span>
                                             </span>
                                             <div className="flex items-center gap-0.5">
                                                 {editable && <Button type="button" variant="ghost" size="icon-sm" onClick={() => onEdit(task)} aria-label={`${task.title} görevini düzenle`}><Pencil className="size-3.5" /></Button>}

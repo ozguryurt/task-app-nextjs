@@ -11,6 +11,7 @@ interface TaskRow extends RowDataPacket {
     id: number;
     team_id: number;
     project_id: number | null;
+    milestone_id: number | null;
     project_name: string | null;
     project_color: string | null;
     assigned_to: number;
@@ -228,8 +229,9 @@ export async function PUT(
 
         const {
             project_id,
+            milestone_id,
             label_ids,
-            assigned_to,
+            assignee_ids,
             title,
             description,
             status,
@@ -243,6 +245,16 @@ export async function PUT(
             const [projects] = await pool.query<RowDataPacket[]>('SELECT id FROM projects WHERE id = ? AND team_id = ?', [project_id, teamIdNum]);
             if (projects.length === 0) return NextResponse.json({ error: 'Geçersiz proje' }, { status: 400 });
         }
+        const effectiveProjectId = project_id === undefined ? existingTasks[0].project_id : project_id;
+        if (milestone_id) {
+            const [milestones] = await pool.query<RowDataPacket[]>(
+                'SELECT id FROM project_milestones WHERE id = ? AND project_id = ? AND team_id = ?',
+                [milestone_id, effectiveProjectId, teamIdNum]
+            );
+            if (!milestones.length) return NextResponse.json({ error: 'Kilometre taşı seçilen projeye ait olmalıdır' }, { status: 400 });
+        }
+        const clearMilestoneForProjectChange = project_id !== undefined && project_id !== existingTasks[0].project_id && milestone_id === undefined;
+
 
         const uniqueLabelIds = label_ids ? [...new Set(label_ids)] : undefined;
         if (uniqueLabelIds && uniqueLabelIds.length > 0) {
@@ -254,14 +266,13 @@ export async function PUT(
             if (labels.length !== uniqueLabelIds.length) return NextResponse.json({ error: 'Geçersiz etiket seçimi' }, { status: 400 });
         }
 
-        // Eğer assigned_to değiştiriliyorsa, yeni kişinin takım üyesi olup olmadığını kontrol et
-        if (assigned_to && assigned_to !== existingTasks[0].assigned_to) {
+        if (assignee_ids !== undefined) {
             const [assignedMemberRows] = await pool.query<TeamMemberRow[]>(
-                'SELECT user_id FROM team_members WHERE team_id = ? AND user_id = ?',
-                [teamIdNum, assigned_to]
+                `SELECT user_id FROM team_members WHERE team_id = ? AND user_id IN (${assignee_ids.map(() => '?').join(',')})`,
+                [teamIdNum, ...assignee_ids]
             );
 
-            if (assignedMemberRows.length === 0) {
+            if (assignedMemberRows.length !== assignee_ids.length) {
                 return NextResponse.json(
                     { error: 'Atanan kişi bu takımın üyesi değil' },
                     { status: 400 }
@@ -277,10 +288,15 @@ export async function PUT(
             updateFields.push('project_id = ?');
             updateValues.push(project_id);
         }
+        if (milestone_id !== undefined || clearMilestoneForProjectChange) {
+            updateFields.push('milestone_id = ?');
+            updateValues.push(clearMilestoneForProjectChange ? null : milestone_id ?? null);
+        }
 
-        if (assigned_to !== undefined) {
+
+        if (assignee_ids !== undefined) {
             updateFields.push('assigned_to = ?');
-            updateValues.push(assigned_to);
+            updateValues.push(assignee_ids[0]);
         }
         if (title !== undefined) {
             updateFields.push('title = ?');
@@ -318,7 +334,7 @@ export async function PUT(
             updateValues.push(due_date || null);
         }
 
-        if (updateFields.length === 0 && label_ids === undefined) {
+        if (updateFields.length === 0 && label_ids === undefined && assignee_ids === undefined) {
             return NextResponse.json(
                 { error: 'Güncellenecek alan bulunamadı' },
                 { status: 400 }
@@ -344,7 +360,7 @@ export async function PUT(
             }
             const proposedValues: Array<[string, unknown]> = [
                 ['project_id', project_id],
-                ['assigned_to', assigned_to],
+                ['milestone_id', milestone_id !== undefined ? milestone_id : clearMilestoneForProjectChange ? null : undefined],
                 ['title', title?.trim()],
                 ['description', description === undefined ? undefined : description?.trim() || null],
                 ['status', status],
@@ -366,6 +382,22 @@ export async function PUT(
                     await recordTaskActivity(connection, taskIdNum, userId, 'updated', fieldName, previousValue, nextValue);
                 }
             }
+            const [oldAssignees] = await connection.query<RowDataPacket[]>(
+                'SELECT user_id FROM task_assignees WHERE task_id = ? ORDER BY user_id FOR UPDATE',
+                [taskIdNum]
+            );
+            const oldAssigneeIds = oldAssignees.map((row) => Number(row.user_id));
+            if (assignee_ids !== undefined) {
+                const nextIds = [...assignee_ids].sort((a, b) => a - b);
+                if (oldAssigneeIds.join(',') !== nextIds.join(',')) {
+                    await connection.query('DELETE FROM task_assignees WHERE task_id = ?', [taskIdNum]);
+                    await connection.query(
+                        `INSERT INTO task_assignees (task_id, user_id) VALUES ${nextIds.map(() => '(?, ?)').join(',')}`,
+                        nextIds.flatMap((assigneeId) => [taskIdNum, assigneeId])
+                    );
+                    await recordTaskActivity(connection, taskIdNum, userId, 'updated', 'assignee_ids', oldAssigneeIds.join(','), nextIds.join(','));
+                }
+            }
             if (uniqueLabelIds !== undefined) {
                 const [oldLabels] = await connection.query<RowDataPacket[]>(
                     'SELECT label_id FROM task_label_assignments WHERE task_id = ? ORDER BY label_id',
@@ -385,11 +417,14 @@ export async function PUT(
                 }
             }
             const notificationTitle = title?.trim() || beforeTask.title;
-            if (assigned_to !== undefined && assigned_to !== beforeTask.assigned_to) {
-                await notifyUser(connection, assigned_to, userId, teamIdNum, taskIdNum, 'reassigned', `"${notificationTitle}" görevi size atandı`);
+            const currentAssigneeIds = assignee_ids ?? oldAssigneeIds;
+            for (const assigneeId of currentAssigneeIds) {
+                if (!oldAssigneeIds.includes(assigneeId)) {
+                    await notifyUser(connection, assigneeId, userId, teamIdNum, taskIdNum, 'reassigned', `"${notificationTitle}" görevi size atandı`);
+                }
             }
             if (status !== undefined && status !== beforeTask.status) {
-                for (const recipientId of new Set([assigned_to ?? beforeTask.assigned_to, beforeTask.assigned_by])) {
+                for (const recipientId of new Set([...currentAssigneeIds, beforeTask.assigned_by])) {
                     await notifyUser(connection, recipientId, userId, teamIdNum, taskIdNum, 'status_changed', `"${notificationTitle}" görevinin durumu değişti`);
                 }
             }

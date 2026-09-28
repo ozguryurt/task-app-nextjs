@@ -21,13 +21,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { TeamMember, Task, type TaskLabel, type TaskProject } from '@/lib/store/team-store';
+import { TeamMember, Task, type TaskLabel, type TaskProject, type ProjectMilestone } from '@/lib/store/team-store';
 
 interface EditTaskDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSubmit: (data: {
-        assigned_to?: number;
+        assignee_ids?: number[];
         title?: string;
         description?: string;
         status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
@@ -36,11 +36,13 @@ interface EditTaskDialogProps {
         end_date?: string | null;
         due_date?: string | null;
         project_id?: number | null;
+        milestone_id?: number | null;
         label_ids?: number[];
     }) => Promise<boolean>;
     task: Task | null;
     members: TeamMember[];
     projects?: TaskProject[];
+    milestones?: ProjectMilestone[];
     labels?: TaskLabel[];
     isSubmitting?: boolean;
 }
@@ -52,10 +54,11 @@ export function EditTaskDialog({
     task,
     members,
     projects = [],
+    milestones = [],
     labels = [],
     isSubmitting = false,
 }: EditTaskDialogProps) {
-    const [assignedTo, setAssignedTo] = useState('');
+    const [assigneeIds, setAssigneeIds] = useState<number[]>([]);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [status, setStatus] = useState<'pending' | 'in_progress' | 'completed' | 'cancelled'>('pending');
@@ -64,11 +67,12 @@ export function EditTaskDialog({
     const [endDate, setEndDate] = useState('');
     const [dueDate, setDueDate] = useState('');
     const [projectId, setProjectId] = useState('none');
+    const [milestoneId, setMilestoneId] = useState('none');
     const [labelIds, setLabelIds] = useState<number[]>([]);
 
     useEffect(() => {
         if (task) {
-            setAssignedTo(task.assigned_to.toString());
+            setAssigneeIds(task.assignees?.map((assignee) => assignee.user_id) ?? [task.assigned_to]);
             setTitle(task.title);
             setDescription(task.description || '');
             setStatus(task.status);
@@ -79,6 +83,7 @@ export function EditTaskDialog({
             setEndDate(task.end_date ? formatDateForInput(task.end_date) : '');
             setDueDate(task.due_date ? formatDateForInput(task.due_date) : '');
             setProjectId(task.project_id ? String(task.project_id) : 'none');
+            setMilestoneId(task.milestone_id ? String(task.milestone_id) : 'none');
             setLabelIds(task.labels?.map((label) => label.id) ?? []);
         }
     }, [task]);
@@ -95,12 +100,12 @@ export function EditTaskDialog({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!assignedTo || !title) {
+        if (assigneeIds.length === 0 || !title) {
             return;
         }
 
         const updateData: {
-            assigned_to?: number;
+            assignee_ids?: number[];
             title?: string;
             description?: string;
             status?: Task['status'];
@@ -109,13 +114,14 @@ export function EditTaskDialog({
             end_date?: string | null;
             due_date?: string | null;
             project_id?: number | null;
+            milestone_id?: number | null;
             label_ids?: number[];
         } = {};
 
         if (task) {
-            if (parseInt(assignedTo) !== task.assigned_to) {
-                updateData.assigned_to = parseInt(assignedTo);
-            }
+            const previousIds = (task.assignees?.map((assignee) => assignee.user_id) ?? [task.assigned_to]).sort((a, b) => a - b);
+            const nextIds = [...assigneeIds].sort((a, b) => a - b);
+            if (previousIds.join(',') !== nextIds.join(',')) updateData.assignee_ids = nextIds;
             if (title !== task.title) {
                 updateData.title = title;
             }
@@ -139,6 +145,8 @@ export function EditTaskDialog({
             }
             const currentProjectId = task.project_id ? String(task.project_id) : 'none';
             if (projectId !== currentProjectId) updateData.project_id = projectId === 'none' ? null : Number(projectId);
+            const nextMilestoneId = projectId === 'none' ? 'none' : milestoneId;
+            if (nextMilestoneId !== (task.milestone_id ? String(task.milestone_id) : 'none')) updateData.milestone_id = nextMilestoneId === 'none' ? null : Number(nextMilestoneId);
             const currentLabelIds = (task.labels ?? []).map((label) => label.id).sort((a, b) => a - b);
             const nextLabelIds = [...labelIds].sort((a, b) => a - b);
             if (currentLabelIds.join(',') !== nextLabelIds.join(',')) updateData.label_ids = nextLabelIds;
@@ -169,23 +177,16 @@ export function EditTaskDialog({
 
                     <div className="space-y-3 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="assigned_to">Atanan Kişi *</Label>
-                            <Select
-                                value={assignedTo}
-                                onValueChange={setAssignedTo}
-                                disabled={isSubmitting}
-                            >
-                                <SelectTrigger id="assigned_to" className="w-full">
-                                    <SelectValue placeholder="Kişi seçin" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {members.map((member) => (
-                                        <SelectItem key={member.user_id} value={member.user_id.toString()}>
-                                            {member.name} ({member.email})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Label>Atanan kişiler *</Label>
+                            <div className="max-h-36 space-y-1 overflow-y-auto rounded-md border p-2">
+                                {members.map((member) => (
+                                    <label key={member.user_id} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted">
+                                        <Checkbox checked={assigneeIds.includes(member.user_id)} disabled={isSubmitting}
+                                            onCheckedChange={(checked) => setAssigneeIds((current) => checked ? [...current, member.user_id] : current.filter((id) => id !== member.user_id))} />
+                                        <span>{member.name} <span className="text-muted-foreground">({member.email})</span></span>
+                                    </label>
+                                ))}
+                            </div>
                         </div>
 
                         <div className="space-y-2">
@@ -253,10 +254,12 @@ export function EditTaskDialog({
 
                         {(projects.length > 0 || labels.length > 0) && (
                             <div className="grid gap-3 sm:grid-cols-2">
-                                {projects.length > 0 && <div className="space-y-2"><Label>Proje</Label><Select value={projectId} onValueChange={setProjectId} disabled={isSubmitting}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Projesiz</SelectItem>{projects.map((project) => <SelectItem key={project.id} value={String(project.id)}>{project.name}</SelectItem>)}</SelectContent></Select></div>}
+                                {projects.length > 0 && <div className="space-y-2"><Label>Proje</Label><Select value={projectId} onValueChange={(value) => { setProjectId(value); setMilestoneId('none'); }} disabled={isSubmitting}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Projesiz</SelectItem>{projects.map((project) => <SelectItem key={project.id} value={String(project.id)}>{project.name}</SelectItem>)}</SelectContent></Select></div>}
                                 {labels.length > 0 && <div className="space-y-2"><Label>Etiketler</Label><div className="flex min-h-9 flex-wrap items-center gap-2 rounded-md border px-2.5 py-1.5">{labels.map((label) => <label key={label.id} className="flex cursor-pointer items-center gap-1.5 text-xs"><Checkbox checked={labelIds.includes(label.id)} onCheckedChange={(checked) => setLabelIds((current) => checked ? [...current, label.id] : current.filter((id) => id !== label.id))} /><span className="size-2 rounded-full" style={{ backgroundColor: label.color }} />{label.name}</label>)}</div></div>}
                             </div>
                         )}
+
+                        {projectId !== 'none' && milestones.some((item) => item.project_id === Number(projectId)) && <div className="space-y-2"><Label>Kilometre taşı</Label><Select value={milestoneId} onValueChange={setMilestoneId} disabled={isSubmitting}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Kilometre taşı yok</SelectItem>{milestones.filter((item) => item.project_id === Number(projectId)).map((item) => <SelectItem key={item.id} value={String(item.id)}>{item.name}</SelectItem>)}</SelectContent></Select></div>}
 
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                             <div className="space-y-2">
@@ -303,7 +306,7 @@ export function EditTaskDialog({
                         >
                             İptal
                         </Button>
-                        <Button type="submit" disabled={isSubmitting || !assignedTo || !title}>
+                        <Button type="submit" disabled={isSubmitting || assigneeIds.length === 0 || !title}>
                             {isSubmitting ? 'Güncelleniyor...' : 'Güncelle'}
                         </Button>
                     </DialogFooter>

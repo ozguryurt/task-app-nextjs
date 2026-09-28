@@ -24,6 +24,7 @@ export const defaultTaskFilters: TaskFilterState = {
 
 interface FilterableTask {
     assigned_to: number;
+    assignees?: Array<{ user_id: number }>;
     title: string;
     description: string | null;
     status: Exclude<TaskStatusFilter, 'all'>;
@@ -57,7 +58,7 @@ export function filterTasks<T extends FilterableTask>(
         .filter((task) => {
             if (filters.status !== 'all' && task.status !== filters.status) return false;
             if (filters.priority !== 'all' && task.priority !== filters.priority) return false;
-            if (filters.assignedTo !== 'all' && String(task.assigned_to) !== filters.assignedTo) return false;
+            if (filters.assignedTo !== 'all' && !(task.assignees?.some((person) => String(person.user_id) === filters.assignedTo) ?? String(task.assigned_to) === filters.assignedTo)) return false;
             if (filters.projectId !== 'all' && String(task.project_id) !== filters.projectId) return false;
             if (filters.labelId !== 'all' && !task.labels?.some((label) => String(label.id) === filters.labelId)) return false;
             if (!query) return true;

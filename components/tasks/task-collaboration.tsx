@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/users/user-avatar';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import type { TeamMember, TaskProject, TaskLabel } from '@/lib/store/team-store';
+import type { TeamMember, TaskProject, TaskLabel, ProjectMilestone } from '@/lib/store/team-store';
 import { TASKS_CHANGED_EVENT } from '@/lib/task-events';
 import { readApiJson } from '@/lib/api/read-api-json';
 
@@ -33,7 +33,7 @@ interface TaskActivity {
 }
 
 const fieldLabels: Record<string, string> = {
-    project_id: 'Proje', assigned_to: 'Atanan kişi', title: 'Başlık', description: 'Açıklama',
+    project_id: 'Proje', milestone_id: 'Kilometre taşı', assigned_to: 'Atanan kişi', assignee_ids: 'Atanan kişiler', title: 'Başlık', description: 'Açıklama',
     status: 'Durum', priority: 'Öncelik', start_date: 'Başlangıç', end_date: 'Bitiş',
     due_date: 'Teslim tarihi', label_ids: 'Etiketler',
 };
@@ -46,12 +46,14 @@ function formatDate(value: string) {
     return new Date(value).toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
-function formatValue(field: string | null, value: string | null, members: TeamMember[], projects: TaskProject[], labels: TaskLabel[]) {
+function formatValue(field: string | null, value: string | null, members: TeamMember[], projects: TaskProject[], labels: TaskLabel[], milestones: ProjectMilestone[]) {
     if (value === null || value === '') return 'Boş';
     if (field === 'status') return statusLabels[value] ?? value;
     if (field === 'priority') return priorityLabels[value] ?? value;
     if (field === 'assigned_to') return members.find((member) => member.user_id === Number(value))?.name ?? `Kullanıcı #${value}`;
+    if (field === 'assignee_ids') return value.split(',').map((id) => members.find((member) => member.user_id === Number(id))?.name ?? `Kullanıcı #${id}`).join(', ');
     if (field === 'project_id') return projects.find((project) => project.id === Number(value))?.name ?? `Proje #${value}`;
+    if (field === 'milestone_id') return milestones.find((milestone) => milestone.id === Number(value))?.name ?? `Kilometre taşı #${value}`;
     if (field === 'label_ids') return value.split(',').map((id) => labels.find((label) => label.id === Number(id))?.name ?? `#${id}`).join(', ');
     if (field === 'start_date' || field === 'end_date' || field === 'due_date') {
         const date = new Date(`${value}T00:00:00`);
@@ -60,12 +62,13 @@ function formatValue(field: string | null, value: string | null, members: TeamMe
     return value;
 }
 
-export function TaskCollaboration({ teamId, taskId, members, projects, labels, isAdmin }: {
+export function TaskCollaboration({ teamId, taskId, members, projects, labels, milestones, isAdmin }: {
     teamId: number;
     taskId: number;
     members: TeamMember[];
     projects: TaskProject[];
     labels: TaskLabel[];
+    milestones: ProjectMilestone[];
     isAdmin: boolean;
 }) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -210,7 +213,7 @@ export function TaskCollaboration({ teamId, taskId, members, projects, labels, i
                             <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-secondary text-primary"><Clock3 className="size-3.5" /></span>
                             <div className="min-w-0 flex-1">
                                 <p className="text-xs font-medium"><span className="font-semibold">{item.actor_name ?? 'Eski üye'}</span> {item.event_type === 'created' ? 'görevi oluşturdu' : item.event_type === 'commented' ? 'yorum ekledi' : item.event_type === 'comment_deleted' ? `#${item.old_value} numaralı yorumu sildi` : `${fieldLabels[item.field_name ?? ''] ?? item.field_name} alanını değiştirdi`}</p>
-                                {item.event_type === 'updated' && <div className="mt-1 break-words text-[11px] text-muted-foreground"><span className="line-through">{formatValue(item.field_name, item.old_value, members, projects, labels)}</span><span className="mx-1.5">→</span><span className="font-medium text-foreground">{formatValue(item.field_name, item.new_value, members, projects, labels)}</span></div>}
+                                {item.event_type === 'updated' && <div className="mt-1 break-words text-[11px] text-muted-foreground"><span className="line-through">{formatValue(item.field_name, item.old_value, members, projects, labels, milestones)}</span><span className="mx-1.5">→</span><span className="font-medium text-foreground">{formatValue(item.field_name, item.new_value, members, projects, labels, milestones)}</span></div>}
                                 <time className="mt-1 block text-[10px] text-muted-foreground">{formatDate(item.created_at)}</time>
                             </div>
                         </div>

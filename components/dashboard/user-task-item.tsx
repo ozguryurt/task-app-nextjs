@@ -42,7 +42,9 @@ export function UserTaskItem({ task }: UserTaskItemProps) {
                 <span className={`block truncate text-[11px] font-medium sm:text-xs ${isCompleted ? 'text-slate-400 line-through' : 'text-slate-800 group-hover:text-indigo-700'}`}>{task.title}</span>
                 <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[9px] text-slate-400 sm:text-[10px]">
                     <TaskProjectBadge projectName={task.project_name} color={task.project_color} className="shrink-0 border-0 bg-transparent px-0 py-0 text-[9px] text-slate-500 sm:text-[10px]" />
+                    {task.milestone_name && <span className="max-w-28 truncate text-primary" title={`Kilometre taşı: ${task.milestone_name}`}>↳ {task.milestone_name}</span>}
                     <span className="max-w-28 truncate text-slate-400" title={`Takım: ${task.team_name}`}>{task.team_name}</span>
+                    {task.assignees.length > 1 && <span className="shrink-0 text-slate-500" title={`Atananlar: ${task.assignees.map((person) => person.name).join(', ')}`}>· {task.assignees.length} kişi</span>}
                     {task.due_date && <><span className="text-slate-300">·</span><Calendar className="size-2.5 shrink-0" /><span>{formatDate(task.due_date)}</span></>}
                     {task.labels?.slice(0, 1).map((label) => <span key={label.id} className="hidden rounded-full px-1.5 py-0.5 sm:inline-flex" style={{ backgroundColor: `${label.color}18`, color: label.color }}>{label.name}</span>)}
                 </span>

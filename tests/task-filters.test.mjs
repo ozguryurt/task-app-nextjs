@@ -5,7 +5,7 @@ import { createMonthGrid, taskDateKey, toLocalDateKey } from '../lib/task-calend
 
 const tasks = [
     {
-        id: 1, assigned_to: 10, title: 'İçerik planı', description: 'Haftalık yayın', team_name: 'Pazarlama',
+        id: 1, assigned_to: 10, assignees: [{ user_id: 10 }, { user_id: 30 }], title: 'İçerik planı', description: 'Haftalık yayın', team_name: 'Pazarlama',
         status: 'pending', priority: 'high', due_date: '2026-10-10', created_at: '2026-09-01',
         project_id: 7, labels: [{ id: 3 }, { id: 5 }],
     },
@@ -33,6 +33,11 @@ test('durum ve öncelik birlikte filtrelenir', () => {
 test('atanan kişi filtresi diğer filtrelerle birlikte çalışır', () => {
     const result = filterTasks(tasks, { ...defaultTaskFilters, assignedTo: '10', status: 'pending' });
     assert.deepEqual(result.map((task) => task.id), [3, 1]);
+});
+
+test('ikinci atanan kişi de filtrede görevi görür', () => {
+    const result = filterTasks(tasks, { ...defaultTaskFilters, assignedTo: '30' });
+    assert.deepEqual(result.map((task) => task.id), [1]);
 });
 
 test('proje ve etiket filtreleri birlikte çalışır', () => {

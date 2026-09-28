@@ -11,6 +11,7 @@ interface TaskRow extends RowDataPacket {
     id: number;
     team_id: number;
     project_id: number | null;
+    milestone_id: number | null;
     project_name: string | null;
     project_color: string | null;
     assigned_to: number;
@@ -187,8 +188,9 @@ export async function POST(
 
         const {
             project_id,
+            milestone_id,
             label_ids = [],
-            assigned_to,
+            assignee_ids,
             title,
             description,
             status = 'pending',
@@ -198,13 +200,13 @@ export async function POST(
             due_date,
         } = parsedBody.data;
 
-        // Atanan kişinin takım üyesi olup olmadığını kontrol et
+        // Her atanan kişi takımın üyesi olmalıdır.
         const [assignedMemberRows] = await pool.query<TeamMemberRow[]>(
-            'SELECT user_id FROM team_members WHERE team_id = ? AND user_id = ?',
-            [teamIdNum, assigned_to]
+            `SELECT user_id FROM team_members WHERE team_id = ? AND user_id IN (${assignee_ids.map(() => '?').join(',')})`,
+            [teamIdNum, ...assignee_ids]
         );
 
-        if (assignedMemberRows.length === 0) {
+        if (assignedMemberRows.length !== assignee_ids.length) {
             return NextResponse.json(
                 { error: 'Atanan kişi bu takımın üyesi değil' },
                 { status: 400 }
@@ -215,6 +217,14 @@ export async function POST(
             const [projects] = await pool.query<RowDataPacket[]>('SELECT id FROM projects WHERE id = ? AND team_id = ?', [project_id, teamIdNum]);
             if (projects.length === 0) return NextResponse.json({ error: 'Geçersiz proje' }, { status: 400 });
         }
+        if (milestone_id) {
+            const [milestones] = await pool.query<RowDataPacket[]>(
+                'SELECT id FROM project_milestones WHERE id = ? AND project_id = ? AND team_id = ?',
+                [milestone_id, project_id ?? null, teamIdNum]
+            );
+            if (!milestones.length) return NextResponse.json({ error: 'Kilometre taşı seçilen projeye ait olmalıdır' }, { status: 400 });
+        }
+
 
         const uniqueLabelIds = [...new Set(label_ids)];
         if (uniqueLabelIds.length > 0) {
@@ -232,13 +242,17 @@ export async function POST(
             await connection.beginTransaction();
             const [result] = await connection.query<ResultSetHeader>(
                 `INSERT INTO tasks (
-                    team_id, project_id, assigned_to, assigned_by, title, description,
+                    team_id, project_id, milestone_id, assigned_to, assigned_by, title, description,
                     status, priority, start_date, end_date, due_date
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [teamIdNum, project_id ?? null, assigned_to, userId, title, description?.trim() || null,
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [teamIdNum, project_id ?? null, milestone_id ?? null, assignee_ids[0], userId, title, description?.trim() || null,
                     status, priority, start_date || null, end_date || null, due_date || null]
             );
             taskId = result.insertId;
+            await connection.query(
+                `INSERT INTO task_assignees (task_id, user_id) VALUES ${assignee_ids.map(() => '(?, ?)').join(',')}`,
+                assignee_ids.flatMap((assigneeId) => [taskId, assigneeId])
+            );
             if (uniqueLabelIds.length > 0) {
                 await connection.query(
                     `INSERT INTO task_label_assignments (task_id, label_id) VALUES ${uniqueLabelIds.map(() => '(?, ?)').join(',')}`,
@@ -246,7 +260,9 @@ export async function POST(
                 );
             }
             await recordTaskActivity(connection, taskId, userId, 'created', null, null, title.trim());
-            await notifyUser(connection, assigned_to, userId, teamIdNum, taskId, 'assigned', `"${title.trim()}" görevi size atandı`);
+            for (const assigneeId of assignee_ids) {
+                await notifyUser(connection, assigneeId, userId, teamIdNum, taskId, 'assigned', `"${title.trim()}" görevi size atandı`);
+            }
             await connection.commit();
         } catch (transactionError) {
             await connection.rollback();

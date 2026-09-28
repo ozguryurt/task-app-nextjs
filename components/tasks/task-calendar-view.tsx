@@ -94,7 +94,7 @@ export function TaskCalendarView({
                                             <Link
                                                 key={task.id}
                                                 href={`/panel/takimlar/${task.team_id}/gorevler/${task.id}`}
-                                                title={`${task.title} · Proje: ${task.project_name || '(Proje yok)'} · ${task.assigned_to_name}`}
+                                                title={`${task.title} · Proje: ${task.project_name || '(Proje yok)'} · ${task.assignees.map((person) => person.name).join(', ')}`}
                                                 className={cn(
                                                     'block w-full truncate rounded border px-1.5 py-1 text-left text-[9px] font-medium transition-[filter,transform] sm:text-[10px]',
                                                     statusClasses[task.status],

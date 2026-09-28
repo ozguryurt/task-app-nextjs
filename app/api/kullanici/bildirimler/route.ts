@@ -31,24 +31,26 @@ export async function GET(request: NextRequest) {
         // Tekilleştirme anahtarı her görev ve teslim tarihi için tek hatırlatma üretir.
         await pool.query(
             `INSERT INTO notifications (user_id, team_id, task_id, type, message, dedupe_key)
-             SELECT t.assigned_to, t.team_id, t.id, 'due_soon',
+             SELECT ta.user_id, t.team_id, t.id, 'due_soon',
                     CONCAT('"', LEFT(t.title, 180), '" görevinin teslim tarihi yaklaşıyor'),
                     CONCAT('due_soon:', t.id, ':', DATE_FORMAT(t.due_date, '%Y-%m-%d'))
              FROM tasks t
-             JOIN team_members tm ON tm.team_id = t.team_id AND tm.user_id = t.assigned_to
-             WHERE t.assigned_to = ? AND t.status IN ('pending', 'in_progress')
+             JOIN task_assignees ta ON ta.task_id = t.id AND ta.user_id = ?
+             JOIN team_members tm ON tm.team_id = t.team_id AND tm.user_id = ta.user_id
+             WHERE t.status IN ('pending', 'in_progress')
                AND t.due_date BETWEEN ? AND ?
              ON DUPLICATE KEY UPDATE read_at = read_at`,
             [userId, today, tomorrow]
         );
         await pool.query(
             `INSERT INTO notifications (user_id, team_id, task_id, type, message, dedupe_key)
-             SELECT t.assigned_to, t.team_id, t.id, 'overdue',
+             SELECT ta.user_id, t.team_id, t.id, 'overdue',
                     CONCAT('"', LEFT(t.title, 180), '" görevinin teslim tarihi geçti'),
                     CONCAT('overdue:', t.id, ':', DATE_FORMAT(t.due_date, '%Y-%m-%d'))
              FROM tasks t
-             JOIN team_members tm ON tm.team_id = t.team_id AND tm.user_id = t.assigned_to
-             WHERE t.assigned_to = ? AND t.status IN ('pending', 'in_progress') AND t.due_date < ?
+             JOIN task_assignees ta ON ta.task_id = t.id AND ta.user_id = ?
+             JOIN team_members tm ON tm.team_id = t.team_id AND tm.user_id = ta.user_id
+             WHERE t.status IN ('pending', 'in_progress') AND t.due_date < ?
              ON DUPLICATE KEY UPDATE read_at = read_at`,
             [userId, today]
         );

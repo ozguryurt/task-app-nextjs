@@ -101,7 +101,11 @@ export async function POST(
             for (const mentionedId of mentionedIds) {
                 await notifyUser(connection, mentionedId, userId, teamId, taskId, 'mention', `"${task.title}" görevindeki yorumda sizden bahsedildi`);
             }
-            const participants = new Set([task.assigned_to, task.assigned_by]);
+            const [assigneeRows] = await connection.query<RowDataPacket[]>(
+                'SELECT user_id FROM task_assignees WHERE task_id = ?',
+                [taskId]
+            );
+            const participants = new Set([task.assigned_by, ...assigneeRows.map((row) => Number(row.user_id))]);
             for (const participantId of participants) {
                 if (!mentionedIds.has(participantId)) {
                     await notifyUser(connection, participantId, userId, teamId, taskId, 'comment', `"${task.title}" görevine yeni yorum eklendi`);

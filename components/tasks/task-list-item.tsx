@@ -67,6 +67,7 @@ export function TaskListItem({
                             {priorityInfo.label}
                         </Badge>
                         <TaskProjectBadge projectName={task.project_name} color={task.project_color} />
+                        {task.milestone_name && <Badge variant="outline">Hedef: {task.milestone_name}</Badge>}
                         {task.labels?.map((label) => <Badge key={label.id} variant="outline" style={{ borderColor: label.color, color: label.color }}>{label.name}</Badge>)}
                     </div>
 
@@ -80,7 +81,7 @@ export function TaskListItem({
                         <div className="flex items-center gap-1">
                             <User className="w-4 h-4" />
                             <span>
-                                <span className="font-medium">Atanan:</span> {task.assigned_to_name}
+                                <span className="font-medium">Atananlar:</span> {task.assignees.map((person) => person.name).join(', ')}
                             </span>
                         </div>
 

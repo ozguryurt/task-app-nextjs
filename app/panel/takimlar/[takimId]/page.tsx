@@ -8,6 +8,8 @@ import { useTeamStore, Task, type TaskProject } from '@/lib/store/team-store';
 import { useTeamMembers } from '@/lib/hooks/use-team-members';
 import { useTasks } from '@/lib/hooks/use-tasks';
 import { useTaskMetadata } from '@/lib/hooks/use-task-metadata';
+import { useProjectMilestones } from '@/lib/hooks/use-project-milestones';
+import { ProjectMilestones } from '@/components/tasks/project-milestones';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddMemberDialog } from '@/components/teams/add-member-dialog';
@@ -95,16 +97,28 @@ export default function TeamDetailPage({ params }: PageProps) {
         projects, labels, templates, fetchMetadata, createMetadata, updateMetadata, deleteMetadata,
         isSubmitting: isSubmittingMetadata,
     } = useTaskMetadata(teamId);
+    const { milestones, isSubmitting: isSubmittingMilestone, refreshMilestones, createMilestone, updateMilestone, deleteMilestone } = useProjectMilestones(teamId);
+
+    const handleUpdateMilestone = async (id: number, data: Parameters<typeof updateMilestone>[1]) => {
+        const saved = await updateMilestone(id, data);
+        if (saved) { await fetchTasks(); notifyTasksChanged(); }
+        return saved;
+    };
+    const handleDeleteMilestone = async (id: number) => {
+        const deleted = await deleteMilestone(id);
+        if (deleted) { await fetchTasks(); notifyTasksChanged(); }
+        return deleted;
+    };
 
     const visibleTasks = useMemo(
-        () => filterTasks(tasks, taskFilters, (task) => `${task.assigned_to_name} ${task.assigned_by_name} ${task.project_name ?? ''} ${task.labels?.map((label) => label.name).join(' ') ?? ''}`),
+        () => filterTasks(tasks, taskFilters, (task) => `${task.assignees.map((person) => person.name).join(' ')} ${task.assigned_by_name} ${task.project_name ?? ''} ${task.labels?.map((label) => label.name).join(' ') ?? ''}`),
         [tasks, taskFilters]
     );
     const taskAssignees = useMemo(
-        () => Array.from(new Map(tasks.map((task) => [task.assigned_to, {
-            id: task.assigned_to,
-            name: task.assigned_to_name,
-        }])).values()).sort((a, b) => a.name.localeCompare(b.name, 'tr-TR')),
+        () => Array.from(new Map(tasks.flatMap((task) => task.assignees.map((person) => [person.user_id, {
+            id: person.user_id,
+            name: person.name,
+        }] as const))).values()).sort((a, b) => a.name.localeCompare(b.name, 'tr-TR')),
         [tasks]
     );
 
@@ -137,6 +151,7 @@ export default function TeamDetailPage({ params }: PageProps) {
                 fetchMembers().catch(() => {}),
                 fetchTasks(),
                 fetchMetadata().catch(() => {}),
+                refreshMilestones().catch((error) => toast.error(error instanceof Error ? error.message : 'Kilometre taşları yüklenemedi')),
             ]);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
@@ -273,6 +288,8 @@ export default function TeamDetailPage({ params }: PageProps) {
         if (!projectToDelete) return;
         const deleted = await deleteMetadata('project', projectToDelete.id);
         if (deleted) {
+            void refreshMilestones().catch(() => {});
+            void fetchTasks();
             setIsDeleteProjectDialogOpen(false);
             setProjectToDelete(null);
         }
@@ -468,10 +485,12 @@ export default function TeamDetailPage({ params }: PageProps) {
                         ) : (
                             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                                 {projects.map((project) => (
-                                    <div key={project.id} className="flex min-w-0 items-start gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/30 hover:bg-muted/60">
-                                        <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: `${project.color}18`, color: project.color }}><FolderKanban className="size-4" /></span>
-                                        <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-foreground">{project.name}</p><p className="mt-1 line-clamp-2 min-h-8 text-xs leading-4 text-muted-foreground">{project.description || 'Bu proje için açıklama eklenmemiş.'}</p></div>
-                                        {isAdmin && <div className="flex shrink-0 items-center gap-0.5"><Button type="button" variant="ghost" size="icon-sm" aria-label={`${project.name} projesini düzenle`} disabled={isSubmittingMetadata} onClick={() => startEditingProject(project)} className="text-muted-foreground"><Pencil /></Button><Button type="button" variant="ghost" size="icon-sm" aria-label={`${project.name} projesini sil`} disabled={isSubmittingMetadata} onClick={() => { setProjectToDelete({ id: project.id, name: project.name }); setIsDeleteProjectDialogOpen(true); }} className="text-muted-foreground hover:text-destructive"><Trash2 /></Button></div>}
+                                    <div key={project.id} className="min-w-0 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/30">
+                                        <div className="flex items-start gap-3"><span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: `${project.color}18`, color: project.color }}><FolderKanban className="size-4" /></span>
+                                            <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-foreground">{project.name}</p><p className="mt-1 line-clamp-2 text-xs leading-4 text-muted-foreground">{project.description || 'Bu proje için açıklama eklenmemiş.'}</p></div>
+                                            {isAdmin && <div className="flex shrink-0 items-center gap-0.5"><Button type="button" variant="ghost" size="icon-sm" aria-label={`${project.name} projesini düzenle`} disabled={isSubmittingMetadata} onClick={() => startEditingProject(project)} className="text-muted-foreground"><Pencil /></Button><Button type="button" variant="ghost" size="icon-sm" aria-label={`${project.name} projesini sil`} disabled={isSubmittingMetadata} onClick={() => { setProjectToDelete({ id: project.id, name: project.name }); setIsDeleteProjectDialogOpen(true); }} className="text-muted-foreground hover:text-destructive"><Trash2 /></Button></div>}
+                                        </div>
+                                        <ProjectMilestones projectId={project.id} milestones={milestones.filter((item) => item.project_id === project.id)} tasks={tasks} isAdmin={isAdmin} isSubmitting={isSubmittingMilestone} onCreate={createMilestone} onUpdate={handleUpdateMilestone} onDelete={handleDeleteMilestone} />
                                     </div>
                                 ))}
                             </div>
@@ -577,6 +596,7 @@ export default function TeamDetailPage({ params }: PageProps) {
                     onSubmit={handleCreateTask}
                     members={currentTeamMembers}
                     projects={projects}
+                    milestones={milestones}
                     labels={labels}
                     templates={templates}
                     isSubmitting={isSubmittingTask}
@@ -590,6 +610,7 @@ export default function TeamDetailPage({ params }: PageProps) {
                     task={taskToEdit}
                     members={currentTeamMembers}
                     projects={projects}
+                    milestones={milestones}
                     labels={labels}
                     isSubmitting={isSubmittingTask}
                 />

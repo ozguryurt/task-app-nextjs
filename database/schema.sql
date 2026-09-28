@@ -117,12 +117,34 @@ CREATE TABLE IF NOT EXISTS projects (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================
--- TASKS TABLE (İleride görev atama sistemi ekleneceği için)
+-- PROJECT MILESTONES
+-- =====================
+CREATE TABLE IF NOT EXISTS project_milestones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    team_id INT NOT NULL,
+    project_id INT NOT NULL,
+    name VARCHAR(120) NOT NULL,
+    description VARCHAR(500) DEFAULT NULL,
+    target_date DATE DEFAULT NULL,
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_project_milestone_name (project_id, name),
+    INDEX idx_milestones_team_project (team_id, project_id),
+    INDEX idx_milestones_target_date (target_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================
+-- TASKS TABLE
 -- =====================
 CREATE TABLE IF NOT EXISTS tasks (
     id INT AUTO_INCREMENT PRIMARY KEY,
     team_id INT NOT NULL,
     project_id INT DEFAULT NULL,
+    milestone_id INT DEFAULT NULL,
     assigned_to INT NOT NULL,
     assigned_by INT NOT NULL,
     title VARCHAR(255) NOT NULL,
@@ -143,12 +165,14 @@ CREATE TABLE IF NOT EXISTS tasks (
     -- Foreign Keys
     FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL,
+    FOREIGN KEY (milestone_id) REFERENCES project_milestones(id) ON DELETE SET NULL,
     FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (assigned_by) REFERENCES users(id) ON DELETE CASCADE,
     
     -- İndeksler
     INDEX idx_team_id (team_id),
     INDEX idx_project_id (project_id),
+    INDEX idx_milestone_id (milestone_id),
     INDEX idx_assigned_to (assigned_to),
     INDEX idx_assigned_by (assigned_by),
     INDEX idx_status (status),
@@ -156,6 +180,19 @@ CREATE TABLE IF NOT EXISTS tasks (
     INDEX idx_start_date (start_date),
     INDEX idx_end_date (end_date),
     INDEX idx_due_date (due_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================
+-- TASK ASSIGNEES
+-- =====================
+-- Görevin tüm atananları; tasks.assigned_to ilk atanan için eski uyumluluk alanıdır.
+CREATE TABLE IF NOT EXISTS task_assignees (
+    task_id INT NOT NULL,
+    user_id INT NOT NULL,
+    PRIMARY KEY (task_id, user_id),
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_task_assignees_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================

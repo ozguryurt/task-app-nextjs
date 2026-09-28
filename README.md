@@ -15,6 +15,7 @@ Taskflow, ekiplerin görevleri oluşturup atayabildiği, projelerle düzenleyebi
 - Görev oluşturma, yorum ve alan değişikliklerinin aktör, zaman, eski ve yeni değerleriyle kaydedildiği gerçek değişiklik geçmişi.
 - `/panel` genel bakışı ve `/panel/analitik` sayfasında tamamlanma oranı, geciken/yaklaşan görevler, durum dağılımı ve takım bazlı iş yükü.
 - Takım bazlı projeler, renkli görev etiketleri ve tekrar eden iş akışlarını hızlandıran görev şablonları. Proje ve etiketler görev oluşturma/düzenleme akışlarında seçilebilir ve görev listesinde filtrelenebilir.
+- Proje bazlı kilometre taşları: takım yöneticileri hedef adı, açıklaması ve tarihini yönetebilir; görevleri kilometre taşına bağlayabilir. Proje kartlarında iptal edilmemiş görevlerin tamamlanma ilerlemesi gösterilir.
 - Kullanıcı profilinde mevcut şifre doğrulamasıyla şifre değiştirme ve yeni adrese gönderilen, 5 dakika geçerli tek kullanımlık kodla e-posta değiştirme.
 - Profil fotoğrafı yükleme (ImgBB): PNG, JPG, JPEG veya WEBP; en fazla 3 MB. Dairesel avatar için 512 × 512 px kare görsel önerilir. Fotoğraf profil ve panel üst çubuğunda gösterilir.
 - İşlem geri bildirimleri için Sonner bildirimleri ve mobil uyumlu arayüz.
@@ -62,9 +63,11 @@ MySQL, npm ve en az Node.js **20.9.0** gerekir. Test komutundaki `--experimental
    SOURCE database/migrations/005_add_profile_email_change_codes.sql;
    SOURCE database/migrations/006_add_user_avatar_url.sql;
    SOURCE database/migrations/007_add_task_collaboration.sql;
+   SOURCE database/migrations/008_add_project_milestones.sql;
+   SOURCE database/migrations/009_add_task_assignees.sql;
    ```
 
-   `001` şifre alanını genişletir; eski SHA-256 hash'leri başarılı girişte bcrypt'e çevrilir. `002` oturum sürümünü, `003` kod deneme sayaçlarını ekler. `004` proje/etiket/şablon tablolarını, `005` profil e-posta değişikliği kodu tablosunu, `006` ise `users.avatar_url` alanını oluşturur. `007` yorum, bahsetme, görev hareketi ve bildirim tablolarını ekler. Yeni kurulumda `schema.sql` yeterlidir; migrasyonları ayrıca çalıştırmayın.
+   `001` şifre alanını genişletir; eski SHA-256 hash'leri başarılı girişte bcrypt'e çevrilir. `002` oturum sürümünü, `003` kod deneme sayaçlarını ekler. `004` proje/etiket/şablon tablolarını, `005` profil e-posta değişikliği kodu tablosunu, `006` ise `users.avatar_url` alanını oluşturur. `007` yorum, bahsetme, görev hareketi ve bildirim tablolarını; `008` proje kilometre taşlarını ve görev bağlantısını; `009` çoklu görev atamalarını ekler ve mevcut atamaları korur. Yeni kurulumda `schema.sql` yeterlidir; migrasyonları ayrıca çalıştırmayın.
 
 3. [`env.example`](env.example) dosyasını `.env.local` olarak kopyalayıp kendi değerlerinizi girin. PowerShell'de:
 
@@ -131,7 +134,7 @@ Ortam değişkenleri değiştirildikten sonra Node.js uygulamasını cPanel üze
 | `/panel/takimlar` | Üyesi olunan takımlar ve yeni takım oluşturma. |
 | `/panel/gorevler` | Kullanıcıya atanan görevler; arama, filtreleme ve sıralama. |
 | `/panel/profil` | Hesap bilgileri ve profil fotoğrafı; mevcut şifre doğrulamasıyla şifre ve e-posta değiştirme. |
-| `/panel/takimlar/[takimId]` | Takım üyeleri ve görevleri. |
+| `/panel/takimlar/[takimId]` | Takım üyeleri, projeleri, kilometre taşları ve görevleri. |
 | `/panel/takimlar/[takimId]/gorevler/[gorevId]` | Görev ayrıntıları ve yetkili görev işlemleri. |
 
 Tanımsız adreslerde özel 404 ekranı gösterilir. `proxy.ts`, oturum açmamış kullanıcıları `/panel` altındaki sayfalardan girişe yönlendirir ve API'deki durum değiştiren çapraz site isteklerini reddeder. API uçları oturum ve yetki kontrollerini ayrıca kendi Route Handler'larında yapar. Takım detayı, üyeler, görevler, yorumlar ve görev kaynakları yalnızca takımın güncel üyelerine açılır; takımdan çıkarılan kişinin eski görevleri kişisel görev listesinde de gösterilmez.
@@ -159,6 +162,7 @@ Tüm yollar `/api` önekini kullanır. Korumalı uçlar oturum çerezini gerekti
 | POST | `/takimlar/[takimId]/gorevler/[gorevId]/yorumlar` | Takım üyesi olarak yorum ve `mentionIds` ile bahsetme ekleme. |
 | DELETE | `/takimlar/[takimId]/gorevler/[gorevId]/yorumlar/[yorumId]` | Takım yöneticisi tarafından yorum silme; işlem geçmişe kaydedilir. |
 | GET, POST, DELETE | `/takimlar/[takimId]/gorev-yapilandirma` | Proje, etiket ve görev şablonlarını listeleme / oluşturma / silme. |
+| GET, POST, PUT, DELETE | `/takimlar/[takimId]/kilometre-taslari` | Proje kilometre taşlarını listeleme / oluşturma / düzenleme / silme. Yazma işlemleri yönetici yetkisi gerektirir. |
 | GET | `/kullanici/gorevler` | Kullanıcıya atanan görevler. |
 | GET, PATCH | `/kullanici/bildirimler` | Bildirim kutusu ve teslim hatırlatmaları / bildirimi veya tümünü okundu işaretleme. |
 | GET, POST | `/kullanici/profil` | Profil bilgisini getirme; şifre değiştirme, e-posta değişikliği kodu isteme ve kodu doğrulama işlemleri. |
@@ -206,7 +210,7 @@ npm run dev
 npm run build
 npm run lint
 npx tsc --noEmit
-node --experimental-strip-types --test tests/task-filters.test.mjs tests/security.test.mjs tests/task-collaboration.test.mjs
+node --test tests/*.test.mjs
 ```
 
-Üretimde standalone sunucuyu `node .next/standalone/server.js` ile başlatın. Node test komutu, görev filtreleri ile güvenlik yardımcılarının doğrulamalarını çalıştırır.
+Üretimde standalone sunucuyu `node .next/standalone/server.js` ile başlatın. Node test komutu görev filtreleri, güvenlik, API yanıtları ve kilometre taşı alanı doğrulamalarını çalıştırır.

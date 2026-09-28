@@ -43,7 +43,7 @@ test('e-posta HTML alanlarındaki kullanıcı verisi kaçışlanır', () => {
 
 test('görev oluşturma yalnızca izin verilen enum ve alanları kabul eder', () => {
     const invalidStatus = createTaskSchema.safeParse({
-        assigned_to: 1,
+        assignee_ids: [1],
         title: 'Görev',
         status: 'admin',
     });

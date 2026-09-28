@@ -11,7 +11,10 @@ export interface Task {
     project_id: number | null;
     project_name: string | null;
     project_color: string | null;
+    milestone_id: number | null;
+    milestone_name: string | null;
     assigned_to: number;
+    assignees: Array<{ user_id: number; name: string; email: string }>;
     assigned_by: number;
     title: string;
     description: string | null;
@@ -32,8 +35,9 @@ export interface Task {
 
 export interface CreateTaskData {
     project_id?: number | null;
+    milestone_id?: number | null;
     label_ids?: number[];
-    assigned_to: number;
+    assignee_ids: number[];
     title: string;
     description?: string;
     status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
@@ -45,8 +49,9 @@ export interface CreateTaskData {
 
 export interface UpdateTaskData {
     project_id?: number | null;
+    milestone_id?: number | null;
     label_ids?: number[];
-    assigned_to?: number;
+    assignee_ids?: number[];
     title?: string;
     description?: string;
     status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
